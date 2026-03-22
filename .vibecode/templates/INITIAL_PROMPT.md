@@ -16,8 +16,6 @@ Yeni bir proje başlatacağım. Aşağıdaki adımları sırasıyla takip et:
 ~/Dev/vibecode/.vibecode/scripts/scaffold.sh [PROJE-ADI] [PROJE-YOLU]
 
 komutunu çalıştırarak proje iskeletini oluştur.
-Bu komut .vibecode/ (standards, skills), .claude/ (commands, hooks, rules),
-docs/, templates ve tüm altyapı dosyalarını oluşturur.
 
 ## 2. Spesifikasyonları Oku
 
@@ -129,8 +127,6 @@ Yeni bir proje başlatacağım. Aşağıdaki adımları sırasıyla takip et:
 ~/Dev/vibecode/.vibecode/scripts/scaffold.sh beegfs ~/Dev/beegfs
 
 komutunu çalıştırarak proje iskeletini oluştur.
-Bu komut .vibecode/ (standards, skills), .claude/ (commands, hooks, rules),
-docs/, templates ve tüm altyapı dosyalarını oluşturur.
 
 ## 2. Spesifikasyonları Oku
 
