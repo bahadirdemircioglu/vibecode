@@ -352,7 +352,7 @@ saves state to HANDOFF.md before compacting, ensuring no context is lost.
 
 ## 9. Five Absolute Rules
 
-These 5 rules are **non-negotiable**. Everything else is in `skills/self-check/SKILL.md`.
+These 6 rules are **non-negotiable**. Everything else is in `skills/self-check/SKILL.md`.
 
 ```
 1. 📖 Load the relevant standard BEFORE writing code
@@ -362,13 +362,17 @@ These 5 rules are **non-negotiable**. Everything else is in `skills/self-check/S
 2. 🔍 Verify library APIs from Context7 or official docs
    → Never write third-party library calls from memory
 
-3. ✅ Run make verify BEFORE reporting task completion
+3. 🧪 Write tests for every new feature or change
+   → No feature is delivered without tests
+   → Test first (TDD) when possible
+
+4. ✅ Run make verify BEFORE reporting task completion
    → If it fails → fix → rerun → do NOT skip
 
-4. 📝 Update CHANGELOG.md after EVERY change
+5. 📝 Update CHANGELOG.md after EVERY change
    → No exceptions — not even "small" changes
 
-5. 🚫 Never proceed past a CHECKPOINT without confirming it passed
+6. 🚫 Never proceed past a CHECKPOINT without confirming it passed
    → Silence is not compliance
 ```
 
