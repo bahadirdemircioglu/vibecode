@@ -6,7 +6,7 @@
 # Restores a database from a backup dump file.
 # If no file is specified, lists available backups.
 #
-# Referenced by: docs/standards/backup.md
+# Referenced by: .vibecode/standards/backup.md
 
 set -euo pipefail
 

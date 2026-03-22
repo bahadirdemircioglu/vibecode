@@ -6,7 +6,7 @@
 # Creates a timestamped SQL dump of the development database.
 # Backups are stored in ./backups/ (gitignored).
 #
-# Referenced by: docs/standards/backup.md
+# Referenced by: .vibecode/standards/backup.md
 
 set -euo pipefail
 

@@ -59,7 +59,7 @@ Change completed
         │
         ▼
 10. Update HANDOFF.md with session state
-    → See skills/handoff-protocol/SKILL.md for format
+    → See .vibecode/skills/handoff-protocol/SKILL.md for format
     → Include: changes made, tests status, open questions, next steps
         │
         ▼
