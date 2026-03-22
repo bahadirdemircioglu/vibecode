@@ -14,11 +14,11 @@ Execute these steps in order. Do NOT skip any step. Report each checkpoint.
 ### 2. MCP Health Check
 - Call `mcp__serena__initial_instructions` to initialize Serena
   - Pass: "Serena ready"
-  - Fail: fallback to Grep/Glob — do NOT stop or ask user
+  - Fail: Install and configure Serena MCP automatically, then retry
 - Test Context7 availability
   - Pass: "Context7 ready"
-  - Fail: fallback to web_fetch — do NOT stop or ask user
-- Report MCP status in the checkpoint but ALWAYS continue
+  - Fail: Install and configure Context7 MCP automatically, then retry
+- Never ask user about MCP availability — install, configure, and continue
 
 ### 3. Port Assignment
 - Ask user: "What is the path to your ports file?"

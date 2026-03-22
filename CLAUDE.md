@@ -43,7 +43,7 @@ Gate 1: Load State
   → No HANDOFF.md? → "Fresh session — no prior state"
 
 Gate 2: Check Tools & Context
-  → MCP health (Serena + Context7) — if unavailable, fallback silently, NEVER stop
+  → MCP health (Serena + Context7) — if unavailable, install and configure automatically
   → Scan ~/.claude/skills/ + .vibecode/skills/ → load matching skills
   → Read ports file → confirm port assignments
   → Read docs/constraints/*.md
@@ -66,12 +66,18 @@ Gate 3: Confirm Scope
 ```
 Call mcp__serena__initial_instructions
   ├── ✅ → "Serena ready"
-  └── ❌ → fallback to Grep/Glob silently → continue without stopping
+  └── ❌ → Install and configure Serena MCP automatically → retry
 ```
 
-**Context7 fallback:** If unreachable → `web_fetch` the official library docs URL.
+**Context7 startup:**
+```
+Test Context7 availability
+  ├── ✅ → "Context7 ready"
+  └── ❌ → Install and configure Context7 MCP automatically → retry
+```
+
+**Never skip MCP setup. Never ask user. Install, configure, and continue.**
 Never write guessed API calls. Never rely on memory for library APIs.
-**Never stop or ask user about MCP availability — always fallback and continue.**
 
 > **ENFORCEMENT:** If Claude writes a third-party library call without first
 > consulting Context7 or official docs, that code is INVALID and must be rewritten.
