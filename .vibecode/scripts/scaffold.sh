@@ -15,22 +15,39 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 TEMPLATE_DIR="$(dirname "$(dirname "$SCRIPT_DIR")")"
 
 # --- Args ---
+FORCE=false
+while [[ "${1:-}" == --* ]]; do
+  case "$1" in
+    --force) FORCE=true; shift ;;
+    *) echo "Unknown option: $1"; exit 1 ;;
+  esac
+done
+
 if [ $# -lt 2 ]; then
-  echo "Usage: ./.vibecode/scripts/scaffold.sh <project-name> <target-path>"
+  echo "Usage: ./.vibecode/scripts/scaffold.sh [--force] <project-name> <target-path>"
   echo ""
   echo "Example: ./.vibecode/scripts/scaffold.sh my-app ~/Dev/my-app"
+  echo "         ./.vibecode/scripts/scaffold.sh --force my-app ~/Dev/my-app  # mevcut dizine ekle"
   exit 1
 fi
 
 PROJECT_NAME="$1"
 TARGET_PATH="$2"
 
-if [ -d "$TARGET_PATH" ] && [ "$(ls -A "$TARGET_PATH" 2>/dev/null)" ]; then
+if [ "$FORCE" = false ] && [ -d "$TARGET_PATH" ] && [ "$(ls -A "$TARGET_PATH" 2>/dev/null)" ]; then
   echo "❌ Target directory is not empty: $TARGET_PATH"
+  echo "   Mevcut dizine scaffold eklemek için: --force flag'i kullan"
   exit 1
 fi
 
-echo "Scaffolding project: $PROJECT_NAME"
+# Use cp -n (no-clobber) in force mode to preserve existing files
+if [ "$FORCE" = true ]; then
+  CP="cp -n"
+  echo "Scaffolding project (force mode — preserving existing files): $PROJECT_NAME"
+else
+  CP="cp"
+  echo "Scaffolding project: $PROJECT_NAME"
+fi
 echo "Target: $TARGET_PATH"
 echo ""
 
@@ -46,46 +63,46 @@ mkdir -p "$TARGET_PATH"/.claude/{commands,hooks}
 
 # --- Copy standards ---
 echo "Copying standards..."
-cp "$TEMPLATE_DIR"/.vibecode/standards/*.md "$TARGET_PATH/.vibecode/standards/"
+$CP "$TEMPLATE_DIR"/.vibecode/standards/*.md "$TARGET_PATH/.vibecode/standards/"
 
 # --- Copy constraint templates ---
 if ls "$TEMPLATE_DIR"/docs/constraints/*.md 1>/dev/null 2>&1; then
   echo "Copying constraint templates..."
-  cp "$TEMPLATE_DIR"/docs/constraints/*.md "$TARGET_PATH/docs/constraints/"
+  $CP "$TEMPLATE_DIR"/docs/constraints/*.md "$TARGET_PATH/docs/constraints/"
 fi
 
 # --- Copy templates ---
 echo "Copying templates..."
-cp "$TEMPLATE_DIR/.vibecode/templates/.gitignore" "$TARGET_PATH/.gitignore"
-cp "$TEMPLATE_DIR/.vibecode/templates/.env.example" "$TARGET_PATH/.env.example"
-cp "$TEMPLATE_DIR/.vibecode/templates/Makefile" "$TARGET_PATH/Makefile"
-cp "$TEMPLATE_DIR/.vibecode/templates/docker-compose.yml" "$TARGET_PATH/docker-compose.yml"
-cp "$TEMPLATE_DIR/.vibecode/templates/HANDOFF.md" "$TARGET_PATH/HANDOFF.md"
+$CP "$TEMPLATE_DIR/.vibecode/templates/.gitignore" "$TARGET_PATH/.gitignore"
+$CP "$TEMPLATE_DIR/.vibecode/templates/.env.example" "$TARGET_PATH/.env.example"
+$CP "$TEMPLATE_DIR/.vibecode/templates/Makefile" "$TARGET_PATH/Makefile"
+$CP "$TEMPLATE_DIR/.vibecode/templates/docker-compose.yml" "$TARGET_PATH/docker-compose.yml"
+$CP "$TEMPLATE_DIR/.vibecode/templates/HANDOFF.md" "$TARGET_PATH/HANDOFF.md"
 
 # --- Copy CLAUDE.md ---
 echo "Copying CLAUDE.md..."
-cp "$TEMPLATE_DIR/CLAUDE.md" "$TARGET_PATH/CLAUDE.md"
+$CP "$TEMPLATE_DIR/CLAUDE.md" "$TARGET_PATH/CLAUDE.md"
 
 # --- Copy skills ---
 echo "Copying skills..."
-cp -r "$TEMPLATE_DIR/.vibecode/skills/"* "$TARGET_PATH/.vibecode/skills/" 2>/dev/null || true
+$CP -r "$TEMPLATE_DIR/.vibecode/skills/"* "$TARGET_PATH/.vibecode/skills/" 2>/dev/null || true
 
 # --- Copy commands ---
 echo "Copying commands..."
-cp "$TEMPLATE_DIR"/.claude/commands/*.md "$TARGET_PATH/.claude/commands/" 2>/dev/null || true
+$CP "$TEMPLATE_DIR"/.claude/commands/*.md "$TARGET_PATH/.claude/commands/" 2>/dev/null || true
 
 # --- Copy hooks ---
 echo "Copying hooks..."
-cp "$TEMPLATE_DIR"/.claude/hooks/*.js "$TARGET_PATH/.claude/hooks/" 2>/dev/null || true
-cp "$TEMPLATE_DIR"/.claude/hooks/*.sh "$TARGET_PATH/.claude/hooks/" 2>/dev/null || true
+$CP "$TEMPLATE_DIR"/.claude/hooks/*.js "$TARGET_PATH/.claude/hooks/" 2>/dev/null || true
+$CP "$TEMPLATE_DIR"/.claude/hooks/*.sh "$TARGET_PATH/.claude/hooks/" 2>/dev/null || true
 chmod +x "$TARGET_PATH"/.claude/hooks/*.js "$TARGET_PATH"/.claude/hooks/*.sh 2>/dev/null || true
 
 # --- Copy settings & statusline ---
 if [ -f "$TEMPLATE_DIR/.claude/settings.json" ]; then
-  cp "$TEMPLATE_DIR/.claude/settings.json" "$TARGET_PATH/.claude/settings.json"
+  $CP "$TEMPLATE_DIR/.claude/settings.json" "$TARGET_PATH/.claude/settings.json"
 fi
 if [ -f "$TEMPLATE_DIR/.claude/statusline.sh" ]; then
-  cp "$TEMPLATE_DIR/.claude/statusline.sh" "$TARGET_PATH/.claude/statusline.sh"
+  $CP "$TEMPLATE_DIR/.claude/statusline.sh" "$TARGET_PATH/.claude/statusline.sh"
   chmod +x "$TARGET_PATH/.claude/statusline.sh"
 fi
 
@@ -93,19 +110,22 @@ fi
 if [ -d "$TEMPLATE_DIR/.claude/rules" ]; then
   echo "Copying rules..."
   mkdir -p "$TARGET_PATH/.claude/rules"
-  cp "$TEMPLATE_DIR"/.claude/rules/*.md "$TARGET_PATH/.claude/rules/" 2>/dev/null || true
+  $CP "$TEMPLATE_DIR"/.claude/rules/*.md "$TARGET_PATH/.claude/rules/" 2>/dev/null || true
 fi
 
 # --- Copy scripts ---
 echo "Copying scripts..."
 mkdir -p "$TARGET_PATH/.vibecode/scripts"
-cp "$TEMPLATE_DIR"/.vibecode/scripts/db-backup.sh "$TARGET_PATH/.vibecode/scripts/" 2>/dev/null || true
-cp "$TEMPLATE_DIR"/.vibecode/scripts/db-restore.sh "$TARGET_PATH/.vibecode/scripts/" 2>/dev/null || true
+$CP "$TEMPLATE_DIR"/.vibecode/scripts/db-backup.sh "$TARGET_PATH/.vibecode/scripts/" 2>/dev/null || true
+$CP "$TEMPLATE_DIR"/.vibecode/scripts/db-restore.sh "$TARGET_PATH/.vibecode/scripts/" 2>/dev/null || true
 chmod +x "$TARGET_PATH"/.vibecode/scripts/*.sh 2>/dev/null || true
 
-# --- Create initial docs ---
+# --- Create initial docs (skip if they already exist in force mode) ---
 echo "Creating initial docs..."
 
+if [ "$FORCE" = true ] && [ -f "$TARGET_PATH/docs/CHANGELOG.md" ]; then
+  echo "  Skipping existing docs (force mode)"
+else
 cat > "$TARGET_PATH/docs/CHANGELOG.md" << CHANGELOG
 ## [$(date +%Y-%m-%d)] v0.1.0 — Project scaffolded
 
@@ -135,6 +155,7 @@ cat > "$TARGET_PATH/docs/decisions.md" << DECISIONS
 <!-- Write an ADR when: new architecture introduced, library added,
      breaking DB change, auth strategy changed -->
 DECISIONS
+fi
 
 # --- Summary ---
 DIR_COUNT=$(find "$TARGET_PATH" -type d | wc -l | tr -d ' ')
