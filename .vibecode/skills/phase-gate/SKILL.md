@@ -22,7 +22,7 @@ exist before the project advances.
 **Required Artifacts:**
 - [ ] Architecture plan written and approved (`docs/architecture/*.md`)
 - [ ] Project constraints defined (`docs/constraints/*.md`)
-- [ ] Port range assigned and confirmed (`docs/standards/ports.md`)
+- [ ] Port range assigned and confirmed (`.vibecode/standards/ports.md`)
 - [ ] Tech stack decisions documented in `docs/decisions.md`
 - [ ] Initial CHANGELOG.md entry created
 - [ ] .env.example created with all known variables

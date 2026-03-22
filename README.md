@@ -192,23 +192,23 @@ Her kod yazma adımında Claude otomatik olarak:
 vibecode/                        ← Bu repo (şablon sistemi)
 ├── CLAUDE.md                    ← Ana yönetişim — Claude'un tüm davranışını yönetir
 │
-├── docs/standards/              ← Standart şablonları (scaffold ile .vibecode/'a kopyalanır)
-│   ├── backend.md               ← FastAPI + SQLAlchemy + Pydantic v2 kuralları
-│   ├── frontend.md              ← React + TypeScript + TanStack Query + Zustand
-│   ├── testing.md               ← pytest-asyncio, test DB, coverage kuralları
-│   ├── docker.md                ← Docker, Makefile, Dockerfile, env vars
-│   ├── architecture.md          ← Mimari planlama, DB seçimi, mobil, subagent
-│   ├── git.md                   ← Semantic versioning, branching, commit format
-│   ├── documentation.md         ← CHANGELOG, ADR, progress, HANDOFF.md
-│   ├── ports.md                 ← Port yönetimi workflow'u
-│   ├── security.md              ← CORS, rate limiting, auth, logging
-│   └── backup.md                ← Yedekleme stratejisi
-│
-├── skills/                      ← Skill şablonları (scaffold ile .vibecode/'a kopyalanır)
-│   ├── self-check/SKILL.md      ← 30 maddelik compliance checklist
-│   ├── handoff-protocol/SKILL.md ← Session state koruma protokolü
-│   ├── project-workflow/SKILL.md ← Build/test/deploy workflow referansı
-│   └── mobile/SKILL.md          ← React Native / Flutter patterns
+├── .vibecode/                   ← Standartlar + skill'ler (gitignored, scaffold ile kopyalanır)
+│   ├── standards/               ← Kodlama standartları (on-demand yüklenir)
+│   │   ├── backend.md           ← FastAPI + SQLAlchemy + Pydantic v2 kuralları
+│   │   ├── frontend.md          ← React + TypeScript + TanStack Query + Zustand
+│   │   ├── testing.md           ← pytest-asyncio, test DB, coverage kuralları
+│   │   ├── docker.md            ← Docker, Makefile, Dockerfile, env vars
+│   │   ├── architecture.md      ← Mimari planlama, DB seçimi, mobil, subagent
+│   │   ├── git.md               ← Semantic versioning, branching, commit format
+│   │   ├── documentation.md     ← CHANGELOG, ADR, progress, HANDOFF.md
+│   │   ├── ports.md             ← Port yönetimi workflow'u
+│   │   ├── security.md          ← CORS, rate limiting, auth, logging
+│   │   └── backup.md            ← Yedekleme stratejisi
+│   └── skills/                  ← Proje-seviyesi skill'ler
+│       ├── self-check/SKILL.md  ← 30 maddelik compliance checklist
+│       ├── handoff-protocol/SKILL.md ← Session state koruma protokolü
+│       ├── project-workflow/SKILL.md ← Build/test/deploy workflow referansı
+│       └── mobile/SKILL.md      ← React Native / Flutter patterns
 │
 ├── .claude/
 │   ├── settings.json            ← Hook registrations

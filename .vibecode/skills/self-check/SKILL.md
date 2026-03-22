@@ -21,7 +21,7 @@ all project rules before reporting task completion.
 ### Libraries
 - [ ] Consulted Context7 or official docs for every third-party API call
 - [ ] Did NOT write any library code from memory
-- [ ] Checked ~/.claude/skills/ and project skills/ for matching skill files
+- [ ] Checked ~/.claude/skills/ and project .vibecode/skills/ for matching skill files
 
 ### Testing
 - [ ] Wrote or updated tests for all changes
@@ -45,7 +45,7 @@ all project rules before reporting task completion.
 - [ ] Updated docs/VERSION (if version changed)
 - [ ] Updated Tome docs (if user-facing change)
 - [ ] Updated .serena/memories/ (session context)
-- [ ] Ran Documentation Checklist from docs/standards/documentation.md
+- [ ] Ran Documentation Checklist from .vibecode/standards/documentation.md
 
 ### Security
 - [ ] No bare `except` / `pass` (silent exception swallowing)
@@ -90,7 +90,7 @@ is invalid and must be corrected.
  8. Running /compact without updating CHANGELOG + memories first
  9. Reading node_modules/, .next/, dist/, __pycache__/, .git/, *.pyc
 10. Delivering a feature without tests
-11. Starting a task without checking skills/ first
+11. Starting a task without checking .vibecode/skills/ first
 12. Running pip install / npm install / python on the host machine
 13. Committing ./data/ contents or .env file
 14. Committing directly to main branch

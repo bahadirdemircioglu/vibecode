@@ -16,7 +16,7 @@ make verify
 - Checkpoint: "make verify passed"
 
 ### 3. Documentation Checklist
-Read `docs/standards/documentation.md` and run the full checklist:
+Read `.vibecode/standards/documentation.md` and run the full checklist:
 1. Update `docs/CHANGELOG.md` — ALWAYS, no exceptions
 2. Architectural decision made? → update `docs/decisions.md` (ADR format)
 3. New feature/service/module? → update `docs/progress.md`

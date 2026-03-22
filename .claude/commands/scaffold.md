@@ -28,7 +28,7 @@ frontend/src/store/
 frontend/src/api/
 frontend/src/types/
 frontend/src/utils/
-docs/standards/
+.vibecode/standards/
 docs/constraints/
 docs/architecture/
 docs/setup/
@@ -36,13 +36,13 @@ docs/user/
 docs/admin/
 docs/api/
 data/
-skills/
+.vibecode/skills/
 .claude/commands/
 ```
 
 ### 3. Copy Template Files
 From vibecode, copy:
-- All `docs/standards/*.md` files
+- All `.vibecode/standards/*.md` files
 - `CLAUDE.md` (substitute project name)
 - `templates/.gitignore` → `.gitignore`
 - `templates/.env.example` → `.env.example`

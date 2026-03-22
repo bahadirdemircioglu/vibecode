@@ -46,7 +46,7 @@ mkdir -p "$TARGET_PATH"/.claude/{commands,hooks}
 
 # --- Copy standards ---
 echo "Copying standards..."
-cp "$TEMPLATE_DIR"/docs/standards/*.md "$TARGET_PATH/.vibecode/standards/"
+cp "$TEMPLATE_DIR"/.vibecode/standards/*.md "$TARGET_PATH/.vibecode/standards/"
 
 # --- Copy constraint templates ---
 if ls "$TEMPLATE_DIR"/docs/constraints/*.md 1>/dev/null 2>&1; then
@@ -68,7 +68,7 @@ cp "$TEMPLATE_DIR/CLAUDE.md" "$TARGET_PATH/CLAUDE.md"
 
 # --- Copy skills ---
 echo "Copying skills..."
-cp -r "$TEMPLATE_DIR/skills/"* "$TARGET_PATH/.vibecode/skills/" 2>/dev/null || true
+cp -r "$TEMPLATE_DIR/.vibecode/skills/"* "$TARGET_PATH/.vibecode/skills/" 2>/dev/null || true
 
 # --- Copy commands ---
 echo "Copying commands..."

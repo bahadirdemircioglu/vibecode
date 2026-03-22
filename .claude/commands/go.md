@@ -29,7 +29,7 @@ Execute these steps in order. Do NOT skip any step. Report each checkpoint.
 
 ### 4. Scan Skills
 - Scan `~/.claude/skills/` for technology skill files
-- Scan project `skills/` directory for project-specific overrides
+- Scan project `.vibecode/skills/` directory for project-specific overrides
 - Match skills to the task tech stack
 - Load all matching skill files (project overrides user-level)
 - Checkpoint: "Skills loaded: [list]" or "No matching skills"

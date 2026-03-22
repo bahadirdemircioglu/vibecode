@@ -7,7 +7,7 @@ description: "Create an architecture plan for a new feature or project"
 Create a detailed architecture plan. Do NOT write any code until the plan is approved.
 
 ### 1. Load Standards
-- Read `docs/standards/architecture.md`
+- Read `.vibecode/standards/architecture.md`
 - Read all files in `docs/constraints/*.md`
 
 ### 2. Research
