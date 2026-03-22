@@ -343,7 +343,7 @@ araştırmayı yapar, özetler ve ana context temiz kalır.
 Claude bir task alır
     │
     ├── ~/.claude/skills/ taranır (860+ user-level skill)
-    ├── project skills/ taranır (3 proje-seviyesi skill)
+    ├── project .vibecode/skills/ taranır (proje-seviyesi skill)
     │
     ├── Task'ın tech stack'ine göre eşleşen skill'ler yüklenir
     │   Örnek: FastAPI kodu → fastapi-pro skill otomatik aktif
@@ -377,7 +377,7 @@ devreye girebilecek olanlar:
 ### Yeni Skill Ekleme
 
 ```markdown
-# skills/my-skill/SKILL.md
+# .vibecode/skills/my-skill/SKILL.md
 
 ---
 name: my-skill
@@ -437,7 +437,7 @@ Claude'un **asla** atlamaması gereken 5 kural:
 5. 🚫 CHECKPOINT'i doğrulamadan ilerleme → sessizlik uyum değildir
 ```
 
-Tam 30 maddelik detaylı liste: `skills/self-check/SKILL.md`
+Tam 30 maddelik detaylı liste: `.vibecode/skills/self-check/SKILL.md`
 
 ---
 
