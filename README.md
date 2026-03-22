@@ -65,6 +65,9 @@ Bu komut otomatik olarak:
 
 ```
 /scaffold proje-adi /hedef/dizin
+
+# veya shell script ile (Claude Code dışından):
+./scripts/scaffold.sh proje-adi /hedef/dizin
 ```
 
 **Ne olur:**
@@ -75,6 +78,7 @@ proje-adi/
 ├── frontend/src/{components, pages, hooks, store, api, types, utils}
 ├── docs/{standards, constraints, architecture, setup, user, admin, api}
 ├── data/                     ← Docker volume'ları (gitignored)
+├── scripts/                  ← Yardımcı scriptler (db-backup, db-restore)
 ├── skills/                   ← Proje-seviyesi skill'ler
 ├── CLAUDE.md                 ← Ana yönetişim dosyası
 ├── docker-compose.yml        ← Port'lar atanmış
@@ -201,9 +205,11 @@ vibecode/                        ← Bu repo (şablon sistemi)
 ├── skills/                      ← Proje-seviyesi skill'ler
 │   ├── self-check/SKILL.md      ← 30 maddelik compliance checklist
 │   ├── handoff-protocol/SKILL.md ← Session state koruma protokolü
-│   └── project-workflow/SKILL.md ← Build/test/deploy workflow referansı
+│   ├── project-workflow/SKILL.md ← Build/test/deploy workflow referansı
+│   └── mobile/SKILL.md          ← React Native / Flutter patterns
 │
 ├── .claude/
+│   ├── settings.json            ← Hook registrations
 │   ├── commands/                ← Slash komutları
 │   │   ├── go.md                ← /go — session başlatma
 │   │   ├── done.md              ← /done — task tamamlama
@@ -221,6 +227,11 @@ vibecode/                        ← Bu repo (şablon sistemi)
 │   ├── .env.example             ← Environment variables şablonu
 │   ├── docker-compose.yml       ← Tüm servisler (port placeholder'lı)
 │   └── Makefile                 ← make verify, test, lint, format, audit...
+│
+├── scripts/                     ← Yardımcı shell scriptler
+│   ├── scaffold.sh              ← Proje oluşturma (Claude Code dışından da çalışır)
+│   ├── db-backup.sh             ← PostgreSQL yedekleme
+│   └── db-restore.sh            ← PostgreSQL geri yükleme
 │
 └── repos.txt                    ← Araştırılan referans repolar
 ```

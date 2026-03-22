@@ -150,7 +150,8 @@ project-root/
 │   ├── uploads/
 │   └── [service]/
 │
-├── .serena/memories/               # Serena project memory
+├── HANDOFF.md                      # Session state — written by /done, read by /go
+├── .serena/memories/               # Serena project memory (when Serena MCP active)
 ├── skills/                         # Project-specific Claude skill definitions
 ├── docker-compose.yml
 ├── docker-compose.override.yml     # Local dev overrides — gitignored
@@ -168,7 +169,7 @@ project-root/
 New task received
         │
         ▼
-Read .serena/memories/ → load project state
+Read HANDOFF.md → load previous session state
         │
         ▼
 Scan ~/.claude/skills/ + project skills/ → matching skills?
@@ -241,7 +242,7 @@ Task received
       ▼
 3. Match skills to task
    → Load ALL matching skill files
-   → Apply in order: user skill → project skill (project overrides user)
+   → Hangisi daha spesifik/kaliteli ise o kullanılır
       │
       ▼
 ✅ CHECKPOINT: "Skills loaded: [fastapi.md, react.md, ...]"

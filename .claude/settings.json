@@ -1,0 +1,27 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".claude/hooks/pre-tool-use.js",
+            "description": "Advisory: checks if relevant standard was loaded before writing code"
+          }
+        ]
+      }
+    ],
+    "Notification": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".claude/hooks/notification.js",
+            "description": "Monitors context size and warns at 60K/80K token thresholds"
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -7,6 +7,9 @@
  * degradation thresholds. Uses message count as a heuristic
  * since exact token counting is not available from hooks.
  *
+ * Input: JSON from stdin (Claude Code hook protocol)
+ * Output: JSON to stdout with optional "message" for warnings
+ *
  * Thresholds (based on claude-mem & context-degradation research):
  * - 0-60K tokens (~30 exchanges): Normal
  * - 60K-80K tokens (~40 exchanges): Warning
@@ -38,21 +41,27 @@ function saveState(state) {
   }
 }
 
-function main() {
-  const input = process.argv[2];
-  if (!input) return;
+async function readStdin() {
+  const chunks = [];
+  for await (const chunk of process.stdin) {
+    chunks.push(chunk);
+  }
+  return Buffer.concat(chunks).toString('utf-8');
+}
 
-  let event;
+async function main() {
+  let input;
   try {
-    event = JSON.parse(input);
+    const raw = await readStdin();
+    input = JSON.parse(raw);
   } catch {
-    return;
+    process.exit(0);
   }
 
   const state = loadState();
 
   // Reset counter on new session
-  const sessionId = event.session_id || 'unknown';
+  const sessionId = input.session_id || 'unknown';
   if (state.sessionId !== sessionId) {
     state.messageCount = 0;
     state.lastWarning = null;
@@ -65,14 +74,19 @@ function main() {
   const CRITICAL_THRESHOLD = 50;  // ~80K tokens
 
   if (state.messageCount >= CRITICAL_THRESHOLD && state.lastWarning !== 'critical') {
-    console.error('🔴 CONTEXT BUDGET: ~80K+ tokens estimated. Run /compact NOW to prevent quality degradation.');
+    console.log(JSON.stringify({
+      message: "🔴 CONTEXT BUDGET: ~80K+ tokens estimated. Run /compact NOW to prevent quality degradation."
+    }));
     state.lastWarning = 'critical';
   } else if (state.messageCount >= WARNING_THRESHOLD && state.lastWarning !== 'warning' && state.lastWarning !== 'critical') {
-    console.error('⚠️ CONTEXT BUDGET: ~60K tokens estimated. Consider running /compact soon.');
+    console.log(JSON.stringify({
+      message: "⚠️ CONTEXT BUDGET: ~60K tokens estimated. Consider running /compact soon."
+    }));
     state.lastWarning = 'warning';
   }
 
   saveState(state);
+  process.exit(0);
 }
 
 main();
