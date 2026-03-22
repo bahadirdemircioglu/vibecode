@@ -39,13 +39,14 @@ echo "Creating directories..."
 
 mkdir -p "$TARGET_PATH"/{backend/src/{api/v1,services,models,schemas,core},backend/tests,backend/alembic}
 mkdir -p "$TARGET_PATH"/{frontend/src/{components,pages,hooks,store,api,types,utils}}
-mkdir -p "$TARGET_PATH"/{docs/{standards,constraints,architecture,setup,user,admin,api}}
-mkdir -p "$TARGET_PATH"/{data,skills,scripts,backups}
+mkdir -p "$TARGET_PATH"/{docs/{constraints,architecture,setup,user,admin,api}}
+mkdir -p "$TARGET_PATH"/{data,scripts,backups}
+mkdir -p "$TARGET_PATH"/.vibecode/{standards,skills}
 mkdir -p "$TARGET_PATH"/.claude/{commands,hooks}
 
 # --- Copy standards ---
 echo "Copying standards..."
-cp "$TEMPLATE_DIR"/docs/standards/*.md "$TARGET_PATH/docs/standards/"
+cp "$TEMPLATE_DIR"/docs/standards/*.md "$TARGET_PATH/.vibecode/standards/"
 
 # --- Copy constraint templates ---
 if ls "$TEMPLATE_DIR"/docs/constraints/*.md 1>/dev/null 2>&1; then
@@ -67,7 +68,7 @@ cp "$TEMPLATE_DIR/CLAUDE.md" "$TARGET_PATH/CLAUDE.md"
 
 # --- Copy skills ---
 echo "Copying skills..."
-cp -r "$TEMPLATE_DIR/skills/"* "$TARGET_PATH/skills/" 2>/dev/null || true
+cp -r "$TEMPLATE_DIR/skills/"* "$TARGET_PATH/.vibecode/skills/" 2>/dev/null || true
 
 # --- Copy commands ---
 echo "Copying commands..."
@@ -76,11 +77,23 @@ cp "$TEMPLATE_DIR"/.claude/commands/*.md "$TARGET_PATH/.claude/commands/" 2>/dev
 # --- Copy hooks ---
 echo "Copying hooks..."
 cp "$TEMPLATE_DIR"/.claude/hooks/*.js "$TARGET_PATH/.claude/hooks/" 2>/dev/null || true
-chmod +x "$TARGET_PATH"/.claude/hooks/*.js 2>/dev/null || true
+cp "$TEMPLATE_DIR"/.claude/hooks/*.sh "$TARGET_PATH/.claude/hooks/" 2>/dev/null || true
+chmod +x "$TARGET_PATH"/.claude/hooks/*.js "$TARGET_PATH"/.claude/hooks/*.sh 2>/dev/null || true
 
-# --- Copy settings ---
+# --- Copy settings & statusline ---
 if [ -f "$TEMPLATE_DIR/.claude/settings.json" ]; then
   cp "$TEMPLATE_DIR/.claude/settings.json" "$TARGET_PATH/.claude/settings.json"
+fi
+if [ -f "$TEMPLATE_DIR/.claude/statusline.sh" ]; then
+  cp "$TEMPLATE_DIR/.claude/statusline.sh" "$TARGET_PATH/.claude/statusline.sh"
+  chmod +x "$TARGET_PATH/.claude/statusline.sh"
+fi
+
+# --- Copy rules ---
+if [ -d "$TEMPLATE_DIR/.claude/rules" ]; then
+  echo "Copying rules..."
+  mkdir -p "$TARGET_PATH/.claude/rules"
+  cp "$TEMPLATE_DIR"/.claude/rules/*.md "$TARGET_PATH/.claude/rules/" 2>/dev/null || true
 fi
 
 # --- Copy scripts ---

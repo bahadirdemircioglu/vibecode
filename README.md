@@ -50,8 +50,8 @@ Claude Code'u aç ve şunu yaz:
 ```
 
 Bu komut otomatik olarak:
-- Tüm dizin yapısını oluşturur (backend, frontend, docs, data, skills)
-- Standart dosyaları kopyalar (10 standard .md)
+- Tüm dizin yapısını oluşturur (backend, frontend, docs, data, .vibecode)
+- Standart dosyaları kopyalar (10 standard .md → `.vibecode/standards/`)
 - CLAUDE.md'yi projeye uyarlar
 - `.gitignore`, `.env.example`, `Makefile`, `docker-compose.yml` kopyalar
 - Port ataması yapar (ports dosyasından)
@@ -76,10 +76,12 @@ proje-adi/
 ├── backend/src/{api/v1, services, models, schemas, core}
 ├── backend/tests/
 ├── frontend/src/{components, pages, hooks, store, api, types, utils}
-├── docs/{standards, constraints, architecture, setup, user, admin, api}
+├── .vibecode/                ← Standartlar + skill'ler (gitignored, şablondan regenerate)
+│   ├── standards/            ← Kodlama standartları (on-demand yüklenir)
+│   └── skills/               ← Proje-seviyesi skill'ler
+├── docs/{constraints, architecture, setup, user, admin, api}
 ├── data/                     ← Docker volume'ları (gitignored)
 ├── scripts/                  ← Yardımcı scriptler (db-backup, db-restore)
-├── skills/                   ← Proje-seviyesi skill'ler
 ├── CLAUDE.md                 ← Ana yönetişim dosyası
 ├── docker-compose.yml        ← Port'lar atanmış
 ├── Makefile                  ← make verify, make test, make up...
@@ -95,7 +97,7 @@ proje-adi/
 ```
 
 **Ne olur:**
-- `docs/standards/architecture.md` okunur
+- `.vibecode/standards/architecture.md` okunur
 - `docs/constraints/*.md` dosyaları kontrol edilir
 - `docs/architecture/uygulama-adi-plan.md` oluşturulur:
   - Overview ve hedefler
@@ -190,7 +192,7 @@ Her kod yazma adımında Claude otomatik olarak:
 vibecode/                        ← Bu repo (şablon sistemi)
 ├── CLAUDE.md                    ← Ana yönetişim — Claude'un tüm davranışını yönetir
 │
-├── docs/standards/              ← Kodlama standartları (on-demand yüklenir)
+├── docs/standards/              ← Standart şablonları (scaffold ile .vibecode/'a kopyalanır)
 │   ├── backend.md               ← FastAPI + SQLAlchemy + Pydantic v2 kuralları
 │   ├── frontend.md              ← React + TypeScript + TanStack Query + Zustand
 │   ├── testing.md               ← pytest-asyncio, test DB, coverage kuralları
@@ -202,7 +204,7 @@ vibecode/                        ← Bu repo (şablon sistemi)
 │   ├── security.md              ← CORS, rate limiting, auth, logging
 │   └── backup.md                ← Yedekleme stratejisi
 │
-├── skills/                      ← Proje-seviyesi skill'ler
+├── skills/                      ← Skill şablonları (scaffold ile .vibecode/'a kopyalanır)
 │   ├── self-check/SKILL.md      ← 30 maddelik compliance checklist
 │   ├── handoff-protocol/SKILL.md ← Session state koruma protokolü
 │   ├── project-workflow/SKILL.md ← Build/test/deploy workflow referansı

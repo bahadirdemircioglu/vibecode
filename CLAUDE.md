@@ -10,7 +10,7 @@
 > Silence is not compliance — every checkpoint requires explicit confirmation.
 >
 > **Architecture:** This file is the entry point. All detailed rules live in
-> `docs/standards/` and are loaded on demand — never read upfront.
+> `.vibecode/standards/` and are loaded on demand — never read upfront.
 
 ---
 
@@ -18,16 +18,16 @@
 
 | Before doing...            | Read this file first                          |
 |---------------------------|-----------------------------------------------|
-| Any backend code           | `docs/standards/backend.md`                   |
-| Any frontend code          | `docs/standards/frontend.md`                  |
-| Any tests                  | `docs/standards/testing.md`                   |
-| Docker / infra changes     | `docs/standards/docker.md`                    |
-| Architecture / new feature | `docs/standards/architecture.md`              |
-| Git commits / branching    | `docs/standards/git.md`                       |
-| Documentation updates      | `docs/standards/documentation.md`             |
-| Port assignments           | `docs/standards/ports.md`                     |
-| Security / auth work       | `docs/standards/security.md`                  |
-| Backup / data management   | `docs/standards/backup.md`                    |
+| Any backend code           | `.vibecode/standards/backend.md`              |
+| Any frontend code          | `.vibecode/standards/frontend.md`             |
+| Any tests                  | `.vibecode/standards/testing.md`              |
+| Docker / infra changes     | `.vibecode/standards/docker.md`               |
+| Architecture / new feature | `.vibecode/standards/architecture.md`         |
+| Git commits / branching    | `.vibecode/standards/git.md`                  |
+| Documentation updates      | `.vibecode/standards/documentation.md`        |
+| Port assignments           | `.vibecode/standards/ports.md`                |
+| Security / auth work       | `.vibecode/standards/security.md`             |
+| Backup / data management   | `.vibecode/standards/backup.md`               |
 | Project-specific decisions | `docs/constraints/*.md`                       |
 
 ---
@@ -44,7 +44,7 @@ Gate 1: Load State
 
 Gate 2: Check Tools & Context
   → MCP health (Serena + Context7)
-  → Scan ~/.claude/skills/ + project skills/ → load matching skills
+  → Scan ~/.claude/skills/ + .vibecode/skills/ → load matching skills
   → Read ports file → confirm port assignments
   → Read docs/constraints/*.md
 
@@ -114,30 +114,41 @@ project-root/
 │   ├── Dockerfile
 │   └── package.json
 │
-├── docs/
-│   ├── architecture/               # Pre-coding approval plans
-│   ├── standards/                  # Detailed coding & process standards
-│   │   ├── architecture.md         # Architecture planning, DB selection
-│   │   ├── backend.md              # Python/FastAPI coding standards
-│   │   ├── frontend.md             # React/TypeScript coding standards
-│   │   ├── testing.md              # Test rules, pytest-asyncio, coverage
-│   │   ├── docker.md               # Docker, Makefile, Dockerfile, env vars
-│   │   ├── git.md                  # Versioning, branching, commit format
-│   │   ├── documentation.md        # CHANGELOG, ADR, progress, Tome docs
-│   │   ├── ports.md                # Port management workflow & format
-│   │   ├── security.md             # CORS, rate limiting, auth, logging
-│   │   └── backup.md               # Database & file backup strategy
-│   ├── constraints/                # Project-specific constraints
-│   │   ├── infrastructure.md
+├── .vibecode/                      # Template infrastructure — gitignored
+│   ├── standards/                  # Coding standards (from vibecode template)
+│   │   ├── architecture.md
 │   │   ├── backend.md
-│   │   ├── api.md
 │   │   ├── frontend.md
-│   │   ├── auth.md
-│   │   ├── database.md
-│   │   └── external-services.md
+│   │   ├── testing.md
+│   │   ├── docker.md
+│   │   ├── git.md
+│   │   ├── documentation.md
+│   │   ├── ports.md
+│   │   ├── security.md
+│   │   └── backup.md
+│   └── skills/                     # AI skills (from vibecode template)
+│       ├── self-check/
+│       ├── handoff-protocol/
+│       ├── project-workflow/
+│       ├── mobile/
+│       ├── incremental-writing/
+│       ├── gap-detection/
+│       ├── phase-gate/
+│       ├── scope-check/
+│       └── reverse-doc/
+│
+├── .claude/                        # Claude Code config — committed
+│   ├── commands/                   # Slash commands (/go, /done, /compact...)
+│   ├── hooks/                      # Lifecycle hooks
+│   ├── rules/                      # Path-scoped coding rules
+│   └── settings.json               # Hook registrations, permissions
+│
+├── docs/                           # Project documentation — committed
+│   ├── architecture/               # Pre-coding approval plans + specs
+│   ├── constraints/                # Project-specific constraints
 │   ├── setup/
-│   │   └── environment.md          # All env variables documented here
-│   ├── user/                       # End-user docs (served via Tome)
+│   │   └── environment.md
+│   ├── user/                       # End-user docs (Tome)
 │   ├── admin/                      # Administrator docs
 │   ├── api/                        # API reference
 │   ├── CHANGELOG.md                # Updated after every task — mandatory
@@ -152,7 +163,6 @@ project-root/
 │
 ├── HANDOFF.md                      # Session state — written by /done, read by /go
 ├── .serena/memories/               # Serena project memory (when Serena MCP active)
-├── skills/                         # Project-specific Claude skill definitions
 ├── docker-compose.yml
 ├── docker-compose.override.yml     # Local dev overrides — gitignored
 ├── Makefile                        # All dev commands — single entry point
@@ -172,7 +182,7 @@ New task received
 Read HANDOFF.md → load previous session state
         │
         ▼
-Scan ~/.claude/skills/ + project skills/ → matching skills?
+Scan ~/.claude/skills/ + .vibecode/skills/ → matching skills?
   ├── Yes → read + apply all matching (project overrides user)
   └── No  → continue with general standards
         │
@@ -183,8 +193,8 @@ Touches existing code?
         │
         ▼
 Uses a third-party library?
-  ├── Yes → Context7 first → then read relevant docs/standards/ file
-  └── No  → read relevant docs/standards/ file as needed
+  ├── Yes → Context7 first → then read relevant .vibecode/standards/ file
+  └── No  → read relevant .vibecode/standards/ file as needed
         │
         ▼
 Affects 5+ files?
@@ -193,7 +203,7 @@ Affects 5+ files?
         │
         ▼
 New project or major feature?
-  ├── Yes → read docs/standards/architecture.md → write plan → WAIT for user OK
+  ├── Yes → read .vibecode/standards/architecture.md → write plan → WAIT for user OK
   └── No  → continue
         │
         ▼
@@ -204,7 +214,7 @@ Run make verify → all must pass (lint + test + audit)
   └── ❌ Fix failures → rerun → do NOT skip
         │
         ▼
-Run Documentation Checklist (docs/standards/documentation.md)
+Run Documentation Checklist (.vibecode/standards/documentation.md)
   ← ALWAYS, no exceptions
         │
         ▼
@@ -237,7 +247,7 @@ Task received
    └── [technology].md
       │
       ▼
-2. Scan project skills/                → project-specific skill overrides
+2. Scan project .vibecode/skills/      → project-specific skill overrides
       │
       ▼
 3. Match skills to task
@@ -294,7 +304,7 @@ Conflict detected between sources?
 |---------|--------|
 | `/go [task]` | Load HANDOFF.md → MCP health → skills → ports → constraints → begin task |
 | `/done` | `make verify` → Documentation Checklist → HANDOFF.md → propose commit |
-| `/plan [feature]` | Read `docs/standards/architecture.md` → write plan → wait for approval |
+| `/plan [feature]` | Read `.vibecode/standards/architecture.md` → write plan → wait for approval |
 | `/compact` | Update CHANGELOG + HANDOFF.md first → then compact context |
 | `/scaffold [name]` | Initialize new project from vibecode template |
 | `/status` | Show session state: loaded skills, context estimate, MCP health |
@@ -310,7 +320,7 @@ When `/done` is called, execute in order:
 2. Run make verify:
      make verify   (lint + test + security audit — all in one)
    → If any step fails → fix → rerun → do NOT skip
-3. Run Documentation Checklist (docs/standards/documentation.md)
+3. Run Documentation Checklist (.vibecode/standards/documentation.md)
 4. Update docs/CHANGELOG.md
 5. Update docs/decisions.md      (if applicable)
 6. Update docs/progress.md       (if applicable)
@@ -326,7 +336,7 @@ When `/done` is called, execute in order:
 ## 8. Token Economy & Context Budget
 
 - **Max 3 files** edited per step — more requires step-by-step progression
-- **Load standards on demand** — do not read `docs/standards/` files unless the task requires them
+- **Load standards on demand** — do not read `.vibecode/standards/` files unless the task requires them
 - **Load skills at task start** — read matching skill files once, not repeatedly
 - **Subagent triggers** — say `use subagent to investigate X` when:
   - Debugging spans multiple services
@@ -352,12 +362,12 @@ saves state to HANDOFF.md before compacting, ensuring no context is lost.
 
 ## 9. Five Absolute Rules
 
-These 6 rules are **non-negotiable**. Everything else is in `skills/self-check/SKILL.md`.
+These 6 rules are **non-negotiable**. Everything else is in `.vibecode/skills/self-check/SKILL.md`.
 
 ```
 1. 📖 Load the relevant standard BEFORE writing code
-   → backend/ code? Read docs/standards/backend.md first
-   → frontend/ code? Read docs/standards/frontend.md first
+   → backend/ code? Read .vibecode/standards/backend.md first
+   → frontend/ code? Read .vibecode/standards/frontend.md first
 
 2. 🔍 Verify library APIs from Context7 or official docs
    → Never write third-party library calls from memory
@@ -376,7 +386,7 @@ These 6 rules are **non-negotiable**. Everything else is in `skills/self-check/S
    → Silence is not compliance
 ```
 
-> **Full prohibited actions list:** See `skills/self-check/SKILL.md` for the
+> **Full prohibited actions list:** See `.vibecode/skills/self-check/SKILL.md` for the
 > complete 30-item checklist. Run it after every code change.
 
 ---
@@ -398,21 +408,21 @@ This makes rule-following visible and auditable. Omit for non-code responses.
 ```
 New project?          →  /scaffold → /plan → /go
 Existing project?     →  /go [task]
-Port assignment?      →  docs/standards/ports.md
+Port assignment?      →  .vibecode/standards/ports.md
 Searching code?       →  Serena (never grep)
 3rd party library?    →  Context7 first + check ~/.claude/skills/
-Backend code?         →  docs/standards/backend.md + matching skills
-Frontend code?        →  docs/standards/frontend.md + matching skills
-Writing tests?        →  docs/standards/testing.md
-Docker / infra?       →  docs/standards/docker.md
-Security / auth?      →  docs/standards/security.md
-Git / commits?        →  docs/standards/git.md
+Backend code?         →  .vibecode/standards/backend.md + matching skills
+Frontend code?        →  .vibecode/standards/frontend.md + matching skills
+Writing tests?        →  .vibecode/standards/testing.md
+Docker / infra?       →  .vibecode/standards/docker.md
+Security / auth?      →  .vibecode/standards/security.md
+Git / commits?        →  .vibecode/standards/git.md
 API changed?          →  run generate-types → commit api.generated.ts
 Done with task?       →  /done (make verify + docs + HANDOFF.md)
 Context bloating?     →  /compact (CHANGELOG + HANDOFF.md first)
 Session state?        →  /status
 Project constraints?  →  docs/constraints/*.md
-Skills?               →  ~/.claude/skills/ (user) + skills/ (project)
-Self-check?           →  skills/self-check/SKILL.md
+Skills?               →  ~/.claude/skills/ (user) + .vibecode/skills/ (project)
+Self-check?           →  .vibecode/skills/self-check/SKILL.md
 Verification?         →  make verify (lint + test + audit)
 ```

@@ -36,5 +36,8 @@ docker-compose.override.yml
 .DS_Store
 Thumbs.db
 
+# Vibecode (regenerated from template)
+.vibecode/
+
 # Generated
 frontend/src/types/api.generated.ts
