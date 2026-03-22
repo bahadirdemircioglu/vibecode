@@ -45,27 +45,27 @@ async function main() {
 
   // Check backend code
   if (filePath.includes('/backend/') || filePath.includes('/src/api/') || filePath.includes('/src/services/') || filePath.includes('/src/models/')) {
-    warnings.push('Writing backend code — ensure docs/standards/backend.md was loaded first.');
+    warnings.push('Writing backend code — ensure .vibecode/standards/backend.md was loaded first.');
   }
 
   // Check frontend code
   if (filePath.includes('/frontend/') || filePath.includes('/components/') || filePath.includes('/pages/') || filePath.includes('/hooks/') || filePath.includes('/store/')) {
-    warnings.push('Writing frontend code — ensure docs/standards/frontend.md was loaded first.');
+    warnings.push('Writing frontend code — ensure .vibecode/standards/frontend.md was loaded first.');
   }
 
   // Check Docker files
   if (filePath.includes('docker-compose') || filePath.includes('Dockerfile')) {
-    warnings.push('Writing Docker config — ensure docs/standards/docker.md was loaded first.');
+    warnings.push('Writing Docker config — ensure .vibecode/standards/docker.md was loaded first.');
   }
 
   // Check test files
   if (filePath.includes('/tests/') || filePath.includes('.test.') || filePath.includes('.spec.')) {
-    warnings.push('Writing tests — ensure docs/standards/testing.md was loaded first.');
+    warnings.push('Writing tests — ensure .vibecode/standards/testing.md was loaded first.');
   }
 
   // Check security-related files
   if (filePath.includes('/auth') || filePath.includes('/security') || filePath.includes('middleware')) {
-    warnings.push('Writing security/auth code — ensure docs/standards/security.md was loaded first.');
+    warnings.push('Writing security/auth code — ensure .vibecode/standards/security.md was loaded first.');
   }
 
   if (warnings.length > 0) {

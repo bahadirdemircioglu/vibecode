@@ -16,6 +16,8 @@ Yeni bir proje başlatacağım. Aşağıdaki adımları sırasıyla takip et:
 ~/Dev/vibecode/scripts/scaffold.sh [PROJE-ADI] [PROJE-YOLU]
 
 komutunu çalıştırarak proje iskeletini oluştur.
+Bu komut .vibecode/ (standards, skills), .claude/ (commands, hooks, rules),
+docs/, templates ve tüm altyapı dosyalarını oluşturur.
 
 ## 2. Spesifikasyonları Oku
 
@@ -56,7 +58,8 @@ docs/constraints/ dizinindeki şablon dosyalarını projeye özel olarak doldur:
 /go [İLK-FAZIN-ADI]
 
 Mimari plandaki fazları sırayla uygula. Her faz için:
-- İlgili standardı yükle (backend.md, frontend.md, vb.)
+- İlgili standardı yükle (.vibecode/standards/ altından)
+- Eşleşen skill'leri yükle (.vibecode/skills/ + ~/.claude/skills/)
 - Önce testleri yaz
 - Max 3 dosya/adım kuralına uy
 - Her adımda make verify çalıştır
@@ -66,6 +69,7 @@ Mimari plandaki fazları sırayla uygula. Her faz için:
 - Six Absolute Rules'a uy (CLAUDE.md Section 9)
 - Kütüphane API'lerini Context7'den doğrula
 - Kod aramak için Serena kullan
+- Path-scoped rules otomatik uygulanır (.claude/rules/)
 - Her task sonunda /done çalıştır
 - Context 60K'yı geçerse /compact çalıştır
 ```
@@ -75,12 +79,42 @@ Mimari plandaki fazları sırayla uygula. Her faz için:
 ## Kullanım
 
 1. Proje spec ve teknik spec dokümanlarını hazırla
-2. Dosyaları proje dizininde `docs/architecture/` altına koy:
+2. Scaffold çalıştır (dosyaları proje dizinine koy):
+   ```bash
+   ~/Dev/vibecode/scripts/scaffold.sh proje-adi ~/Dev/proje-adi
+   ```
+3. Spec dosyalarını `docs/architecture/` altına koy:
    - `docs/architecture/project-spec.md`
    - `docs/architecture/technical-spec.md`
-3. Claude Code'u aç
-4. Yukarıdaki prompt'u yapıştır (`[BÜYÜK HARFLER]`'i değiştirerek)
-5. Claude sırasıyla: scaffold → spec oku → plan yaz → onay bekle → geliştir
+4. Claude Code'u aç (`cd ~/Dev/proje-adi && claude`)
+5. Yukarıdaki prompt'u yapıştır (`[BÜYÜK HARFLER]`'i değiştirerek)
+6. Claude sırasıyla: scaffold → spec oku → plan yaz → onay bekle → geliştir
+
+### Proje Dizin Yapısı (scaffold sonrası)
+
+```
+proje-adi/
+├── .vibecode/              ← gitignored (scaffold'dan regenere edilir)
+│   ├── standards/          ← backend.md, frontend.md, testing.md...
+│   └── skills/             ← self-check, handoff-protocol, phase-gate...
+├── .claude/                ← committed
+│   ├── commands/           ← /go, /done, /compact, /plan, /scaffold, /status
+│   ├── hooks/              ← pre-tool-use, notification, session-start
+│   ├── rules/              ← path-scoped auto-applied rules
+│   └── settings.json       ← hook registrations, permissions
+├── docs/                   ← committed (proje dokümanları)
+│   ├── architecture/       ← spec'ler + mimari planlar
+│   ├── constraints/        ← projeye özel kısıtlamalar
+│   ├── CHANGELOG.md
+│   └── ...
+├── CLAUDE.md               ← ana yönetişim dosyası
+├── HANDOFF.md              ← session state
+├── backend/                ← proje kodu
+├── frontend/               ← proje kodu
+├── docker-compose.yml
+├── Makefile
+└── .env.example
+```
 
 ---
 
@@ -94,6 +128,8 @@ Yeni bir proje başlatacağım. Aşağıdaki adımları sırasıyla takip et:
 ~/Dev/vibecode/scripts/scaffold.sh beegfs ~/Dev/beegfs
 
 komutunu çalıştırarak proje iskeletini oluştur.
+Bu komut .vibecode/ (standards, skills), .claude/ (commands, hooks, rules),
+docs/, templates ve tüm altyapı dosyalarını oluşturur.
 
 ## 2. Spesifikasyonları Oku
 
@@ -127,7 +163,8 @@ docs/constraints/ dizinindeki şablon dosyalarını projeye özel olarak doldur.
 /go backend-models-ve-auth
 
 Mimari plandaki fazları sırayla uygula. Her faz için:
-- İlgili standardı yükle
+- İlgili standardı yükle (.vibecode/standards/ altından)
+- Eşleşen skill'leri yükle (.vibecode/skills/ + ~/.claude/skills/)
 - Önce testleri yaz
 - Max 3 dosya/adım kuralına uy
 - Her adımda make verify çalıştır
@@ -137,6 +174,7 @@ Mimari plandaki fazları sırayla uygula. Her faz için:
 - Six Absolute Rules'a uy (CLAUDE.md Section 9)
 - Kütüphane API'lerini Context7'den doğrula
 - Kod aramak için Serena kullan
+- Path-scoped rules otomatik uygulanır (.claude/rules/)
 - Her task sonunda /done çalıştır
 - Context 60K'yı geçerse /compact çalıştır
 ```
