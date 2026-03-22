@@ -44,10 +44,10 @@ data/
 From vibecode, copy:
 - All `.vibecode/standards/*.md` files
 - `CLAUDE.md` (substitute project name)
-- `templates/.gitignore` → `.gitignore`
-- `templates/.env.example` → `.env.example`
-- `templates/Makefile` → `Makefile`
-- `templates/docker-compose.yml` → `docker-compose.yml`
+- `.vibecode/templates/.gitignore` → `.gitignore`
+- `.vibecode/templates/.env.example` → `.env.example`
+- `.vibecode/templates/Makefile` → `Makefile`
+- `.vibecode/templates/docker-compose.yml` → `docker-compose.yml`
 
 ### 4. Port Assignment
 - Ask user for their ports file path

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # Database Backup Script
-# Usage: ./scripts/db-backup.sh
+# Usage: ./.vibecode/scripts/db-backup.sh
 #
 # Creates a timestamped SQL dump of the development database.
 # Backups are stored in ./backups/ (gitignored).

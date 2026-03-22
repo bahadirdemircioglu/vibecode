@@ -98,6 +98,6 @@ YYYY-MM-DD
 ## Location
 
 - **File:** `HANDOFF.md` in the project root
-- **Template:** `templates/HANDOFF.md` provides the blank structure
+- **Template:** `.vibecode/templates/HANDOFF.md` provides the blank structure
 - **Lifecycle:** Overwritten each session (not appended). Previous state is
   preserved in .serena/memories/ and docs/CHANGELOG.md.

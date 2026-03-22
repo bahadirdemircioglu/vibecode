@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # Database Restore Script
-# Usage: ./scripts/db-restore.sh [backup_file]
+# Usage: ./.vibecode/scripts/db-restore.sh [backup_file]
 #
 # Restores a database from a backup dump file.
 # If no file is specified, lists available backups.
@@ -33,7 +33,7 @@ if [ $# -eq 0 ]; then
     echo "  No backups found in $BACKUP_DIR/"
   fi
   echo ""
-  echo "Usage: ./scripts/db-restore.sh <backup_file>"
+  echo "Usage: ./.vibecode/scripts/db-restore.sh <backup_file>"
   exit 0
 fi
 

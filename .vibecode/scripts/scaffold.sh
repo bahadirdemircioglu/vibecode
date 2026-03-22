@@ -1,24 +1,24 @@
 #!/usr/bin/env bash
 
 # Project Scaffold Script
-# Usage: ./scripts/scaffold.sh <project-name> <target-path>
+# Usage: ./.vibecode/scripts/scaffold.sh <project-name> <target-path>
 #
 # Creates a new project from the vibecode template.
 # This script handles the file system operations that Claude Code's
 # /scaffold slash command delegates to.
 #
-# Example: ./scripts/scaffold.sh my-app ~/Dev/my-app
+# Example: ./.vibecode/scripts/scaffold.sh my-app ~/Dev/my-app
 
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-TEMPLATE_DIR="$(dirname "$SCRIPT_DIR")"
+TEMPLATE_DIR="$(dirname "$(dirname "$SCRIPT_DIR")")"
 
 # --- Args ---
 if [ $# -lt 2 ]; then
-  echo "Usage: ./scripts/scaffold.sh <project-name> <target-path>"
+  echo "Usage: ./.vibecode/scripts/scaffold.sh <project-name> <target-path>"
   echo ""
-  echo "Example: ./scripts/scaffold.sh my-app ~/Dev/my-app"
+  echo "Example: ./.vibecode/scripts/scaffold.sh my-app ~/Dev/my-app"
   exit 1
 fi
 
@@ -40,8 +40,8 @@ echo "Creating directories..."
 mkdir -p "$TARGET_PATH"/{backend/src/{api/v1,services,models,schemas,core},backend/tests,backend/alembic}
 mkdir -p "$TARGET_PATH"/{frontend/src/{components,pages,hooks,store,api,types,utils}}
 mkdir -p "$TARGET_PATH"/{docs/{constraints,architecture,setup,user,admin,api}}
-mkdir -p "$TARGET_PATH"/{data,scripts,backups}
-mkdir -p "$TARGET_PATH"/.vibecode/{standards,skills}
+mkdir -p "$TARGET_PATH"/{data,backups}
+mkdir -p "$TARGET_PATH"/.vibecode/{standards,skills,scripts}
 mkdir -p "$TARGET_PATH"/.claude/{commands,hooks}
 
 # --- Copy standards ---
@@ -56,11 +56,11 @@ fi
 
 # --- Copy templates ---
 echo "Copying templates..."
-cp "$TEMPLATE_DIR/templates/.gitignore" "$TARGET_PATH/.gitignore"
-cp "$TEMPLATE_DIR/templates/.env.example" "$TARGET_PATH/.env.example"
-cp "$TEMPLATE_DIR/templates/Makefile" "$TARGET_PATH/Makefile"
-cp "$TEMPLATE_DIR/templates/docker-compose.yml" "$TARGET_PATH/docker-compose.yml"
-cp "$TEMPLATE_DIR/templates/HANDOFF.md" "$TARGET_PATH/HANDOFF.md"
+cp "$TEMPLATE_DIR/.vibecode/templates/.gitignore" "$TARGET_PATH/.gitignore"
+cp "$TEMPLATE_DIR/.vibecode/templates/.env.example" "$TARGET_PATH/.env.example"
+cp "$TEMPLATE_DIR/.vibecode/templates/Makefile" "$TARGET_PATH/Makefile"
+cp "$TEMPLATE_DIR/.vibecode/templates/docker-compose.yml" "$TARGET_PATH/docker-compose.yml"
+cp "$TEMPLATE_DIR/.vibecode/templates/HANDOFF.md" "$TARGET_PATH/HANDOFF.md"
 
 # --- Copy CLAUDE.md ---
 echo "Copying CLAUDE.md..."
@@ -98,9 +98,10 @@ fi
 
 # --- Copy scripts ---
 echo "Copying scripts..."
-cp "$TEMPLATE_DIR"/scripts/db-backup.sh "$TARGET_PATH/scripts/" 2>/dev/null || true
-cp "$TEMPLATE_DIR"/scripts/db-restore.sh "$TARGET_PATH/scripts/" 2>/dev/null || true
-chmod +x "$TARGET_PATH"/scripts/*.sh 2>/dev/null || true
+mkdir -p "$TARGET_PATH/.vibecode/scripts"
+cp "$TEMPLATE_DIR"/.vibecode/scripts/db-backup.sh "$TARGET_PATH/.vibecode/scripts/" 2>/dev/null || true
+cp "$TEMPLATE_DIR"/.vibecode/scripts/db-restore.sh "$TARGET_PATH/.vibecode/scripts/" 2>/dev/null || true
+chmod +x "$TARGET_PATH"/.vibecode/scripts/*.sh 2>/dev/null || true
 
 # --- Create initial docs ---
 echo "Creating initial docs..."
@@ -111,7 +112,7 @@ cat > "$TARGET_PATH/docs/CHANGELOG.md" << CHANGELOG
 ### Changes
 - **What:** Project initialized from vibecode template
 - **Why:** New project setup
-- **How:** Scaffolded via vibecode/scripts/scaffold.sh
+- **How:** Scaffolded via vibecode/.vibecode/scripts/scaffold.sh
 
 ### Affected Files
 - All template files copied

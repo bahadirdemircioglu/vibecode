@@ -13,7 +13,7 @@ Yeni bir proje başlatacağım. Aşağıdaki adımları sırasıyla takip et:
 
 ## 1. Şablonu Oluştur
 
-~/Dev/vibecode/scripts/scaffold.sh [PROJE-ADI] [PROJE-YOLU]
+~/Dev/vibecode/.vibecode/scripts/scaffold.sh [PROJE-ADI] [PROJE-YOLU]
 
 komutunu çalıştırarak proje iskeletini oluştur.
 Bu komut .vibecode/ (standards, skills), .claude/ (commands, hooks, rules),
@@ -81,7 +81,7 @@ Mimari plandaki fazları sırayla uygula. Her faz için:
 1. Proje spec ve teknik spec dokümanlarını hazırla
 2. Scaffold çalıştır (dosyaları proje dizinine koy):
    ```bash
-   ~/Dev/vibecode/scripts/scaffold.sh proje-adi ~/Dev/proje-adi
+   ~/Dev/vibecode/.vibecode/scripts/scaffold.sh proje-adi ~/Dev/proje-adi
    ```
 3. Spec dosyalarını `docs/architecture/` altına koy:
    - `docs/architecture/project-spec.md`
@@ -96,7 +96,8 @@ Mimari plandaki fazları sırayla uygula. Her faz için:
 proje-adi/
 ├── .vibecode/              ← gitignored (scaffold'dan regenere edilir)
 │   ├── standards/          ← backend.md, frontend.md, testing.md...
-│   └── skills/             ← self-check, handoff-protocol, phase-gate...
+│   ├── skills/             ← self-check, handoff-protocol, phase-gate...
+│   └── scripts/            ← db-backup.sh, db-restore.sh
 ├── .claude/                ← committed
 │   ├── commands/           ← /go, /done, /compact, /plan, /scaffold, /status
 │   ├── hooks/              ← pre-tool-use, notification, session-start
@@ -125,7 +126,7 @@ Yeni bir proje başlatacağım. Aşağıdaki adımları sırasıyla takip et:
 
 ## 1. Şablonu Oluştur
 
-~/Dev/vibecode/scripts/scaffold.sh beegfs ~/Dev/beegfs
+~/Dev/vibecode/.vibecode/scripts/scaffold.sh beegfs ~/Dev/beegfs
 
 komutunu çalıştırarak proje iskeletini oluştur.
 Bu komut .vibecode/ (standards, skills), .claude/ (commands, hooks, rules),

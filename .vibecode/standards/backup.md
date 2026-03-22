@@ -11,7 +11,7 @@
 - Provide a convenience script:
 
 ```bash
-# scripts/db-backup.sh
+# .vibecode/scripts/db-backup.sh
 docker compose exec postgres pg_dump -U $POSTGRES_USER $POSTGRES_DB > \
   backups/$(date +%Y%m%d_%H%M%S).sql
 ```
