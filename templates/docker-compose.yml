@@ -1,0 +1,82 @@
+services:
+  backend:
+    build: ./backend
+    env_file: .env
+    extra_hosts:
+      - "host.docker.internal:host-gateway"    # MANDATORY on all services
+    ports:
+      - "${BACKEND_PORT}:8000"
+    volumes:
+      - ./backend:/app              # Live reload in dev
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  frontend:
+    build: ./frontend
+    env_file: .env
+    extra_hosts:
+      - "host.docker.internal:host-gateway"    # MANDATORY on all services
+    ports:
+      - "${FRONTEND_PORT}:3000"
+    volumes:
+      - ./frontend:/app             # Live reload in dev
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  postgres:
+    image: postgres:16-alpine
+    env_file: .env
+    extra_hosts:
+      - "host.docker.internal:host-gateway"    # MANDATORY on all services
+    ports:
+      - "${POSTGRES_PORT}:5432"
+    volumes:
+      - ./data/postgres:/var/lib/postgresql/data   # Persisted on host
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  postgres-test:
+    image: postgres:16-alpine
+    extra_hosts:
+      - "host.docker.internal:host-gateway"    # MANDATORY on all services
+    environment:
+      POSTGRES_DB: test_db
+      POSTGRES_USER: test_user
+      POSTGRES_PASSWORD: test_password
+    tmpfs:
+      - /var/lib/postgresql/data    # RAM-backed — no persistence, maximum speed
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U test_user -d test_db"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    # Internal network only — not exposed to host
+
+  tome:
+    image: ghcr.io/vxcozy/tome:latest
+    extra_hosts:
+      - "host.docker.internal:host-gateway"    # MANDATORY on all services
+    volumes:
+      - ./docs:/docs:ro             # Read-only live mount
+    ports:
+      - "${TOME_PORT}:4000"         # Port assigned from ports file
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # redis / elasticsearch / mongodb — add only after architecture plan approval
