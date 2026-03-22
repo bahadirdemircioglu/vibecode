@@ -1,4 +1,41 @@
 {
+  "permissions": {
+    "allow": [
+      "Bash(git status*)",
+      "Bash(git diff*)",
+      "Bash(git log*)",
+      "Bash(git branch*)",
+      "Bash(git show*)",
+      "Bash(ls *)",
+      "Bash(find *)",
+      "Bash(wc *)",
+      "Bash(make verify*)",
+      "Bash(make test*)",
+      "Bash(make lint*)",
+      "Bash(make format*)",
+      "Bash(make audit*)",
+      "Bash(docker compose ps*)",
+      "Bash(docker compose logs*)",
+      "Bash(docker compose exec * pytest*)",
+      "Bash(docker compose exec * npm test*)",
+      "Bash(docker compose exec * ruff*)"
+    ],
+    "deny": [
+      "Bash(rm -rf *)",
+      "Bash(git push --force*)",
+      "Bash(git reset --hard*)",
+      "Bash(sudo *)",
+      "Bash(chmod 777*)",
+      "Bash(*> .env*)",
+      "Bash(cat *.env*)",
+      "Bash(pip install*)",
+      "Bash(npm install*)",
+      "Bash(python *)",
+      "Bash(node *)",
+      "Read(**/.env)",
+      "Read(**/.env.local)"
+    ]
+  },
   "hooks": {
     "PreToolUse": [
       {
@@ -19,6 +56,17 @@
             "type": "command",
             "command": ".claude/hooks/notification.js",
             "description": "Monitors context size and warns at 60K/80K token thresholds"
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".claude/hooks/session-start.sh",
+            "description": "Show session state and detect project gaps on startup"
           }
         ]
       }
