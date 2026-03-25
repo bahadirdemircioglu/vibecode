@@ -205,16 +205,17 @@ vibecode/                        ← Bu repo (şablon sistemi)
 │   │   ├── security.md          ← CORS, rate limiting, auth, logging
 │   │   └── backup.md            ← Yedekleme stratejisi
 │   ├── skills/                  ← 110 skill (gerçek dosya, symlink yok — portable)
-│   │   ├── [Proje workflow]     ← self-check, handoff-protocol, project-workflow, mobile
-│   │   ├── [Python/FastAPI]     ← fastapi-pro, python-pro, pydantic, async-python, uv
-│   │   ├── [Database]           ← postgresql, sql-pro, database-design, migrations
-│   │   ├── [Frontend]           ← react-patterns, vue-expert, typescript, tailwind, zustand
-│   │   ├── [Testing/TDD]        ← test-driven-development, tdd-workflow (7 skill)
-│   │   ├── [Code Quality]       ← clean-code, code-reviewer, find-bugs, simplify
-│   │   ├── [Documentation]      ← changelog, readme, docs-architect, openapi-spec
-│   │   ├── [Security]           ← security-auditor, vulnerability-scanner, auth-patterns
-│   │   ├── [DevOps]             ← docker-expert, bash-pro, deployment, server-management
-│   │   └── [Context/Workflow]   ← context-degradation, brainstorming, plan-writing
+│   │   ├── self-check/SKILL.md  ← 30 maddelik compliance checklist
+│   │   ├── handoff-protocol/SKILL.md ← Session state koruma protokolü
+│   │   ├── project-workflow/SKILL.md ← Build/test/deploy workflow referansı
+│   │   ├── mobile/SKILL.md      ← React Native / Flutter patterns
+│   │   ├── gap-detection/SKILL.md ← Eksik test/doc/migration tespiti
+│   │   ├── phase-gate/SKILL.md  ← Faz geçiş doğrulama (PASS/FAIL)
+│   │   ├── scope-check/SKILL.md ← Kapsam kayması tespiti
+│   │   ├── incremental-writing/SKILL.md ← Bölüm bölüm doc yazma (token tasarrufu)
+│   │   ├── reverse-doc/SKILL.md ← Koddan doküman üretme
+│   │   ├── vue-expert/SKILL.md  ← Vue 3 Composition API, Pinia, TypeScript
+│   │   └── ... (101 teknoloji skill'i: fastapi, python, react, postgresql, tdd, vb.)
 │   ├── scripts/                 ← Yardımcı shell scriptler
 │   │   ├── scaffold.sh          ← Proje oluşturma (Claude Code dışından da çalışır)
 │   │   ├── db-backup.sh         ← PostgreSQL yedekleme
