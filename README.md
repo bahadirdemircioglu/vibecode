@@ -204,11 +204,17 @@ vibecode/                        ← Bu repo (şablon sistemi)
 │   │   ├── ports.md             ← Port yönetimi workflow'u
 │   │   ├── security.md          ← CORS, rate limiting, auth, logging
 │   │   └── backup.md            ← Yedekleme stratejisi
-│   ├── skills/                  ← Proje-seviyesi skill'ler
-│   │   ├── self-check/SKILL.md  ← 30 maddelik compliance checklist
-│   │   ├── handoff-protocol/SKILL.md ← Session state koruma protokolü
-│   │   ├── project-workflow/SKILL.md ← Build/test/deploy workflow referansı
-│   │   └── mobile/SKILL.md      ← React Native / Flutter patterns
+│   ├── skills/                  ← 110 skill (gerçek dosya, symlink yok — portable)
+│   │   ├── [Proje workflow]     ← self-check, handoff-protocol, project-workflow, mobile
+│   │   ├── [Python/FastAPI]     ← fastapi-pro, python-pro, pydantic, async-python, uv
+│   │   ├── [Database]           ← postgresql, sql-pro, database-design, migrations
+│   │   ├── [Frontend]           ← react-patterns, vue-expert, typescript, tailwind, zustand
+│   │   ├── [Testing/TDD]        ← test-driven-development, tdd-workflow (7 skill)
+│   │   ├── [Code Quality]       ← clean-code, code-reviewer, find-bugs, simplify
+│   │   ├── [Documentation]      ← changelog, readme, docs-architect, openapi-spec
+│   │   ├── [Security]           ← security-auditor, vulnerability-scanner, auth-patterns
+│   │   ├── [DevOps]             ← docker-expert, bash-pro, deployment, server-management
+│   │   └── [Context/Workflow]   ← context-degradation, brainstorming, plan-writing
 │   ├── scripts/                 ← Yardımcı shell scriptler
 │   │   ├── scaffold.sh          ← Proje oluşturma (Claude Code dışından da çalışır)
 │   │   ├── db-backup.sh         ← PostgreSQL yedekleme
@@ -340,8 +346,7 @@ araştırmayı yapar, özetler ve ana context temiz kalır.
 ```
 Claude bir task alır
     │
-    ├── ~/.claude/skills/ taranır (860+ user-level skill)
-    ├── project .vibecode/skills/ taranır (proje-seviyesi skill)
+    ├── .vibecode/skills/ taranır (110 skill — gerçek dosya, portable)
     │
     ├── Task'ın tech stack'ine göre eşleşen skill'ler yüklenir
     │   Örnek: FastAPI kodu → fastapi-pro skill otomatik aktif
@@ -349,28 +354,28 @@ Claude bir task alır
     └── Hangisi daha spesifik/kaliteli ise o kullanılır
 ```
 
-### Proje-Seviyesi Skill'ler
+### 110 Skill — Kategoriler
 
-| Skill | Ne Yapar | Ne Zaman Aktif |
-|-------|----------|----------------|
-| `self-check` | 30 maddelik kural uyum checklist'i | Her kod değişikliğinden sonra |
-| `handoff-protocol` | Session state koruma protokolü | `/done`, `/compact`, session sonu |
-| `project-workflow` | Build/test/deploy workflow referansı | make komutları, Docker işlemleri |
+| Kategori | Skill Sayısı | Örnekler |
+|----------|-------------|----------|
+| **Proje Workflow** | 9 | self-check, handoff-protocol, phase-gate, scope-check, gap-detection |
+| **Python / FastAPI** | 9 | fastapi-pro, python-pro, pydantic, async-python, uv-package-manager |
+| **Database / SQL** | 8 | postgresql, postgres-best-practices, sql-pro, database-design, migrations |
+| **Frontend (React)** | 7 | react-patterns, react-best-practices, react-state-management, zustand |
+| **Frontend (Vue)** | 1 | vue-expert (Composition API, Pinia, Vue Router 4, TypeScript) |
+| **TypeScript / JS** | 9 | typescript-expert, javascript-pro, modern-javascript-patterns |
+| **Testing / TDD** | 10 | test-driven-development, tdd-workflow, python-testing, js-testing |
+| **Code Quality** | 5 | clean-code, code-reviewer, find-bugs, simplify, legacy-modernizer |
+| **Documentation** | 7 | changelog-automation, readme, docs-architect, openapi-spec-generation |
+| **Architecture** | 4 | architecture-patterns, architecture-decision-records, api-design |
+| **Security** | 4 | security-auditor, vulnerability-scanner, auth-patterns, backend-security |
+| **DevOps / Infra** | 8 | docker-expert, bash-pro, deployment-engineer, server-management |
+| **Context Management** | 5 | context-degradation, compression, optimization, window-management |
+| **Workflow / Planning** | 8 | brainstorming, plan-writing, executing-plans, verification, prompting |
+| **Diğer** | 6 | tailwind, i18n, mermaid, mobile, performance-profiling, environment-setup |
 
-### User-Level Skill'ler (Örnekler)
-
-`~/.claude/skills/` dizininde 860+ skill mevcut. Bu projede otomatik
-devreye girebilecek olanlar:
-
-| Skill | Kapsam |
-|-------|--------|
-| `fastapi-pro` | Async patterns, Pydantic V2, SQLAlchemy 2.0+ |
-| `react-patterns` | Hooks, composition, performance, React 19 |
-| `typescript-expert` | Advanced types, strict checking, build perf |
-| `zustand-store-ts` | State/action interfaces, selectors, middleware |
-| `flutter-expert` | Widget patterns, state management, Dart 3 |
-| `systematic-debugging` | 4-phase root cause analysis |
-| `plan-writing` | Atomic task breakdown |
+Tüm skill'ler gerçek dosya olarak `.vibecode/skills/` altında — symlink yok,
+herhangi bir makineye klonlayınca çalışır.
 
 ### Yeni Skill Ekleme
 
