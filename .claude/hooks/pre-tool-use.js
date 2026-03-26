@@ -1,16 +1,17 @@
 #!/usr/bin/env node
 
 /**
- * Pre-Tool-Use Hook — Standards Enforcement (Advisory)
+ * Pre-Tool-Use Hook — Standards + MCP + Doc Enforcement (Advisory)
  *
- * Checks if the relevant standard file was likely loaded before
- * writing/editing code in backend/ or frontend/ directories.
+ * Three-layer advisory system:
+ * 1. Standards enforcement — reminds to load relevant standard files
+ * 2. MCP availability — reminds to verify Serena + Context7 before code ops
+ * 3. Skill suggestions — recommends relevant skills based on file paths (ADR-002)
+ * 4. Doc update reminder — reminds that documentation must be updated
  *
  * This hook is advisory — it warns but does not block.
  * Input: JSON from stdin (Claude Code hook protocol)
  * Output: JSON to stdout with optional "message" for warnings
- *
- * Source pattern: GSD's gsd-workflow-guard hook
  */
 
 async function readStdin() {
@@ -43,8 +44,37 @@ async function main() {
 
   const warnings = [];
   const skillSuggestions = [];
+  const mcpReminders = [];
+  const docReminders = [];
 
-  // --- Standards enforcement (existing) ---
+  // --- MCP availability reminders ---
+  // Remind Claude to verify Serena and Context7 before code operations
+
+  const isCodeFile = filePath.match(/\.(py|ts|tsx|js|jsx|sql|yml|yaml)$/);
+  const isBackendCode = filePath.includes('/backend/') || filePath.includes('/src/api/') || filePath.includes('/src/services/') || filePath.includes('/src/models/');
+  const isFrontendCode = filePath.includes('/frontend/') || filePath.includes('/components/') || filePath.includes('/pages/');
+
+  if (isCodeFile) {
+    mcpReminders.push('Verify Serena MCP is available — use Serena for ALL code search (never grep/find).');
+  }
+  if (isCodeFile && (filePath.includes('import') || isBackendCode || isFrontendCode)) {
+    mcpReminders.push('Verify Context7 MCP for any third-party library calls.');
+  }
+
+  // --- Doc update reminders ---
+  // Every code change requires documentation update
+
+  if (isCodeFile) {
+    docReminders.push('MANDATORY: Update docs after this change (CHANGELOG.md + relevant docs).');
+  }
+  if (filePath.includes('/api/') || filePath.includes('routes')) {
+    docReminders.push('API change detected — update docs/api/ + run generate-types.');
+  }
+  if (filePath.includes('/models/') || filePath.includes('alembic')) {
+    docReminders.push('Schema change detected — update docs/constraints/database.md if needed.');
+  }
+
+  // --- Standards enforcement ---
 
   // Check backend code
   if (filePath.includes('/backend/') || filePath.includes('/src/api/') || filePath.includes('/src/services/') || filePath.includes('/src/models/')) {
@@ -106,12 +136,18 @@ async function main() {
 
   // Build output
   const messages = [];
+  if (mcpReminders.length > 0) {
+    messages.push('🔌 ' + mcpReminders.join(' | '));
+  }
   if (warnings.length > 0) {
     messages.push('⚠️ ' + warnings.join(' | '));
   }
   if (skillSuggestions.length > 0) {
     const unique = [...new Set(skillSuggestions)];
     messages.push('💡 Suggested skills: ' + unique.join(', '));
+  }
+  if (docReminders.length > 0) {
+    messages.push('📝 ' + docReminders.join(' | '));
   }
 
   if (messages.length > 0) {

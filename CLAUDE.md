@@ -61,7 +61,44 @@ Gate 3: Confirm Scope
 |------|------|
 | Find symbol / route / class in project code | **Serena** — never `grep` / `find` |
 | Dependency and impact analysis before editing | **Serena** |
+| Understanding code relationships before changes | **Serena** |
 | FastAPI, SQLAlchemy, Alembic, React, TypeScript, TanStack Query, Zustand, shadcn/ui, Pydantic v2, Tome | **Context7** — never from memory |
+
+### 2.1 Pre-Operation MCP Health Check
+
+> **ENFORCEMENT:** Before EVERY code-modifying operation, Claude MUST verify
+> that both Serena and Context7 are available. This is not limited to session
+> startup — it applies before each task, each file edit, each refactor.
+
+```
+Before writing/editing any code
+        │
+        ▼
+Serena available?
+  ├── ✅ → continue
+  └── ❌ → Install and configure automatically → verify → then continue
+        │
+        ▼
+Context7 available? (if task uses third-party libraries)
+  ├── ✅ → continue
+  └── ❌ → Install and configure automatically → verify → then continue
+        │
+        ▼
+Both verified → proceed with task
+```
+
+### 2.2 Serena Usage — Non-Negotiable
+
+> **ENFORCEMENT:** Serena is the PRIMARY tool for code navigation.
+> Claude MUST use Serena for ALL code search and analysis operations.
+> Using grep, find, or manual file reading instead of Serena is a violation.
+
+**Serena MUST be used for:**
+- Finding any symbol, route, class, or function
+- Understanding dependencies before modifying code
+- Analyzing impact scope of changes
+- Navigating between related files
+- Understanding code relationships and call chains
 
 **Serena startup:**
 ```
@@ -69,6 +106,8 @@ Call mcp__serena__initial_instructions
   ├── ✅ → "Serena ready"
   └── ❌ → Install and configure Serena MCP automatically → retry
 ```
+
+### 2.3 Context7 Usage
 
 **Context7 startup:**
 ```
@@ -227,15 +266,21 @@ New project or major feature?
 Write / update tests first
         │
         ▼
+Verify MCP availability (Serena + Context7) → reinstall if needed
+        │
+        ▼
 Run make verify → all must pass (lint + test + audit)
-  └── ❌ Fix failures → rerun → do NOT skip
+  └── ❌ Capture error → .vibecode/memories/errors/ (ADR-001)
+   → Fix → rerun → do NOT skip
         │
         ▼
 Run Documentation Checklist (.vibecode/standards/documentation.md)
-  ← ALWAYS, no exceptions
+  ← MANDATORY after EVERY change — no exceptions
+  ← Skipping doc update = incomplete task
         │
         ▼
 ✅ CHECKPOINT: "Task complete. Docs updated: [list]"
+   → If no docs updated → task is NOT complete → go back
 ```
 
 ---
@@ -378,9 +423,9 @@ saves state to HANDOFF.md before compacting, ensuring no context is lost.
 
 ---
 
-## 9. Five Absolute Rules
+## 9. Eight Absolute Rules
 
-These 6 rules are **non-negotiable**. Everything else is in `.vibecode/skills/self-check/SKILL.md`.
+These 8 rules are **non-negotiable**. Everything else is in `.vibecode/skills/self-check/SKILL.md`.
 
 ```
 1. 📖 Load the relevant standard BEFORE writing code
@@ -397,11 +442,22 @@ These 6 rules are **non-negotiable**. Everything else is in `.vibecode/skills/se
 4. ✅ Run make verify BEFORE reporting task completion
    → If it fails → fix → rerun → do NOT skip
 
-5. 📝 Update CHANGELOG.md after EVERY change
-   → No exceptions — not even "small" changes
+5. 📝 Update documentation after EVERY change
+   → CHANGELOG.md — no exceptions, not even "small" changes
+   → Relevant docs (API, user, admin) — if the change affects them
+   → Skipping doc update = task is NOT complete
 
 6. 🚫 Never proceed past a CHECKPOINT without confirming it passed
    → Silence is not compliance
+
+7. 🔎 Use Serena for ALL code search and navigation
+   → Never use grep, find, or manual file reading for code search
+   → Serena saves tokens and provides accurate results
+   → Verify Serena availability before every code operation
+
+8. 🔌 Verify MCP availability before every operation
+   → Serena + Context7 must be confirmed available before code changes
+   → If unavailable → install and configure automatically → never skip
 ```
 
 > **Full prohibited actions list:** See `.vibecode/skills/self-check/SKILL.md` for the

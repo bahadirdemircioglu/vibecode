@@ -5,6 +5,21 @@
 
 ---
 
+## [2026-03-26] v0.2.0 — Enforce mandatory Serena usage, pre-operation MCP checks, and doc updates
+
+### Changes
+- **What:** Strengthened MCP enforcement in CLAUDE.md (§2 rewritten with pre-operation health check, Serena non-negotiable usage). Added mandatory doc update enforcement in Task Decision Tree. Expanded absolute rules from 5 to 8 (added Serena, MCP check, doc update rules). Updated pre-tool-use.js with MCP availability reminders and doc update reminders. Updated README to reflect all changes.
+- **Why:** Serena must be used for ALL code operations (not optional). Documentation must be updated after EVERY change (not just at /done). MCP availability must be verified before every operation, not just at session start.
+- **How:** CLAUDE.md §2 split into §2.1 (pre-op MCP check), §2.2 (Serena non-negotiable), §2.3 (Context7). Hook now has 4 advisory layers: MCP, standards, skills, docs. Five Absolute Rules → Eight Absolute Rules.
+
+### Affected Files
+- `CLAUDE.md` — §2, §4, §9 rewritten/expanded
+- `.claude/hooks/pre-tool-use.js` — MCP + doc reminder layers added
+- `README.md` — hooks, rules, troubleshooting sections updated
+- `docs/CHANGELOG.md` — this entry
+
+---
+
 ## [2026-03-26] v0.1.2 — Update README with Error Memory, Skill Orchestrator, and ADR documentation
 
 ### Changes
