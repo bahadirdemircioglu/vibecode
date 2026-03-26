@@ -5,6 +5,19 @@
 
 ---
 
+## [2026-03-26] v0.1.2 — Update README with Error Memory, Skill Orchestrator, and ADR documentation
+
+### Changes
+- **What:** Updated README.md to document Error Memory (ADR-001), Skill Orchestrator (ADR-002), and ADR system. Added new sections, updated directory tree, hooks description, /done flow, FAQ, and philosophy.
+- **Why:** README was out of date — strategic improvements (Error Memory, Skill Orchestrator, ADR system) were implemented in CLAUDE.md and hooks but not reflected in user-facing documentation.
+- **How:** 7 sections updated/added: intro table, Gate 2, directory tree, hooks (skill suggestion), /done flow, Error Memory section, ADR section, FAQ entries, philosophy.
+
+### Affected Files
+- `README.md` — 7 sections updated, 2 new sections added
+- `docs/CHANGELOG.md` — this entry
+
+---
+
 ## [2026-03-26] v0.1.1 — Integrate ADR decisions into CLAUDE.md and hooks
 
 ### Changes
