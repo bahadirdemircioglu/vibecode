@@ -433,6 +433,19 @@ store/                    → 💡 react-state-management
 Dockerfile                → 💡 docker-expert
 ```
 
+**Katman 3 — MCP kullanılabilirlik hatırlatması:**
+```
+Kod dosyası yazılıyor → 🔌 "Serena MCP aktif mi? Context7 aktif mi?"
+API/route dosyası     → 🔌 "Context7 ile kütüphane doğrulaması yap"
+```
+
+**Katman 4 — Doküman güncelleme hatırlatması:**
+```
+Herhangi bir kod dosyası → 📝 "ZORUNLU: CHANGELOG.md + ilgili dokümanları güncelle"
+API/route değişikliği    → 📝 "docs/api/ güncelle + generate-types çalıştır"
+Model/schema değişikliği → 📝 "docs/constraints/database.md kontrol et"
+```
+
 **Advisory modda** çalışır — bloklamaz, uyarır ve önerir. Claude uyarıyı
 görünce kendini düzeltir.
 
@@ -447,16 +460,21 @@ Session boyunca mesaj sayısını izler:
 
 ---
 
-## Five Absolute Rules
+## Eight Absolute Rules
 
-Claude'un **asla** atlamaması gereken 5 kural:
+Claude'un **asla** atlamaması gereken 8 kural:
 
 ```
 1. 📖 İlgili standardı ÖNCE yükle → sonra kod yaz
 2. 🔍 Kütüphane API'lerini Context7'den doğrula → asla hafızadan yazma
-3. ✅ make verify'ı çalıştır → sonra tamamlandı de
-4. 📝 CHANGELOG.md'yi güncelle → her değişiklikten sonra
-5. 🚫 CHECKPOINT'i doğrulamadan ilerleme → sessizlik uyum değildir
+3. 🧪 Her yeni özellik veya değişiklik için test yaz
+4. ✅ make verify'ı çalıştır → sonra tamamlandı de
+5. 📝 Her değişiklikten sonra dokümanları güncelle (CHANGELOG + ilgili docs)
+   → Doküman güncellemesi yapılmadıysa task tamamlanmamıştır
+6. 🚫 CHECKPOINT'i doğrulamadan ilerleme → sessizlik uyum değildir
+7. 🔎 Kod arama için HER ZAMAN Serena kullan → asla grep/find kullanma
+8. 🔌 Her işlem öncesi MCP'leri doğrula (Serena + Context7)
+   → Yoksa otomatik kur → asla atlama
 ```
 
 Tam 30 maddelik detaylı liste: `.vibecode/skills/self-check/SKILL.md`
@@ -716,13 +734,16 @@ Bu şablon sistemi aşağıdaki açık kaynak projelerden ilham almıştır:
 ### Serena çalışmıyor
 
 ```
-"⚠ Degraded session" — Serena olmadan çalışılabilir ama token tüketimi artar.
-Claude grep/find'a düşer. MCP ayarlarını kontrol et.
+Serena ZORUNLUDUR — yoksa Claude otomatik kurar ve yapılandırır.
+Serena olmadan kod yazılmaz. Manuel müdahale gerekiyorsa:
+→ MCP ayarlarını kontrol et
+→ claude mcp add serena komutuyla yeniden kur
 ```
 
 ### Context7 çalışmıyor
 
 ```
+Context7 ZORUNLUDUR — yoksa Claude otomatik kurar ve yapılandırır.
 Fallback: web_fetch ile resmi dokümantasyon URL'si kullanılır.
 Asla hafızadan kütüphane API'si yazılmaz.
 ```
