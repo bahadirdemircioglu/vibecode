@@ -56,6 +56,84 @@ if [[ -d "$PROJECT_ROOT/.git" ]]; then
   fi
 fi
 
+# 5. Stack detection — map dependencies to available skills
+SKILLS=""
+SKILL_DIRS=("$PROJECT_ROOT/.vibecode/skills" "$HOME/.claude/skills")
+
+skill_exists() {
+  for dir in "${SKILL_DIRS[@]}"; do
+    [[ -d "$dir/$1" ]] && return 0
+  done
+  return 1
+}
+
+add_skill() {
+  for s in "$@"; do
+    if skill_exists "$s"; then
+      [[ -n "$SKILLS" ]] && SKILLS+=", "
+      SKILLS+="$s"
+    fi
+  done
+}
+
+# Python (pyproject.toml or requirements.txt)
+PY_DEPS=""
+[[ -f "$PROJECT_ROOT/backend/pyproject.toml" ]] && PY_DEPS="$PROJECT_ROOT/backend/pyproject.toml"
+[[ -z "$PY_DEPS" && -f "$PROJECT_ROOT/pyproject.toml" ]] && PY_DEPS="$PROJECT_ROOT/pyproject.toml"
+[[ -z "$PY_DEPS" && -f "$PROJECT_ROOT/requirements.txt" ]] && PY_DEPS="$PROJECT_ROOT/requirements.txt"
+
+if [[ -n "$PY_DEPS" ]]; then
+  add_skill "python-pro"
+  grep -qi 'fastapi' "$PY_DEPS" 2>/dev/null && add_skill "fastapi-pro" "fastapi-router-py"
+  grep -qi 'sqlalchemy' "$PY_DEPS" 2>/dev/null && add_skill "postgresql" "sql-optimization-patterns"
+  grep -qi 'pydantic' "$PY_DEPS" 2>/dev/null && add_skill "pydantic-models-py"
+  grep -qi 'alembic' "$PY_DEPS" 2>/dev/null && add_skill "database-migrations-sql-migrations"
+  grep -qi 'celery' "$PY_DEPS" 2>/dev/null && add_skill "async-python-patterns"
+  grep -qi 'pytest' "$PY_DEPS" 2>/dev/null && add_skill "python-testing-patterns"
+  grep -qi 'django' "$PY_DEPS" 2>/dev/null && add_skill "django-pro"
+  grep -qi 'flask' "$PY_DEPS" 2>/dev/null && add_skill "python-pro"
+fi
+
+# JavaScript/TypeScript (package.json)
+PKG_JSON=""
+[[ -f "$PROJECT_ROOT/frontend/package.json" ]] && PKG_JSON="$PROJECT_ROOT/frontend/package.json"
+[[ -z "$PKG_JSON" && -f "$PROJECT_ROOT/package.json" ]] && PKG_JSON="$PROJECT_ROOT/package.json"
+
+if [[ -n "$PKG_JSON" ]]; then
+  add_skill "typescript-pro"
+  grep -qi '"react"' "$PKG_JSON" 2>/dev/null && add_skill "react-patterns" "react-best-practices"
+  grep -qi '"next"' "$PKG_JSON" 2>/dev/null && add_skill "nextjs-best-practices"
+  grep -qi '"zustand"' "$PKG_JSON" 2>/dev/null && add_skill "zustand-store-ts"
+  grep -qi 'tanstack' "$PKG_JSON" 2>/dev/null && add_skill "react-state-management"
+  grep -qi '"tailwindcss"' "$PKG_JSON" 2>/dev/null && add_skill "tailwind-patterns"
+  grep -qi '"vue"' "$PKG_JSON" 2>/dev/null && add_skill "vue-expert"
+  grep -qi '"angular"' "$PKG_JSON" 2>/dev/null && add_skill "angular-best-practices"
+  grep -qi '"prisma"' "$PKG_JSON" 2>/dev/null && add_skill "prisma-expert"
+  grep -qi '"jest"\|"vitest"' "$PKG_JSON" 2>/dev/null && add_skill "javascript-testing-patterns"
+  grep -qi '"express"' "$PKG_JSON" 2>/dev/null && add_skill "nodejs-backend-patterns"
+  grep -qi '"nestjs"\|"@nestjs"' "$PKG_JSON" 2>/dev/null && add_skill "nestjs-expert"
+fi
+
+# Docker
+[[ -f "$PROJECT_ROOT/docker-compose.yml" || -f "$PROJECT_ROOT/docker-compose.yaml" ]] && add_skill "docker-expert"
+[[ -f "$PROJECT_ROOT/Dockerfile" || -f "$PROJECT_ROOT/backend/Dockerfile" ]] && add_skill "docker-expert"
+
+# Terraform
+[[ -f "$PROJECT_ROOT/main.tf" || -d "$PROJECT_ROOT/terraform" ]] && add_skill "terraform-specialist"
+
+# Go
+[[ -f "$PROJECT_ROOT/go.mod" ]] && add_skill "golang-pro" "go-concurrency-patterns"
+
+# Rust
+[[ -f "$PROJECT_ROOT/Cargo.toml" ]] && add_skill "rust-pro"
+
+# Ruby
+[[ -f "$PROJECT_ROOT/Gemfile" ]] && add_skill "ruby-pro"
+
+if [[ -n "$SKILLS" ]]; then
+  OUTPUT+="SKILLS: ${SKILLS}"$'\n'
+fi
+
 # Print output (only if there is something to report)
 if [[ -n "$OUTPUT" ]]; then
   echo "--- Session Start Check ---"
