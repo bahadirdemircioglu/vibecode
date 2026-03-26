@@ -42,6 +42,9 @@ async function main() {
   }
 
   const warnings = [];
+  const skillSuggestions = [];
+
+  // --- Standards enforcement (existing) ---
 
   // Check backend code
   if (filePath.includes('/backend/') || filePath.includes('/src/api/') || filePath.includes('/src/services/') || filePath.includes('/src/models/')) {
@@ -68,11 +71,54 @@ async function main() {
     warnings.push('Writing security/auth code — ensure .vibecode/standards/security.md was loaded first.');
   }
 
+  // --- Skill suggestions (ADR-002: Skill Orchestrator) ---
+  // Advisory only — suggests relevant skills based on file paths
+
+  // Backend skills
+  if (filePath.includes('/api/') || filePath.includes('routes')) {
+    skillSuggestions.push('fastapi-pro', 'api-design-principles');
+  }
+  if (filePath.includes('/models/') || filePath.includes('alembic')) {
+    skillSuggestions.push('postgresql', 'database-migrations-sql-migrations');
+  }
+  if (filePath.includes('/schemas/')) {
+    skillSuggestions.push('pydantic-models-py');
+  }
+  if (filePath.includes('/services/')) {
+    skillSuggestions.push('fastapi-pro', 'error-handling-patterns');
+  }
+
+  // Frontend skills
+  if (filePath.endsWith('.tsx') || filePath.endsWith('.jsx')) {
+    skillSuggestions.push('react-patterns');
+  }
+  if (filePath.includes('/store/')) {
+    skillSuggestions.push('react-state-management');
+  }
+  if (filePath.includes('tailwind') || filePath.includes('.css')) {
+    skillSuggestions.push('tailwind-patterns');
+  }
+
+  // Infra skills
+  if (filePath.includes('Dockerfile')) {
+    skillSuggestions.push('docker-expert');
+  }
+
+  // Build output
+  const messages = [];
   if (warnings.length > 0) {
-    // Output advisory message — does not block, just warns
+    messages.push('⚠️ ' + warnings.join(' | '));
+  }
+  if (skillSuggestions.length > 0) {
+    const unique = [...new Set(skillSuggestions)];
+    messages.push('💡 Suggested skills: ' + unique.join(', '));
+  }
+
+  if (messages.length > 0) {
+    // Output advisory message — does not block, just warns/suggests
     console.log(JSON.stringify({
       decision: "approve",
-      message: "⚠️ " + warnings.join(' | ')
+      message: messages.join('\n')
     }));
   }
 

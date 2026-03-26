@@ -5,6 +5,20 @@
 
 ---
 
+## [2026-03-26] v0.1.1 — Integrate ADR decisions into CLAUDE.md and hooks
+
+### Changes
+- **What:** Updated CLAUDE.md to reference Error Memory system (ADR-001) in session startup, task decision tree, /done command, project structure, and quick reference. Updated `pre-tool-use.js` with skill suggestion logic (ADR-002).
+- **Why:** ADR decisions were recorded but not reflected in the governing files that Claude reads at session start. Without these references, the Error Memory and Skill Orchestrator systems would not be activated.
+- **How:** Added error memory scan steps to Gates and Task Decision Tree. Added `.vibecode/memories/errors/` to project structure. Extended pre-tool-use hook with file-path-to-skill mapping (advisory, non-blocking).
+
+### Affected Files
+- `CLAUDE.md` — 5 sections updated (§1, §3, §4, §7, §11)
+- `.claude/hooks/pre-tool-use.js` — skill suggestion logic added
+- `docs/CHANGELOG.md` — this entry
+
+---
+
 ## [2026-03-26] v0.1.0 — ADR system initialized with 3 architecture decisions
 
 ### Changes

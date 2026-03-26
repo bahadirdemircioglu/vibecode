@@ -45,6 +45,7 @@ Gate 1: Load State
 Gate 2: Check Tools & Context
   → MCP health (Serena + Context7) — if unavailable, install and configure automatically
   → Scan ~/.claude/skills/ + .vibecode/skills/ → load matching skills
+  → Scan .vibecode/memories/errors/ → load relevant error history for task context
   → Read ports file → confirm port assignments
   → Read docs/constraints/*.md
 
@@ -133,6 +134,10 @@ project-root/
 │   │   ├── ports.md
 │   │   ├── security.md
 │   │   └── backup.md
+│   ├── memories/                   # Persistent AI memory (ADR-001)
+│   │   └── errors/                 # Structured error history
+│   │       ├── [date]-[category]-[desc].md  # Error records (YAML frontmatter)
+│   │       └── archive/            # Resolved errors older than 90 days
 │   └── skills/                     # AI skills (from vibecode template)
 │       ├── self-check/
 │       ├── handoff-protocol/
@@ -192,6 +197,11 @@ Read HANDOFF.md → load previous session state
 Scan ~/.claude/skills/ + .vibecode/skills/ → matching skills?
   ├── Yes → read + apply all matching (project overrides user)
   └── No  → continue with general standards
+        │
+        ▼
+Scan .vibecode/memories/errors/ → relevant error history?
+  ├── Yes → load matching errors (by module/technology) → apply lessons
+  └── No  → continue
         │
         ▼
 Touches existing code?
@@ -326,7 +336,8 @@ When `/done` is called, execute in order:
 1. Summarize all changes made in this session
 2. Run make verify:
      make verify   (lint + test + security audit — all in one)
-   → If any step fails → fix → rerun → do NOT skip
+   → If any step fails → capture error to .vibecode/memories/errors/ (ADR-001)
+   → Fix → rerun → do NOT skip
 3. Run Documentation Checklist (.vibecode/standards/documentation.md)
 4. Update docs/CHANGELOG.md
 5. Update docs/decisions.md      (if applicable)
@@ -430,6 +441,8 @@ Context bloating?     →  /compact (CHANGELOG + HANDOFF.md first)
 Session state?        →  /status
 Project constraints?  →  docs/constraints/*.md
 Skills?               →  ~/.claude/skills/ (user) + .vibecode/skills/ (project)
+Error history?        →  .vibecode/memories/errors/ (ADR-001)
+Architecture records? →  docs/decisions.md (ADR format)
 Self-check?           →  .vibecode/skills/self-check/SKILL.md
 Verification?         →  make verify (lint + test + audit)
 ```
