@@ -16,6 +16,8 @@ karşılaşılan 4 temel sorunu çözer:
 | Her projede aynı dosyaları tekrar yazıyorsun | **`/scaffold`** komutu + hazır **`.vibecode/templates/`** |
 | Context doluyor, kalite düşüyor | **Context Budget** eşikleri + **notification hook** + **`/compact`** |
 | Session geçişlerinde bağlam kaybı | **HANDOFF.md** protokolü + **`/go`** ile otomatik yükleme |
+| Aynı hatalar tekrar ediyor | **Error Memory** (ADR-001) — yapılandırılmış hata hafızası |
+| Doğru skill yüklenemiyor | **Skill Orchestrator** (ADR-002) — otomatik skill öneri sistemi |
 
 ---
 
@@ -129,6 +131,7 @@ Gate 2: Check Tools & Context
   ├── Serena MCP → hazır mı? (kod arama için)
   ├── Context7 MCP → hazır mı? (kütüphane docs için)
   ├── Skills → eşleşen skill'ler yüklenir
+  ├── Error Memory → ilgili hata kayıtları yüklenir (ADR-001)
   ├── Ports → port atamaları kontrol edilir
   └── Constraints → proje kısıtlamaları okunur
 
@@ -155,6 +158,7 @@ Her kod yazma adımında Claude otomatik olarak:
 **Ne olur:**
 1. Tüm değişiklikler özetlenir
 2. `make verify` çalıştırılır (lint + test + security audit)
+   - Başarısız olursa → hata `.vibecode/memories/errors/`'e kaydedilir (ADR-001)
 3. Documentation Checklist kontrol edilir
 4. `CHANGELOG.md` güncellenir
 5. `HANDOFF.md` yazılır (sonraki session için)
@@ -204,6 +208,9 @@ vibecode/                        ← Bu repo (şablon sistemi)
 │   │   ├── ports.md             ← Port yönetimi workflow'u
 │   │   ├── security.md          ← CORS, rate limiting, auth, logging
 │   │   └── backup.md            ← Yedekleme stratejisi
+│   ├── memories/                ← Kalıcı AI hafızası (ADR-001)
+│   │   └── errors/              ← Yapılandırılmış hata kayıtları (YAML frontmatter)
+│   │       └── archive/         ← 90 günden eski çözülmüş hatalar
 │   ├── skills/                  ← 110 skill (gerçek dosya, symlink yok — portable)
 │   │   ├── self-check/SKILL.md  ← 30 maddelik compliance checklist
 │   │   ├── handoff-protocol/SKILL.md ← Session state koruma protokolü
@@ -237,7 +244,7 @@ vibecode/                        ← Bu repo (şablon sistemi)
 │   │   ├── scaffold.md          ← /scaffold — yeni proje
 │   │   └── status.md            ← /status — durum raporu
 │   └── hooks/                   ← Otomatik kontroller
-│       ├── pre-tool-use.js      ← Standart yükleme kontrolü (advisory)
+│       ├── pre-tool-use.js      ← Standart kontrolü + skill öneri (ADR-002, advisory)
 │       └── notification.js      ← Context büyüklüğü monitörü
 │
 └── repos.txt                    ← Araştırılan referans repolar
@@ -405,18 +412,29 @@ eşleştiğinde skill otomatik yüklenir.
 
 ## Hooks Sistemi
 
-### pre-tool-use.js — Standart Enforcement
+### pre-tool-use.js — Standart Enforcement + Skill Öneri (ADR-002)
 
-Dosya yazma/düzenleme öncesinde çalışır:
+Dosya yazma/düzenleme öncesinde çalışır. İki katmanlı:
 
+**Katman 1 — Standart kontrolü:**
 ```
 backend/ kodu yazılıyor → "⚠️ backend.md yüklendi mi?"
 frontend/ kodu yazılıyor → "⚠️ frontend.md yüklendi mi?"
 Dockerfile düzenleniyor → "⚠️ docker.md yüklendi mi?"
 ```
 
-**Advisory modda** çalışır — bloklamaz, uyarır. Claude uyarıyı görünce
-kendini düzeltir.
+**Katman 2 — Skill önerisi (ADR-002):**
+```
+api/ veya routes dosyası  → 💡 fastapi-pro, api-design-principles
+models/ veya alembic/     → 💡 postgresql, database-migrations
+schemas/                  → 💡 pydantic-models-py
+*.tsx / *.jsx             → 💡 react-patterns
+store/                    → 💡 react-state-management
+Dockerfile                → 💡 docker-expert
+```
+
+**Advisory modda** çalışır — bloklamaz, uyarır ve önerir. Claude uyarıyı
+görünce kendini düzeltir.
 
 ### notification.js — Context Monitor
 
@@ -442,6 +460,84 @@ Claude'un **asla** atlamaması gereken 5 kural:
 ```
 
 Tam 30 maddelik detaylı liste: `.vibecode/skills/self-check/SKILL.md`
+
+---
+
+## Error Memory — Hata Analiz Hafızası (ADR-001)
+
+Claude'un aynı hatayı iki kez yapmaması için tasarlanmış kalıcı hafıza sistemi.
+
+### Nasıl Çalışır?
+
+```
+make verify başarısız oldu
+    │
+    ├── Hata analiz edilir (kök neden, bağlam, çözüm)
+    │
+    ├── .vibecode/memories/errors/ altına kayıt yazılır
+    │   Dosya: [tarih]-[kategori]-[kısa-açıklama].md
+    │   Format: YAML frontmatter + yapılandırılmış içerik
+    │
+    └── Sonraki session'da /go çalıştırılınca
+        → ilgili modül/teknolojiye ait hata kayıtları otomatik yüklenir
+        → Claude aynı hatayı tekrarlamamak için önlem alır
+```
+
+### Kayıt Formatı
+
+```yaml
+---
+date: 2026-03-26
+category: build-error | test-failure | lint-error | runtime-error | type-error | migration-error
+module: backend/api | frontend/components | docker | alembic | ...
+technology: fastapi | react | sqlalchemy | typescript | ...
+severity: critical | high | medium | low
+resolved: true | false
+tags: [ilgili-anahtar-kelimeler]
+---
+
+## Hata
+[Hata mesajı / stack trace özeti]
+
+## Kök Neden
+[Root cause analizi]
+
+## Çözüm
+[Ne yapıldı, neden işe yaradı]
+
+## Önlem
+[Gelecekte bu hatanın tekrarını önlemek için ne yapılmalı]
+```
+
+### Yaşam Döngüsü
+
+- **90 günden eski** + `resolved: true` → `archive/` altına taşınır
+- `resolved: false` kayıtlar süresi ne olursa olsun **aktif kalır**
+- Arşiv sadece istatistik amaçlı tutulur (hata pattern analizi)
+
+---
+
+## Architecture Decision Records (ADR)
+
+Mimari kararlar `docs/decisions.md`'de ADR formatında kayıt altına alınır.
+Her yeni teknoloji, kütüphane, yapısal değişiklik veya strateji kararı
+bir ADR gerektirir.
+
+### Mevcut ADR'ler
+
+| ADR | Başlık | Durum |
+|-----|--------|-------|
+| ADR-001 | Error Memory — Yapılandırılmış Hata Analiz Hafızası | Accepted |
+| ADR-002 | Skill Orchestrator — Otomatik Skill Öneri Sistemi | Proposed |
+| ADR-003 | Doc-Sync — Hibrit Doküman Senkronizasyonu | Proposed |
+
+### Ne Zaman ADR Yazılır?
+
+- Yeni mimari tanıtıldığında
+- Kütüphane eklendiğinde veya değiştirildiğinde
+- Breaking DB schema değişikliğinde
+- Auth stratejisi değiştiğinde
+- CLAUDE.md standartlarından sapma olduğunda
 
 ---
 
@@ -522,6 +618,23 @@ altyapı eklenmesini önler.
 
 Ports dosyasını kontrol et. Her proje 10 port'luk bloklar halinde atanır.
 `/go` komutu otomatik olarak port dosyasını kontrol eder.
+
+### "Claude aynı hatayı tekrar yaptı"
+
+Error Memory sistemi (ADR-001) devredeyse, `/go` sırasında ilgili hata
+kayıtları otomatik yüklenir. Eğer hata henüz kaydedilmemişse, `/done`
+sırasında `make verify` başarısızlığı otomatik olarak kayıt altına alınır.
+
+### "Hangi skill'i yüklemem gerekiyor?"
+
+`pre-tool-use.js` hook'u dosya yoluna göre ilgili skill'leri otomatik önerir
+(ADR-002). Örneğin `backend/src/api/` altına yazarken `fastapi-pro` ve
+`api-design-principles` skill'leri önerilir.
+
+### "Mimari bir karar aldık, nereye kaydetmeliyiz?"
+
+`docs/decisions.md` dosyasına ADR formatında ekleyin. Format:
+`ADR-[NNN]: Başlık → Context → Decision → Alternatives → Consequences`
 
 ### "Claude kuralları yine atladı"
 
@@ -646,3 +759,5 @@ Kurallar basit:
 - Her session'ı belgele (`/done` → HANDOFF.md)
 - Context'i temiz tut (`/compact`)
 - Hafızaya güvenme, doğrula (Context7, Serena)
+- Hatalardan öğren, tekrarlama (Error Memory)
+- Kararları kaydet (ADR → `docs/decisions.md`)
