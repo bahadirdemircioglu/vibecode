@@ -5,6 +5,25 @@
 
 ---
 
+## [2026-03-27] — Add security-review skill and /security-review command
+
+### Changes
+- **What:** Created `security-review` skill for OWASP Top 10 code review across all languages (Python, JS/TS, Go, Java, C#). Added `/security-review` slash command for manual triggering. Integrated automatic security review into `/done` flow (Step 3). Updated CLAUDE.md slash commands table.
+- **Why:** Need for systematic security review of generated/written code with line-level findings and patched code suggestions. Inspired by "Senior AppSec Engineer" prompt pattern.
+- **How:** New skill at `.vibecode/skills/security-review/SKILL.md` with full OWASP Top 10 checklist + language-specific patterns. Slash command at `.claude/commands/security-review.md`. `/done` flow updated with automatic security pass.
+
+### Affected Files
+- `.vibecode/skills/security-review/SKILL.md` — new skill (created)
+- `.claude/commands/security-review.md` — new slash command (created)
+- `.claude/commands/done.md` — added Step 3: Security Review (Automatic)
+- `CLAUDE.md` — added `/security-review` to slash commands table
+- `docs/architecture/security-review-skill-plan.md` — architecture plan (created)
+- `docs/CHANGELOG.md` — this entry
+- `docs/decisions.md` — ADR-004 added
+- `docs/progress.md` — security-review module added
+
+---
+
 ## [2026-03-26] v0.2.0 — Enforce mandatory Serena usage, pre-operation MCP checks, and doc updates
 
 ### Changes

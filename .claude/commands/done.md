@@ -15,7 +15,17 @@ make verify
 - If ANY step fails: fix the issue, rerun, do NOT skip
 - Checkpoint: "make verify passed"
 
-### 3. Documentation Checklist
+### 3. Security Review (Automatic)
+Run a security review on all changed source files in this session:
+1. Identify changed files: `git diff --name-only` (staged + unstaged) filtered to source code only
+2. Load `.vibecode/skills/security-review/SKILL.md`
+3. For each changed source file, run the full OWASP Top 10 checklist from the skill
+4. If issues found: report them with severity, vulnerable code, and patched code
+5. Ask user: "Security issues found. Apply patches? (all / pick / skip)"
+6. If no issues: "Security review passed — no vulnerabilities found"
+- Checkpoint: "Security review completed"
+
+### 4. Documentation Checklist
 Read `.vibecode/standards/documentation.md` and run the full checklist:
 1. Update `docs/CHANGELOG.md` — ALWAYS, no exceptions
 2. Architectural decision made? → update `docs/decisions.md` (ADR format)
@@ -29,10 +39,10 @@ Read `.vibecode/standards/documentation.md` and run the full checklist:
 
 Checkpoint: "Documentation updated: [list of files]"
 
-### 4. Update CHANGELOG
+### 5. Update CHANGELOG
 Add entry at top of `docs/CHANGELOG.md` using the format from documentation standards.
 
-### 5. Write HANDOFF.md
+### 6. Write HANDOFF.md
 Create or update `HANDOFF.md` in the project root with:
 - **Branch:** current git branch
 - **Changes this session:** summary of all changes
@@ -41,7 +51,7 @@ Create or update `HANDOFF.md` in the project root with:
 - **Next steps:** recommended follow-up tasks
 - **Active skills:** skills that were loaded this session
 
-### 6. Propose Commit Message
+### 7. Propose Commit Message
 Generate a Conventional Commits format message:
 ```
 type(scope): description
@@ -50,5 +60,5 @@ body with details
 ```
 Present to user for approval. Do NOT commit automatically.
 
-### 7. Remind
+### 8. Remind
 > Run `/compact` if context is large before starting the next task.

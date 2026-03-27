@@ -180,3 +180,58 @@ listeye ekler → minimal token maliyeti.
 **Olumlu:** Doküman güncelliği garanti altına alınır, token maliyeti düşük
 **Olumsuz:** Tracking state'i session-scoped, beklenmedik session kaybında
 liste de kaybolur (HANDOFF.md'ye yedekleme ile azaltılabilir)
+
+---
+
+## ADR-004: Security Review Skill — Otomatik OWASP Top 10 Kod Güvenlik Taraması
+**Date:** 2026-03-27 | **Status:** Accepted
+
+### Context
+
+Yazılan kodun güvenliğini doğrulamak için sistematik bir mekanizma yoktu.
+Mevcut güvenlik skill'leri (security-auditor, vulnerability-scanner, backend-security-coder)
+ya çok geniş kapsamlı ya da yazma odaklıydı — hiçbiri satır bazlı review +
+düzeltilmiş kod sunmuyordu. `find-bugs` skill'i branch diff'e bağlıydı ve
+tek dosya review desteklemiyordu.
+
+### Decision
+
+Üç katmanlı bir güvenlik review mekanizması oluşturuldu:
+
+1. **Skill:** `.vibecode/skills/security-review/SKILL.md` — Tüm diller için
+   OWASP Top 10 kontrol listesi, dil-spesifik pattern'ler (Python, JS/TS,
+   Go, Java, C#), satır bazlı bulgu + düzeltilmiş kod formatı.
+
+2. **Slash Command:** `/security-review [file|last|staged|branch]` — Manuel
+   tetikleme için. Dosya yolu, son değişiklik veya branch bazlı review.
+
+3. **`/done` Entegrasyonu:** Adım 3 olarak otomatik security review. Her task
+   tamamlandığında değişen kaynak dosyalar OWASP Top 10'a göre taranır.
+
+**Kapsam kararları:**
+- Tüm yazılım dilleri ve framework'ler (sadece Python değil)
+- `/done` sırasında otomatik çalışma (onaylandı)
+- Skill içeriği İngilizce (proje standardı)
+
+### Alternatives Considered
+
+1. **Hook (post-tool-use):** Her dosya yazımında otomatik çalışma — çok
+   gürültülü, aşırı token tüketimi.
+
+2. **Mevcut skill'leri genişletme:** security-auditor veya find-bugs'a ekleme
+   — mevcut skill'lerin odağını bulandırır, SRP ihlali.
+
+3. **Sadece skill, command yok:** Otomatik yükleme Claude'un inisiyatifine
+   bağlı kalır — manuel tetikleme gerekli.
+
+### Consequences
+
+**Olumlu:**
+- Her task tamamlandığında güvenlik review otomatik çalışır
+- Satır bazlı bulgular + düzeltilmiş kod → anında aksiyon alınabilir
+- Tüm diller desteklenir → frontend + backend birlikte taranır
+- `/security-review` ile isteğe bağlı manuel tetikleme
+
+**Olumsuz:**
+- `/done` akışına eklenen adım toplam token maliyetini artırır (~500-2000 token/dosya)
+- Sadece bilinen pattern'leri tarar — sıfır-gün veya iş mantığı hataları kapsamda değil

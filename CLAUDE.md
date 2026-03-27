@@ -97,6 +97,7 @@ If a skill defines an anti-pattern, avoid it.
 | `/plan [feature]` | Architecture plan, wait for approval |
 | `/compact` | Save state to HANDOFF.md, then compact context |
 | `/scaffold [name]` | Initialize new project from template |
+| `/security-review [file]` | OWASP Top 10 security review with patched code |
 | `/status` | Show session state and MCP health |
 
 ---

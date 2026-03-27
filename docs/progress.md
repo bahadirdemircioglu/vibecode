@@ -44,6 +44,27 @@
 
 ---
 
+## Security Review Skill (ADR-004)
+**Added:** 2026-03-27 | **Version:** —
+**Status:** 🟢 Complete
+
+### Scope
+- `.vibecode/skills/security-review/SKILL.md` — OWASP Top 10 review skill (all languages)
+- `.claude/commands/security-review.md` — `/security-review` slash command
+- `/done` entegrasyonu — otomatik güvenlik taraması (Step 3)
+
+### Dependencies
+- Yok (bağımsız)
+
+### Completed Tasks
+- [x] Security review skill oluştur (tüm diller, OWASP Top 10)
+- [x] `/security-review` slash command oluştur
+- [x] `/done` akışına otomatik security review entegre et
+- [x] CLAUDE.md slash commands tablosunu güncelle
+- [x] Architecture plan yaz
+
+---
+
 ## Doc-Sync System (ADR-003)
 **Added:** 2026-03-26 | **Version:** —
 **Status:** 🔴 Blocked (ADR-001 ve ADR-002 sonrası)
