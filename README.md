@@ -11,8 +11,8 @@ Vibecode, Claude Code ile yazılım geliştirirken karşılaşılan temel sorunl
 
 | Sorun | Çözüm |
 |-------|-------|
-| Her projede aynı dosyaları tekrar yazıyorsun | **`/scaffold`** + hazır **`.vibecode/templates/`** |
-| Session geçişlerinde bağlam kaybı | **HANDOFF.md** + **`/go`** ile otomatik yükleme |
+| Her projede aynı dosyaları tekrar yazıyorsun | **`/vibe-scaffold`** + hazır **`.vibecode/templates/`** |
+| Session geçişlerinde bağlam kaybı | **HANDOFF.md** + **`/vibe-go`** ile otomatik yükleme |
 | Hangi skill'i yüklemem gerektiği belirsiz | **Otomatik stack detection** — config dosyalarından skill tespiti |
 | Aynı hatalar tekrar ediyor | **Error Memory** — yapılandırılmış hata hafızası |
 | Doğru standart yüklenemiyor | **pre-tool-use hook** — dosya path'ine göre uyarı |
@@ -31,7 +31,7 @@ cd ~/Dev/vibecode
 ### 2. İlk Projeyi Oluştur
 
 ```
-/scaffold my-awesome-app ~/Dev/my-awesome-app
+/vibe-scaffold my-awesome-app ~/Dev/my-awesome-app
 ```
 
 Bu komut otomatik olarak:
@@ -43,41 +43,41 @@ Bu komut otomatik olarak:
 ### 3. Çalışmaya Başla
 
 ```
-/go kullanici-yonetimi-ekle
+/vibe-go kullanici-yonetimi-ekle
 ```
 
 ---
 
 ## Proje Yaşam Döngüsü
 
-### /scaffold — Projeyi Oluştur
+### /vibe-scaffold — Projeyi Oluştur
 
 ```
-/scaffold proje-adi /hedef/dizin
+/vibe-scaffold proje-adi /hedef/dizin
 ```
 
-### /plan — Mimariyi Tasarla
+### /vibe-plan — Mimariyi Tasarla
 
 ```
-/plan uygulama-adi
+/vibe-plan uygulama-adi
 ```
 
 `docs/architecture/` altına plan yazar, onay bekler.
 
-### /go — Çalışmaya Başla
+### /vibe-go — Çalışmaya Başla
 
 ```
-/go kullanici-profil-sayfasi-ekle
+/vibe-go kullanici-profil-sayfasi-ekle
 ```
 
 1. HANDOFF.md varsa okunur
 2. Config dosyalarından ilgili skill'ler tespit edilir (otomatik)
 3. "Ready: [task] | Skills: [list]" ile başlar
 
-### /done — Tamamla
+### /vibe-done — Tamamla
 
 ```
-/done
+/vibe-done
 ```
 
 1. `make verify` çalıştırır (lint + test + audit)
@@ -85,10 +85,10 @@ Bu komut otomatik olarak:
 3. HANDOFF.md yazar
 4. Commit mesajı önerir
 
-### /compact — Context Temizle
+### /vibe-compact — Context Temizle
 
 ```
-/compact
+/vibe-compact
 ```
 
 State'i HANDOFF.md'ye kaydeder, context'i sıkıştırır.
@@ -99,12 +99,13 @@ State'i HANDOFF.md'ye kaydeder, context'i sıkıştırır.
 
 | Komut | Ne Yapar |
 |-------|----------|
-| `/scaffold [isim]` | Yeni proje oluşturur |
-| `/plan [feature]` | Mimari plan yazar, onay bekler |
-| `/go [task]` | State + skills yükler, başlar |
-| `/done` | Verify + docs + HANDOFF.md + commit önerisi |
-| `/compact` | State kaydeder, context temizler |
-| `/status` | Session durumunu gösterir |
+| `/vibe-scaffold [isim]` | Yeni proje oluşturur |
+| `/vibe-plan [feature]` | Mimari plan yazar, onay bekler |
+| `/vibe-go [task]` | State + skills yükler, başlar |
+| `/vibe-done` | Verify + docs + HANDOFF.md + commit önerisi |
+| `/vibe-compact` | State kaydeder, context temizler |
+| `/vibe-status` | Session durumunu gösterir |
+| `/vibe-security-review [file]` | OWASP Top 10 güvenlik taraması |
 
 ---
 
@@ -228,7 +229,7 @@ vibecode/
 │   ├── scripts/                 ← Yardımcı shell scriptler
 │   └── templates/               ← Scaffold şablonları
 ├── .claude/
-│   ├── commands/                ← Slash komutları (/go, /done, /compact, /plan, /scaffold, /status)
+│   ├── commands/                ← Slash komutları (/vibe-go, /vibe-done, /vibe-compact, /vibe-plan, /vibe-scaffold, /vibe-status)
 │   ├── hooks/                   ← session-start.sh, pre-tool-use.js, notification.js
 │   ├── rules/                   ← Path-scoped kodlama kuralları (8 dosya)
 │   └── settings.json            ← Hook registrations, permissions
@@ -239,7 +240,7 @@ vibecode/
     └── progress.md
 ```
 
-> `backend/`, `frontend/`, `Makefile`, `docker-compose.yml` — `/scaffold` ile oluşturulur.
+> `backend/`, `frontend/`, `Makefile`, `docker-compose.yml` — `/vibe-scaffold` ile oluşturulur.
 
 ---
 
@@ -266,10 +267,10 @@ vibecode/
 
 | Durum | Çözüm |
 |-------|-------|
-| Context doldu | `/compact` |
-| Farklı task'a geçmem gerekiyor | `/compact` → `/go yeni-task` |
-| Session kapandı, nerede kalmıştım? | `/go devam-et` |
-| Yeni servis eklemem gerekiyor | `/plan redis-cache-ekleme` |
+| Context doldu | `/vibe-compact` |
+| Farklı task'a geçmem gerekiyor | `/vibe-compact` → `/vibe-go yeni-task` |
+| Session kapandı, nerede kalmıştım? | `/vibe-go devam-et` |
+| Yeni servis eklemem gerekiyor | `/vibe-plan redis-cache-ekleme` |
 | Hangi skill'i yüklemeliyim? | Otomatik — session başında tespit edilir |
 | Claude kuralları atladı | `pre-tool-use.js` hook uyarı verir |
 

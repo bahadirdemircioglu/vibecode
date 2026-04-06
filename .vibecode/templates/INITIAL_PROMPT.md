@@ -28,7 +28,7 @@ olacağını ve teknik kararları içeriyor.
 
 ## 3. Mimari Plan Yaz
 
-/plan [PROJE-ADI]
+/vibe-plan [PROJE-ADI]
 
 Spec dokümanlarını temel alarak mimari planı yaz. Plana şunları dahil et:
 - Veritabanı şeması (tablolar, ilişkiler, indeksler)
@@ -53,7 +53,7 @@ docs/constraints/ dizinindeki şablon dosyalarını projeye özel olarak doldur:
 
 ## 5. Geliştirmeye Başla
 
-/go [İLK-FAZIN-ADI]
+/vibe-go [İLK-FAZIN-ADI]
 
 Mimari plandaki fazları sırayla uygula. Her faz için:
 - İlgili standardı yükle (.vibecode/standards/ altından)
@@ -68,8 +68,8 @@ Mimari plandaki fazları sırayla uygula. Her faz için:
 - Kütüphane API'lerini Context7'den doğrula
 - Kod aramak için Serena kullan
 - Path-scoped rules otomatik uygulanır (.claude/rules/)
-- Her task sonunda /done çalıştır
-- Context 60K'yı geçerse /compact çalıştır
+- Her task sonunda /vibe-done çalıştır
+- Context 60K'yı geçerse /vibe-compact çalıştır
 ```
 
 ---
@@ -97,7 +97,7 @@ proje-adi/
 │   ├── skills/             ← self-check, handoff-protocol, phase-gate...
 │   └── scripts/            ← db-backup.sh, db-restore.sh
 ├── .claude/                ← committed
-│   ├── commands/           ← /go, /done, /compact, /plan, /scaffold, /status
+│   ├── commands/           ← /vibe-go, /vibe-done, /vibe-compact, /vibe-plan, /vibe-scaffold, /vibe-status
 │   ├── hooks/              ← pre-tool-use, notification, session-start
 │   ├── rules/              ← path-scoped auto-applied rules
 │   └── settings.json       ← hook registrations, permissions
@@ -139,7 +139,7 @@ olacağını ve teknik kararları içeriyor.
 
 ## 3. Mimari Plan Yaz
 
-/plan beegfs
+/vibe-plan beegfs
 
 Spec dokümanlarını temel alarak mimari planı yaz. Plana şunları dahil et:
 - Veritabanı şeması (tablolar, ilişkiler, indeksler)
@@ -157,7 +157,7 @@ docs/constraints/ dizinindeki şablon dosyalarını projeye özel olarak doldur.
 
 ## 5. Geliştirmeye Başla
 
-/go backend-models-ve-auth
+/vibe-go backend-models-ve-auth
 
 Mimari plandaki fazları sırayla uygula. Her faz için:
 - İlgili standardı yükle (.vibecode/standards/ altından)
@@ -172,6 +172,6 @@ Mimari plandaki fazları sırayla uygula. Her faz için:
 - Kütüphane API'lerini Context7'den doğrula
 - Kod aramak için Serena kullan
 - Path-scoped rules otomatik uygulanır (.claude/rules/)
-- Her task sonunda /done çalıştır
-- Context 60K'yı geçerse /compact çalıştır
+- Her task sonunda /vibe-done çalıştır
+- Context 60K'yı geçerse /vibe-compact çalıştır
 ```

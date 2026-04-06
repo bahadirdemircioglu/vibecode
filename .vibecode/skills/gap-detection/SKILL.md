@@ -100,8 +100,8 @@ Present findings as a structured report:
 
 | Trigger | Scope |
 |---------|-------|
-| Session start (`/go`) | Quick scan — critical gaps only |
-| Before `/done` | Full scan — all categories |
+| Session start (`/vibe-go`) | Quick scan — critical gaps only |
+| Before `/vibe-done` | Full scan — all categories |
 | Before release / deployment | Full scan + security focus |
 | On-demand audit request | Full scan with detailed report |
 

@@ -70,5 +70,5 @@ Project scaffolded at [path].
   Structure: [count] directories created
   Templates: [count] files copied
 
-Run /go to begin development.
+Run /vibe-go to begin development.
 ```

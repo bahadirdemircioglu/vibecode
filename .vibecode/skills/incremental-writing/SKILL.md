@@ -53,7 +53,7 @@ section needs to stay in context.
 
 ### Step 6 — Recovery
 
-On session recovery (after `/compact` or new session):
+On session recovery (after `/vibe-compact` or new session):
 1. Read the document file
 2. Scan for sections that still contain `[To be designed]`
 3. Resume at the next empty section

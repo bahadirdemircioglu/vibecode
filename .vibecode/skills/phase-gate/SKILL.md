@@ -148,7 +148,7 @@ exist before the project advances.
 - [x] Tech stack documented
 
 ### Blocking Issues (if FAIL)
-1. No port range assigned — run /go to trigger port assignment
+1. No port range assigned — run /vibe-go to trigger port assignment
 
 ### Concerns (if CONCERNS)
 1. constraints/auth.md has placeholder content — fill before backend phase

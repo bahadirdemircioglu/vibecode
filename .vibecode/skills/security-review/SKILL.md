@@ -19,8 +19,8 @@ metadata:
 ## When to Use
 
 - After writing or modifying code — before marking a task complete
-- When `/security-review` is invoked
-- During `/done` — automatic security pass on changed files
+- When `/vibe-security-review` is invoked
+- During `/vibe-done` — automatic security pass on changed files
 - When reviewing pull requests or branch diffs
 
 ## When NOT to Use
@@ -152,7 +152,7 @@ Check EVERY item for EVERY file under review:
 ### Step 1 — Identify Target Files
 - If file path given: review that file
 - If "last" or no argument: find recently changed files via `git diff --name-only HEAD~1`
-- For `/done` flow: review all files in `git diff --name-only` (staged + unstaged)
+- For `/vibe-done` flow: review all files in `git diff --name-only` (staged + unstaged)
 
 ### Step 2 — Read Each File Completely
 - Read the full file, not just the diff

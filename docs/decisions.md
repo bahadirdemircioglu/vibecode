@@ -64,7 +64,7 @@ tags: [ilgili-anahtar-kelimeler]
 
 1. **Otomatik yakalama (auto-capture):**
    - `make verify` başarısız olduğunda → hata + çözüm otomatik kaydedilir
-   - `/done` sırasında çözülen hatalar → memory'ye yazılır
+   - `/vibe-done` sırasında çözülen hatalar → memory'ye yazılır
 
 2. **Proaktif kontrol (pre-check):**
    - Yeni task başlarken → ilgili modül/teknoloji hata kayıtları otomatik yüklenir
@@ -153,7 +153,7 @@ skill'leri öneri olarak sunacak. Son karar Claude'da kalacak.
 
 ### Context
 
-Doküman güncellemesi şu an tamamen `/done` checklist'ine bağlı. Session
+Doküman güncellemesi şu an tamamen `/vibe-done` checklist'ine bağlı. Session
 boyunca hangi dokümanların etkilendiği takip edilmiyor. Geliştirici `/done`
 demeyi unutursa veya session beklenmedik şekilde biterse dokümanlar güncel
 kalmıyor.
@@ -163,7 +163,7 @@ kalmıyor.
 **Hibrit yaklaşım:**
 1. Session boyunca bir "etkilenen dokümanlar" listesi tutulacak (lightweight tracking)
 2. Her dosya yazımında hook, değişikliğin hangi dokümanları etkilediğini listeye ekleyecek
-3. `/done` aşamasında bu liste işlenecek — toplu güncelleme yapılacak
+3. `/vibe-done` aşamasında bu liste işlenecek — toplu güncelleme yapılacak
 
 Bu yaklaşım her edit'te tam analiz yapmak yerine sadece dosya yolunu
 listeye ekler → minimal token maliyeti.
@@ -202,10 +202,10 @@ tek dosya review desteklemiyordu.
    OWASP Top 10 kontrol listesi, dil-spesifik pattern'ler (Python, JS/TS,
    Go, Java, C#), satır bazlı bulgu + düzeltilmiş kod formatı.
 
-2. **Slash Command:** `/security-review [file|last|staged|branch]` — Manuel
+2. **Slash Command:** `/vibe-security-review [file|last|staged|branch]` — Manuel
    tetikleme için. Dosya yolu, son değişiklik veya branch bazlı review.
 
-3. **`/done` Entegrasyonu:** Adım 3 olarak otomatik security review. Her task
+3. **`/vibe-done` Entegrasyonu:** Adım 3 olarak otomatik security review. Her task
    tamamlandığında değişen kaynak dosyalar OWASP Top 10'a göre taranır.
 
 **Kapsam kararları:**
@@ -230,8 +230,8 @@ tek dosya review desteklemiyordu.
 - Her task tamamlandığında güvenlik review otomatik çalışır
 - Satır bazlı bulgular + düzeltilmiş kod → anında aksiyon alınabilir
 - Tüm diller desteklenir → frontend + backend birlikte taranır
-- `/security-review` ile isteğe bağlı manuel tetikleme
+- `/vibe-security-review` ile isteğe bağlı manuel tetikleme
 
 **Olumsuz:**
-- `/done` akışına eklenen adım toplam token maliyetini artırır (~500-2000 token/dosya)
+- `/vibe-done` akışına eklenen adım toplam token maliyetini artırır (~500-2000 token/dosya)
 - Sadece bilinen pattern'leri tarar — sıfır-gün veya iş mantığı hataları kapsamda değil

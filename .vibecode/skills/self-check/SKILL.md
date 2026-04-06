@@ -87,7 +87,7 @@ is invalid and must be corrected.
  5. Modifying a DB model without an Alembic migration
  6. Editing more than 3 files in a single step
  7. Running complex multi-service investigation in main context — use subagent
- 8. Running /compact without updating CHANGELOG + memories first
+ 8. Running /vibe-compact without updating CHANGELOG + memories first
  9. Reading node_modules/, .next/, dist/, __pycache__/, .git/, *.pyc
 10. Delivering a feature without tests
 11. Starting a task without checking .vibecode/skills/ first
@@ -110,5 +110,5 @@ is invalid and must be corrected.
 28. Dockerfile without non-root USER directive
 29. Skipping make verify before reporting task completion
 30. Using pip/poetry/pipenv instead of uv for Python dependency management
-31. Running /compact without updating .serena/memories/ first
+31. Running /vibe-compact without updating .serena/memories/ first
 ```

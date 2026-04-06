@@ -1,6 +1,6 @@
 ---
 name: handoff-protocol
-description: "Session state preservation protocol. Use when ending sessions, running /compact, or starting new sessions to maintain context continuity."
+description: "Session state preservation protocol. Use when ending sessions, running /vibe-compact, or starting new sessions to maintain context continuity."
 ---
 
 # Handoff Protocol Skill
@@ -55,8 +55,8 @@ YYYY-MM-DD
 
 | Trigger              | Action                                              |
 |----------------------|-----------------------------------------------------|
-| `/done` command      | Write HANDOFF.md as part of the /done sequence       |
-| `/compact` command   | Write HANDOFF.md BEFORE compacting context           |
+| `/vibe-done` command      | Write HANDOFF.md as part of the /vibe-done sequence       |
+| `/vibe-compact` command   | Write HANDOFF.md BEFORE compacting context           |
 | Session ending       | Write HANDOFF.md before the session closes           |
 | Switching tasks      | Write HANDOFF.md to preserve state of current task   |
 
@@ -66,9 +66,9 @@ YYYY-MM-DD
 
 | Trigger              | Action                                              |
 |----------------------|-----------------------------------------------------|
-| `/go [task]`         | Read HANDOFF.md as part of the startup sequence      |
+| `/vibe-go [task]`         | Read HANDOFF.md as part of the startup sequence      |
 | New session          | Read HANDOFF.md during Session Startup Checklist     |
-| After `/compact`     | Read HANDOFF.md to restore context                   |
+| After `/vibe-compact`     | Read HANDOFF.md to restore context                   |
 
 ---
 

@@ -20,8 +20,8 @@
 ### Open Tasks
 - [ ] `.vibecode/memories/errors/` dizin yapısını oluştur
 - [ ] Hata kaydı YAML şemasını doğrula (örnek dosya)
-- [ ] Auto-capture mantığını hook veya `/done` akışına entegre et
-- [ ] Pre-check mantığını `/go` akışına entegre et
+- [ ] Auto-capture mantığını hook veya `/vibe-done` akışına entegre et
+- [ ] Pre-check mantığını `/vibe-go` akışına entegre et
 
 ---
 
@@ -50,16 +50,16 @@
 
 ### Scope
 - `.vibecode/skills/security-review/SKILL.md` — OWASP Top 10 review skill (all languages)
-- `.claude/commands/security-review.md` — `/security-review` slash command
-- `/done` entegrasyonu — otomatik güvenlik taraması (Step 3)
+- `.claude/commands/security-review.md` — `/vibe-security-review` slash command
+- `/vibe-done` entegrasyonu — otomatik güvenlik taraması (Step 3)
 
 ### Dependencies
 - Yok (bağımsız)
 
 ### Completed Tasks
 - [x] Security review skill oluştur (tüm diller, OWASP Top 10)
-- [x] `/security-review` slash command oluştur
-- [x] `/done` akışına otomatik security review entegre et
+- [x] `/vibe-security-review` slash command oluştur
+- [x] `/vibe-done` akışına otomatik security review entegre et
 - [x] CLAUDE.md slash commands tablosunu güncelle
 - [x] Architecture plan yaz
 
@@ -72,7 +72,7 @@
 ### Scope
 - Session-scoped "etkilenen dokümanlar" listesi
 - Hook bazlı dosya-doküman eşleştirme
-- `/done` entegrasyonu — toplu güncelleme
+- `/vibe-done` entegrasyonu — toplu güncelleme
 
 ### Dependencies
 - ADR-002 (Skill Orchestrator) — hook altyapısı paylaşımı
@@ -80,4 +80,4 @@
 ### Open Tasks
 - [ ] Dosya yolu → doküman eşleşme kurallarını tanımla
 - [ ] Tracking state formatını belirle
-- [ ] `/done` komutuna entegre et
+- [ ] `/vibe-done` komutuna entegre et

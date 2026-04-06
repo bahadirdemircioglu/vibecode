@@ -27,7 +27,7 @@ Read the relevant standard before writing code in that area.
 
 ## Session Startup
 
-Use `/go [task]` for the full sequence. Summary:
+Use `/vibe-go [task]` for the full sequence. Summary:
 
 1. **Load state** — read HANDOFF.md if it exists, otherwise fresh session
 2. **Load skills** — scan `.vibecode/skills/` for task-matching skills
@@ -74,7 +74,7 @@ project-root/
 └── docker-compose.yml
 ```
 
-> `backend/`, `frontend/`, `Makefile`, `docker-compose.yml` are created by `/scaffold`.
+> `backend/`, `frontend/`, `Makefile`, `docker-compose.yml` are created by `/vibe-scaffold`.
 
 ---
 
@@ -92,17 +92,17 @@ If a skill defines an anti-pattern, avoid it.
 
 | Command | Action |
 |---------|--------|
-| `/go [task]` | Load state + skills + begin task |
-| `/done` | Verify + update docs + write HANDOFF.md + propose commit |
-| `/plan [feature]` | Architecture plan, wait for approval |
-| `/compact` | Save state to HANDOFF.md, then compact context |
-| `/scaffold [name]` | Initialize new project from template |
-| `/security-review [file]` | OWASP Top 10 security review with patched code |
-| `/status` | Show session state and MCP health |
+| `/vibe-go [task]` | Load state + skills + begin task |
+| `/vibe-done` | Verify + update docs + write HANDOFF.md + propose commit |
+| `/vibe-plan [feature]` | Architecture plan, wait for approval |
+| `/vibe-compact` | Save state to HANDOFF.md, then compact context |
+| `/vibe-scaffold [name]` | Initialize new project from template |
+| `/vibe-security-review [file]` | OWASP Top 10 security review with patched code |
+| `/vibe-status` | Show session state and MCP health |
 
 ---
 
-## /done Checklist
+## /vibe-done Checklist
 
 1. Summarize changes
 2. Run `make verify` (lint + test + audit) — fix failures before continuing
@@ -128,15 +128,15 @@ If a skill defines an anti-pattern, avoid it.
 ## Quick Reference
 
 ```
-New project?          →  /scaffold → /plan → /go
-Existing project?     →  /go [task]
+New project?          →  /vibe-scaffold → /vibe-plan → /vibe-go
+Existing project?     →  /vibe-go [task]
 Searching code?       →  Serena (preferred) or Grep
 3rd party library?    →  Context7 or official docs
 Backend code?         →  .vibecode/standards/backend.md
 Frontend code?        →  .vibecode/standards/frontend.md
 Tests?                →  .vibecode/standards/testing.md
-Done with task?       →  /done
-Context bloating?     →  /compact
-Session state?        →  /status
+Done with task?       →  /vibe-done
+Context bloating?     →  /vibe-compact
+Session state?        →  /vibe-status
 Error history?        →  .vibecode/memories/errors/
 ```

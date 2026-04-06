@@ -61,4 +61,4 @@ body with details
 Present to user for approval. Do NOT commit automatically.
 
 ### 8. Remind
-> Run `/compact` if context is large before starting the next task.
+> Run `/vibe-compact` if context is large before starting the next task.
