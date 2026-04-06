@@ -6,10 +6,31 @@ description: "Start a task: load state, check tools, scan skills, confirm scope"
 
 Execute these steps in order:
 
-### 0. MCP Check
-Verify that required MCP servers are running before any work begins:
-1. **Serena** — Try calling a Serena tool (e.g. `serena_search_symbols` or list available tools). If it responds: "Serena: OK". If not: "Serena: UNAVAILABLE — code navigation will fall back to Grep/Read"
-2. **Context7** — Try calling a Context7 tool (e.g. list available tools). If it responds: "Context7: OK". If not: "Context7: UNAVAILABLE — library docs will fall back to official docs"
+### 0. MCP Setup & Check
+Ensure MCP servers are configured and running before any work begins:
+
+1. **Check `.mcp.json`** — If it does NOT exist in the project root, create it:
+```json
+{
+  "mcpServers": {
+    "serena": {
+      "command": "uvx",
+      "args": ["--from", "git+https://github.com/oraios/serena", "serena", "start-mcp-server"]
+    },
+    "context7": {
+      "command": "npx",
+      "args": ["-y", "@upstash/context7-mcp@latest"]
+    }
+  }
+}
+```
+If the file was just created, tell the user: "`.mcp.json` created — session restart needed for MCP servers to load. Run `/vibe-go` again after restart."  Then **STOP**.
+
+2. **Verify MCPs** — Try calling a Serena tool and a Context7 tool:
+   - Serena responds → "Serena: OK"
+   - Serena silent → "Serena: UNAVAILABLE — falling back to Grep/Read"
+   - Context7 responds → "Context7: OK"
+   - Context7 silent → "Context7: UNAVAILABLE — falling back to official docs"
 
 If Serena is unavailable, WARN the user and ask if they want to continue without it. Serena is critical for token-efficient code navigation.
 
