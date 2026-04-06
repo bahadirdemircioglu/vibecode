@@ -170,6 +170,60 @@ This log should be preserved for documentation.
 
 ---
 
+## Divergent Thinking Lenses (Optional Phase)
+
+When exploring design approaches in step 5, use these lenses to generate creative alternatives:
+
+| Lens | Prompt |
+|------|--------|
+| **Inversion** | What if we solved the opposite problem? |
+| **Constraint Removal** | What would we build with unlimited time/budget? |
+| **Audience Shift** | What if the user was a developer? A non-technical person? A child? |
+| **Combination** | Can we combine two existing features to solve this? |
+| **Simplification** | What's the version that takes 1 day instead of 1 week? |
+| **10x** | What if we needed to handle 10x the scale? |
+| **Expert Lens** | How would [domain expert] approach this differently? |
+
+Use 2-3 lenses maximum per session. Not every idea needs all lenses.
+
+---
+
+## "Not Doing" List (Mandatory Output)
+
+Every brainstorming session MUST produce a "Not Doing (and Why)" section:
+
+```markdown
+## Not Doing (and Why)
+- Real-time sync — premature for MVP, polling is sufficient
+- Mobile app — web-first, evaluate mobile after 100 users
+- Custom auth — use existing provider, don't build from scratch
+```
+
+This is as important as what we ARE doing. It prevents scope creep and documents conscious decisions to exclude.
+
+---
+
+## Spec Template (Optional Output)
+
+For larger features, produce a specification document with these 6 areas:
+
+1. **Objective** — What are we building and why?
+2. **Commands/API** — What operations does it support?
+3. **Project Structure** — Where does the code live?
+4. **Code Style** — Any special patterns for this feature?
+5. **Testing Strategy** — How will we verify it works?
+6. **Boundaries** — Always do / Ask first / Never do
+
+The Boundaries section is particularly valuable as a guardrail:
+```markdown
+### Boundaries
+- **Always:** Validate input, log errors, write tests
+- **Ask First:** Change database schema, add dependencies, modify shared code
+- **Never:** Skip tests, hardcode secrets, break existing API contracts
+```
+
+---
+
 ## After the Design
 
 ### 📄 Documentation
