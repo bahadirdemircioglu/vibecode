@@ -80,9 +80,10 @@ project-root/
 
 ## Skills
 
-Load matching skills from `.vibecode/skills/` at task start.
-Project skills override user-level skills when both exist.
+**Lazy loading:** Do NOT read skill files at task start. Only list matching skills by name.
+Load a skill's SKILL.md content ONLY when about to work in that area — and prefer loading into the subagent that needs it, not the main context.
 
+Project skills override user-level skills when both exist.
 If a skill defines a template, use it.
 If a skill defines an anti-pattern, avoid it.
 
