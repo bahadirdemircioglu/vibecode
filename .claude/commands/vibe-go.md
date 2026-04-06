@@ -38,10 +38,12 @@ If Serena is unavailable, WARN the user and ask if they want to continue without
 - Read `HANDOFF.md` if it exists, summarize previous session
 - If not found: "Fresh session — no prior state"
 
-### 2. Load Skills
+### 2. Load Skills (MANDATORY)
+**Do NOT skip this step. Skills MUST be loaded before any coding begins.**
 - Session startup hook already detected matching skills from project config files
-- Read the listed skill files from `.vibecode/skills/` before starting work
+- Read EVERY listed skill file from `.vibecode/skills/` — actually open and read the SKILL.md content
 - If skills need manual lookup: scan `.vibecode/skills/` for task-relevant skills
+- Skills define patterns, templates, and anti-patterns — they are the coding standards
 
 ### 3. Load Constraints
 - Read `docs/constraints/*.md` if the directory exists
@@ -51,8 +53,15 @@ If Serena is unavailable, WARN the user and ask if they want to continue without
 Ready: $ARGUMENTS
   State: [fresh / resumed from HANDOFF.md]
   MCP: Serena [OK/UNAVAILABLE] | Context7 [OK/UNAVAILABLE]
-  Skills: [loaded list]
+  Skills: [loaded — actually read: list]
   Constraints: [loaded list or none]
+  Model routing: Opus (planning/review) → Sonnet (code writing)
 ```
+
+### 5. Model Routing
+When coding begins:
+- **Planning, analysis, review, debugging** → Stay on Opus (main context)
+- **Writing/editing code** → Delegate to subagents with `model: "sonnet"` for token efficiency
+- **Never write code directly on Opus** — always spawn a Sonnet subagent for implementation
 
 Begin work after confirmation.

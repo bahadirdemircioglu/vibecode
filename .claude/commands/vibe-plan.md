@@ -6,6 +6,8 @@ description: "Create an architecture plan for a new feature or project"
 
 Create a detailed architecture plan. Do NOT write any code until the plan is approved.
 
+> **Model:** This command runs entirely on Opus. Do NOT delegate to Sonnet subagents — planning requires deep reasoning.
+
 ### 0. MCP Setup & Check
 Ensure MCP servers are configured and running before any work begins:
 
