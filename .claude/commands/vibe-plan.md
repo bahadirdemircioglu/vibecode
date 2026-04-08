@@ -17,7 +17,7 @@ Ensure MCP servers are configured and running before any work begins:
   "mcpServers": {
     "serena": {
       "command": "uvx",
-      "args": ["--from", "git+https://github.com/oraios/serena", "serena", "start-mcp-server"]
+      "args": ["--from", "git+https://github.com/oraios/serena", "serena", "start-mcp-server", "--project-from-cwd"]
     },
     "context7": {
       "command": "npx",
@@ -28,11 +28,36 @@ Ensure MCP servers are configured and running before any work begins:
 ```
 If the file was just created, tell the user: "`.mcp.json` created — session restart needed for MCP servers to load. Run `/vibe-go` again after restart."  Then **STOP**.
 
-2. **Verify MCPs** — Try calling a Serena tool and a Context7 tool:
-   - Serena responds → "Serena: OK"
-   - Serena silent → "Serena: UNAVAILABLE — falling back to Grep/Read"
-   - Context7 responds → "Context7: OK"
-   - Context7 silent → "Context7: UNAVAILABLE — falling back to official docs"
+2. **Check `.serena/project.yml`** — If it does NOT exist, auto-detect and create:
+   - Detect languages from project files:
+     - `*.py`, `pyproject.toml`, `requirements.txt` → `python`
+     - `package.json`, `*.ts`, `*.tsx` → `typescript`
+     - `go.mod` → `go`
+     - `Cargo.toml` → `rust`
+     - `Gemfile` → `ruby`
+     - `pom.xml`, `build.gradle` → `java`
+     - `build.gradle.kts` → `kotlin`
+     - `*.csproj`, `*.sln` → `csharp`
+     - `pubspec.yaml` → `dart`
+     - `mix.exs` → `elixir`
+     - `composer.json` → `php`
+     - `*.tf` → `terraform`
+     - `*.sh` → `bash`
+     - `*.swift`, `Package.swift` → `swift`
+     - `*.scala`, `build.sbt` → `scala`
+     - `*.zig` → `zig`
+     - `*.lua` → `lua`
+     - `*.cpp`, `*.c`, `CMakeLists.txt` → `cpp`
+   - Create `.serena/project.yml` with detected languages
+   - Create `.serena/.gitignore` with: `/cache`, `/project.local.yml`, `/memories`
+   - WARN: "`.serena/project.yml` created with languages: [list]. Restart session for Serena to pick it up." Then **STOP**.
+
+3. **Verify MCPs** — Call `get_current_config` on Serena:
+   - Active project with correct languages → "Serena: OK"
+   - No active project → "Serena: UNAVAILABLE — restart session"
+   - Context7: try a Context7 tool call
+     - responds → "Context7: OK"
+     - silent → "Context7: UNAVAILABLE — falling back to official docs"
 
 If Serena is unavailable, WARN the user and ask if they want to continue without it. Serena is critical for token-efficient code navigation.
 

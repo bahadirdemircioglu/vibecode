@@ -49,6 +49,28 @@ From vibecode, copy:
 - `.vibecode/templates/Makefile` → `Makefile`
 - `.vibecode/templates/docker-compose.yml` → `docker-compose.yml`
 
+### 3b. Configure Serena
+- Create `.serena/` directory in target project
+- Copy `.vibecode/templates/serena-project.yml` → `.serena/project.yml`
+  - Replace `{{PROJECT_NAME}}` with actual project name (kebab-case)
+  - Adjust `languages` list if stack differs from default (Python + TypeScript + bash)
+- Copy `.vibecode/templates/serena-gitignore` → `.serena/.gitignore`
+- Create `.mcp.json` with `--project-from-cwd` flag:
+```json
+{
+  "mcpServers": {
+    "serena": {
+      "command": "uvx",
+      "args": ["--from", "git+https://github.com/oraios/serena", "serena", "start-mcp-server", "--project-from-cwd"]
+    },
+    "context7": {
+      "command": "npx",
+      "args": ["-y", "@upstash/context7-mcp@latest"]
+    }
+  }
+}
+```
+
 ### 4. Port Assignment
 - Ask user for their ports file path
 - Read the file, find the next available 10-port block
