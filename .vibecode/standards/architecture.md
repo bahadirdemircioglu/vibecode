@@ -90,3 +90,45 @@ When a task requires **multi-service debugging** (backend + frontend + DB):
 - Spawn a subagent for investigation
 - Keep the main context clean for decision-making
 - Document findings before acting
+
+### Sonnet Subagent Delegasyon Protokolü (Opus ↔ Sonnet)
+
+Sonnet subagent'a kod yazdırırken **üç fazlı protokol** uygulanır:
+
+**Faz 1 — SPEC (Opus):** Her kod değişikliği için mikro-spec yaz:
+- **Dosya yolu** ve değişiklik türü (create / modify)
+- **Pseudo-code** seviyesinde logic (adım adım ne yapılacak)
+- **Pattern referansı** — mevcut codebase'den örnek dosya/fonksiyon göster
+- **YAPMA listesi** — scope dışı eklemeler, gereksiz abstraction'lar
+- **1-2 satır değişiklik** → mikro-spec atla, Opus direkt Edit ile yazsın
+
+**Faz 2 — WRITE (Sonnet subagent):**
+- Mikro-spec'i birebir koda çevir — ekleme/çıkarma yapma
+- Pattern referansı varsa o dosyayı oku, aynı stili kullan
+- Belirsizlik varsa **kod yazma**, `BELIRSIZ: [soru]` olarak raporla
+- Skill/standard içeriğini Opus prompt'a ekler — Sonnet aramaz
+
+Subagent prompt şablonu:
+```
+Sen bir kod yazma asistanısın. Verilen mikro-spec'i birebir koda çevir.
+KURALLAR:
+1. Spec'te yazanı AYNEN uygula — ekleme/çıkarma yapma
+2. Pattern referansı varsa o dosyayı oku ve aynı stili kullan
+3. YAPMA listesindeki şeyleri YAPMA
+4. Belirsizlik varsa kod yazma — "BELIRSIZ: [soru]" olarak raporla
+
+MIKRO-SPEC:
+[spec içeriği buraya]
+```
+
+**Faz 3 — REVIEW (Opus):** Sonnet döndükten sonra **zorunlu kontrol**:
+1. Yazılan kodu oku (Read tool)
+2. Spec'e uygunluk: tüm talimatlar uygulandı mı, YAPMA listesine uyuldu mu?
+3. Kalite: mevcut codebase pattern'leriyle tutarlı mı, security açığı var mı?
+4. Karar:
+   - ✅ OK → sonraki mikro-spec'e geç
+   - 🔧 Küçük fix (1-5 satır) → Opus kendi düzeltir (Edit tool)
+   - ❌ Büyük sorun → yeni mikro-spec yaz, Sonnet'e tekrar gönder
+   - **Max 2 Sonnet denemesi** — 2. denemede de başarısızsa Opus kendi yazar
+
+**Paralel delegasyon:** Bağımsız dosyalar için birden fazla Sonnet subagent paralel çalışabilir. Dosyalar arası bağımlılık varsa sıralı çalıştır.

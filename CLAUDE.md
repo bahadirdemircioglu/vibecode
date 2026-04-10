@@ -129,9 +129,15 @@ If a skill defines an anti-pattern, avoid it.
 3. Write tests for every new feature or change
 4. Run `make verify` before reporting task complete — fix failures, don't skip
 5. Update CHANGELOG.md after every change
-6. Use Serena for code navigation when available — prefer it over grep
+6. Serena aktifken kod okuma sırası: `get_symbols_overview` → `find_symbol(include_body=False)` → gerekli gövdeleri `find_symbol(include_body=True)` ile oku. Tüm dosyayı Read ile okuma — sadece config/doc dosyaları veya Serena'nın kapsamadığı dosyalar için.
+   Serena memory = proje bilgisi (yapı, standartlar, komutlar). Claude auto-memory = kullanıcı tercihleri.
 7. Max 3 files per step — use subagents for larger changes
 8. New feature or architecture change — write plan, wait for approval
+9. Sonnet subagent'lara mikro-spec ver — yüksek seviye talimat verme.
+   Mikro-spec: dosya yolu + değişiklik türü + pseudo-code + pattern referansı + YAPMA listesi.
+   1-2 satır değişiklik → Opus direkt yazsın, mikro-spec gereksiz.
+   3+ satır → mikro-spec zorunlu. Sonnet döndükten sonra kodu oku ve review et.
+   Max 2 Sonnet denemesi — 2. başarısızlıkta Opus devralır.
 
 ---
 

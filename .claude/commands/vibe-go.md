@@ -29,35 +29,88 @@ Ensure MCP servers are configured and running before any work begins:
 
 If Serena is unavailable, WARN the user and ask if they want to continue without it. Serena is critical for token-efficient code navigation.
 
-### 1. Load State
+### 1. Serena Onboarding & Language Check
+
+**Onboarding kontrolü:**
+- Call `check_onboarding_performed` on Serena
+- If not performed → WARN: "Serena onboarding gerekli. Onboarding context window'u doldurur — şimdi çalıştırmamı ister misiniz? (sonra yeni session gerekecek)"
+- If user approves → run onboarding (Serena will guide), then suggest new session
+- If performed → `list_memories` ile mevcut memory'leri listele, devam et
+
+**Dil kontrolü:**
+- Projedeki dosya uzantılarını kontrol et:
+  - `*.py` / `pyproject.toml` → python gerekli
+  - `package.json` / `*.ts` / `*.tsx` → typescript gerekli
+  - `go.mod` → go gerekli
+  - `Cargo.toml` → rust gerekli
+  - `*.sh` → bash gerekli
+- `.serena/project.yml`'deki `languages` listesiyle karşılaştır
+- Eksik dil varsa → project.yml'e ekle + WARN: "Dil eklendi — restart gerekebilir"
+
+### 1.5 Permission Check
+
+Task'ın gerektirdiği yetkileri kontrol et. Projedeki dosya yapısına göre:
+
+**Backend projesi tespit edilirse** (`backend/`, `*.py`, `pyproject.toml`):
+- `pip install`, `python -m pytest`, `alembic`, `docker compose up/build/down/restart` gerekebilir
+
+**Frontend projesi tespit edilirse** (`frontend/`, `package.json`, `*.tsx`):
+- `npm install`, `npm run`, `npx`, `node` gerekebilir
+
+**Her iki durumda:**
+- `mkdir`, `cp`, `mv` dosya sistemi komutları gerekebilir
+
+Eksik yetki varsa kullanıcıya sor:
+```
+Bu task için şu ek yetkiler gerekli: [liste]
+settings.local.json'a ekleyeyim mi?
+```
+Kullanıcı onaylarsa → `.claude/settings.local.json`'a ilgili allow kurallarını ekle.
+
+### 2. Load State
 - Read `HANDOFF.md` if it exists, summarize previous session
 - If not found: "Fresh session — no prior state"
 
-### 2. Identify Skills (DO NOT READ YET)
+### 3. Identify Skills (DO NOT READ YET)
 **List relevant skills but do NOT load their content into context.**
 - Note which skills from `.vibecode/skills/` match the task (by name/description only)
 - Skills will be loaded **lazily** — only when about to work on that specific area
 - Example: don't load `react-patterns` if the task is backend-only
 
-### 3. Load Constraints
+### 4. Load Constraints
 - Read `docs/constraints/*.md` ONLY if the task touches constrained areas
 - Skip if task is clearly unrelated (e.g., don't load database constraints for a CSS fix)
 
-### 4. Confirm Ready
+### 5. Confirm Ready
 ```
 Ready: $ARGUMENTS
   State: [fresh / resumed from HANDOFF.md]
   MCP: Serena [OK/UNAVAILABLE] | Context7 [OK/UNAVAILABLE]
+  Serena: Onboarding [done/needed] | Memories [count] | Languages [list]
+  Permissions: [OK / eksik yetkiler listesi]
   Skills available: [list by name — NOT loaded yet]
   Constraints: [loaded list or "skipped — not relevant"]
   Model routing: Opus (planning/review) → Sonnet (code writing)
 ```
 
-### 5. Context Rules
+### 6. Context Rules & Model Routing
 **Minimize context at all times:**
 - **Skills:** Load a skill ONLY when about to use it. Read it into the subagent that needs it, not the main context.
 - **Standards:** Load the relevant standard ONLY when about to write code in that area.
 - **Files:** Don't read files "just in case." Read only what the current step requires.
-- **Model routing:** Opus plans/reviews. Sonnet subagents write code (pass relevant skill content to the subagent prompt).
+
+**Üç Fazlı Delegasyon Protokolü (Opus ↔ Sonnet):**
+
+| Faz | Model | Ne Yapar |
+|-----|-------|----------|
+| SPEC | Opus | Mikro-spec üretir: dosya yolu + pseudo-code + pattern referansı + YAPMA listesi |
+| WRITE | Sonnet | Mikro-spec'i birebir koda çevirir. Belirsizse kod yazmaz, raporlar |
+| REVIEW | Opus | Kodu okur, spec'e uygunluğu kontrol eder. Küçük fix = Opus yapar |
+
+**Kısa yol:** 1-2 satır değişiklik → mikro-spec atla, Opus direkt yazsın.
+**Limit:** Max 2 Sonnet denemesi — 2. başarısızlıkta Opus devralır.
+**Paralel:** Bağımsız dosyalar için Sonnet subagent'lar paralel çalışabilir.
+
+Detaylı protokol: `.vibecode/standards/architecture.md §4`
 
 Begin work after confirmation.

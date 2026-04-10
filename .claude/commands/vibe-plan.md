@@ -24,6 +24,12 @@ Ensure MCP servers are configured and running before any work begins:
 
 If Serena is unavailable, WARN the user and ask if they want to continue without it. Serena is critical for token-efficient code navigation.
 
+### 0.5 Serena Planning Mode
+Switch Serena to read-only planning mode to prevent accidental file writes during planning:
+- Call `switch_modes` with `["planning", "interactive"]`
+- This disables all write tools in Serena — only read/search/analysis tools remain active
+- After plan is approved and implementation begins (via `/vibe-go`), mode automatically returns to `["editing", "interactive"]`
+
 ### 1. Load Standards
 - Read `.vibecode/standards/architecture.md`
 - Read all files in `docs/constraints/*.md`
