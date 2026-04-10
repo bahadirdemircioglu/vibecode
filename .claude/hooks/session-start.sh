@@ -173,6 +173,15 @@ if [[ -f "$SERENA_YML_CHECK" ]]; then
   done
 fi
 
+# Validate .mcp.json — fix wrong Serena command ("mcp" → "start-mcp-server")
+MCP_JSON="$PROJECT_ROOT/.mcp.json"
+if [[ -f "$MCP_JSON" ]]; then
+  if grep -q '"serena"' "$MCP_JSON" && grep -q '"mcp"' "$MCP_JSON" && ! grep -q '"start-mcp-server"' "$MCP_JSON"; then
+    sedi 's/"mcp"/"start-mcp-server"/g' "$MCP_JSON"
+    OUTPUT+="FIXED: .mcp.json Serena command corrected (mcp → start-mcp-server)"$'\n'
+  fi
+fi
+
 if [[ -n "$INSTALL_NEEDED" ]]; then
   OUTPUT+="ACTION: Install missing dependencies and restart session"$'\n'
 fi
