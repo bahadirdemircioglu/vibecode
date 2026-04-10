@@ -32,10 +32,12 @@ If Serena is unavailable, WARN the user and ask if they want to continue without
 ### 1. Serena Onboarding & Language Check
 
 **Onboarding kontrolü:**
-- Call `check_onboarding_performed` on Serena
-- If not performed → WARN: "Serena onboarding gerekli. Onboarding context window'u doldurur — şimdi çalıştırmamı ister misiniz? (sonra yeni session gerekecek)"
-- If user approves → run onboarding (Serena will guide), then suggest new session
-- If performed → `list_memories` ile mevcut memory'leri listele, devam et
+- Call `list_memories` on Serena
+- If memories exist → list them, devam et
+- If memories are empty → session-start hook otomatik oluşturmuş olmalı, yine de kontrol et:
+  - `.serena/memories/` dizininde dosya var mı? Varsa Serena restart gerekebilir
+  - Yoksa → proje yapısından temel memory'leri `write_memory` ile oluştur (project_overview, suggested_commands, tech_stack, task_completion)
+  - Context-yoğun tam onboarding YAPMA — hafif memory'ler yeterli
 
 **Dil kontrolü:**
 - Projedeki dosya uzantılarını kontrol et:

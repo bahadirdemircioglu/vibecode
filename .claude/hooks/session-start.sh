@@ -205,6 +205,105 @@ if [[ -f "$SERENA_YML" ]]; then
   fi
 fi
 
+# 0c. Auto-onboarding — if .serena/memories/ is empty, create basic memories from project files
+# This is a lightweight alternative to Serena's full onboarding (which consumes the entire context window)
+# Serena memories are just markdown files — we can write them directly
+SERENA_MEM_DIR="$PROJECT_ROOT/.serena/memories"
+if [[ -d "$PROJECT_ROOT/.serena" ]]; then
+  mkdir -p "$SERENA_MEM_DIR"
+  MEM_COUNT=$(find "$SERENA_MEM_DIR" -name '*.md' 2>/dev/null | wc -l | tr -d ' ')
+
+  if [[ "$MEM_COUNT" -eq 0 ]]; then
+    DIR_NAME=$(basename "$PROJECT_ROOT")
+
+    # --- project_overview.md ---
+    OVERVIEW="# Project: $DIR_NAME\n\n"
+    if [[ -f "$PROJECT_ROOT/CLAUDE.md" ]]; then
+      # Extract project structure section if it exists
+      OVERVIEW+="## Source\nGenerated from CLAUDE.md and project file analysis.\n\n"
+    fi
+    OVERVIEW+="## Structure\n\`\`\`\n"
+    # List top-level dirs (excluding hidden except .vibecode/.claude/.serena)
+    for d in "$PROJECT_ROOT"/*/; do
+      [[ -d "$d" ]] && OVERVIEW+="$(basename "$d")/\n"
+    done
+    OVERVIEW+="\`\`\`\n"
+    # Detect tech stack
+    OVERVIEW+="\n## Detected Stack\n"
+    [[ -n "$(find "$PROJECT_ROOT" -maxdepth 3 -name '*.py' 2>/dev/null | head -1)" ]] && OVERVIEW+="- Python\n"
+    [[ -n "$(find "$PROJECT_ROOT" -maxdepth 3 -name '*.ts' -o -name '*.tsx' 2>/dev/null | head -1)" ]] && OVERVIEW+="- TypeScript\n"
+    [[ -n "$(find "$PROJECT_ROOT" -maxdepth 3 -name '*.go' 2>/dev/null | head -1)" ]] && OVERVIEW+="- Go\n"
+    [[ -n "$(find "$PROJECT_ROOT" -maxdepth 3 -name '*.rs' 2>/dev/null | head -1)" ]] && OVERVIEW+="- Rust\n"
+    [[ -n "$(find "$PROJECT_ROOT" -maxdepth 3 -name '*.java' 2>/dev/null | head -1)" ]] && OVERVIEW+="- Java\n"
+    [[ -f "$PROJECT_ROOT/docker-compose.yml" || -f "$PROJECT_ROOT/docker-compose.yaml" ]] && OVERVIEW+="- Docker Compose\n"
+    [[ -f "$PROJECT_ROOT/Makefile" ]] && OVERVIEW+="- Makefile\n"
+    printf "$OVERVIEW" > "$SERENA_MEM_DIR/project_overview.md"
+
+    # --- suggested_commands.md ---
+    CMDS="# Suggested Commands\n\n"
+    if [[ -f "$PROJECT_ROOT/Makefile" ]]; then
+      CMDS+="## Make targets\n\`\`\`\n"
+      # Extract make targets with descriptions
+      grep -E '^[a-zA-Z_-]+:.*##' "$PROJECT_ROOT/Makefile" 2>/dev/null | sed 's/:.*## /: /' | while read -r line; do
+        CMDS+="$line\n"
+      done
+      # Fallback: just list .PHONY targets
+      PHONY=$(grep -m1 '^\.PHONY:' "$PROJECT_ROOT/Makefile" 2>/dev/null | sed 's/\.PHONY: //')
+      [[ -n "$PHONY" ]] && CMDS+="Available: $PHONY\n"
+      CMDS+="\`\`\`\n"
+    fi
+    CMDS+="\n## Git (pre-allowed)\ngit status, git diff, git log, git add, git commit, git push\n"
+    printf "$CMDS" > "$SERENA_MEM_DIR/suggested_commands.md"
+
+    # --- tech_stack.md ---
+    TECH="# Tech Stack\n\n"
+    # Python deps
+    for pyfile in "$PROJECT_ROOT/backend/pyproject.toml" "$PROJECT_ROOT/pyproject.toml" "$PROJECT_ROOT/requirements.txt"; do
+      if [[ -f "$pyfile" ]]; then
+        TECH+="## Python\nDeps file: $(basename "$pyfile")\n"
+        grep -qi 'fastapi' "$pyfile" 2>/dev/null && TECH+="- FastAPI\n"
+        grep -qi 'sqlalchemy' "$pyfile" 2>/dev/null && TECH+="- SQLAlchemy\n"
+        grep -qi 'alembic' "$pyfile" 2>/dev/null && TECH+="- Alembic\n"
+        grep -qi 'pydantic' "$pyfile" 2>/dev/null && TECH+="- Pydantic\n"
+        grep -qi 'pytest' "$pyfile" 2>/dev/null && TECH+="- Pytest\n"
+        grep -qi 'django' "$pyfile" 2>/dev/null && TECH+="- Django\n"
+        grep -qi 'flask' "$pyfile" 2>/dev/null && TECH+="- Flask\n"
+        grep -qi 'celery' "$pyfile" 2>/dev/null && TECH+="- Celery\n"
+        break
+      fi
+    done
+    # JS/TS deps
+    for jsfile in "$PROJECT_ROOT/frontend/package.json" "$PROJECT_ROOT/package.json"; do
+      if [[ -f "$jsfile" ]]; then
+        TECH+="\n## JavaScript/TypeScript\nDeps file: $(basename "$jsfile")\n"
+        grep -qi '"react"' "$jsfile" 2>/dev/null && TECH+="- React\n"
+        grep -qi '"next"' "$jsfile" 2>/dev/null && TECH+="- Next.js\n"
+        grep -qi '"vue"' "$jsfile" 2>/dev/null && TECH+="- Vue.js\n"
+        grep -qi '"angular"' "$jsfile" 2>/dev/null && TECH+="- Angular\n"
+        grep -qi '"zustand"' "$jsfile" 2>/dev/null && TECH+="- Zustand\n"
+        grep -qi 'tanstack' "$jsfile" 2>/dev/null && TECH+="- TanStack Query\n"
+        grep -qi '"tailwindcss"' "$jsfile" 2>/dev/null && TECH+="- Tailwind CSS\n"
+        grep -qi '"prisma"' "$jsfile" 2>/dev/null && TECH+="- Prisma\n"
+        grep -qi '"vitest"\|"jest"' "$jsfile" 2>/dev/null && TECH+="- Vitest/Jest\n"
+        grep -qi '"express"' "$jsfile" 2>/dev/null && TECH+="- Express\n"
+        grep -qi '"nestjs"\|"@nestjs"' "$jsfile" 2>/dev/null && TECH+="- NestJS\n"
+        break
+      fi
+    done
+    printf "$TECH" > "$SERENA_MEM_DIR/tech_stack.md"
+
+    # --- task_completion.md ---
+    TASK="# Task Completion Checklist\n\n"
+    TASK+="1. Run \`make verify\` (or equivalent lint+test+audit)\n"
+    TASK+="2. Update docs/CHANGELOG.md\n"
+    TASK+="3. Write HANDOFF.md for next session\n"
+    TASK+="4. Propose commit message (Conventional Commits)\n"
+    printf "$TASK" > "$SERENA_MEM_DIR/task_completion.md"
+
+    OUTPUT+="SERENA: auto-onboarding — created ${DIR_NAME} memories (project_overview, suggested_commands, tech_stack, task_completion)"$'\n'
+  fi
+fi
+
 # 1. Check HANDOFF.md
 if [[ -f "$PROJECT_ROOT/HANDOFF.md" ]]; then
   STATUS=$(grep -m1 '^\- \*\*Status:\*\*' "$PROJECT_ROOT/HANDOFF.md" 2>/dev/null | sed 's/.*\*\*Status:\*\* *//' || echo "unknown")
