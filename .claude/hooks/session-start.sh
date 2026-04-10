@@ -6,6 +6,98 @@ set -euo pipefail
 
 PROJECT_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
 OUTPUT=""
+INSTALL_NEEDED=""
+
+# -1. MCP dependency check — ensure Serena and Context7 can run
+# Serena requires: uv/uvx (Python), language servers per language
+# Context7 requires: node/npx
+
+if ! command -v uv &>/dev/null; then
+  if command -v brew &>/dev/null; then
+    brew install uv --quiet 2>/dev/null
+    OUTPUT+="INSTALLED: uv (via Homebrew) — Serena dependency"$'\n'
+  else
+    OUTPUT+="MISSING: uv — Serena will not work. Install: curl -LsSf https://astral.sh/uv/install.sh | sh"$'\n'
+    INSTALL_NEEDED="true"
+  fi
+fi
+
+if ! command -v node &>/dev/null; then
+  if command -v brew &>/dev/null; then
+    brew install node --quiet 2>/dev/null
+    OUTPUT+="INSTALLED: node (via Homebrew) — Context7 dependency"$'\n'
+  else
+    OUTPUT+="MISSING: node — Context7 will not work. Install: brew install node"$'\n'
+    INSTALL_NEEDED="true"
+  fi
+fi
+
+# Check language servers based on .serena/project.yml languages
+SERENA_YML_CHECK="$PROJECT_ROOT/.serena/project.yml"
+if [[ -f "$SERENA_YML_CHECK" ]]; then
+  LANGS=$(grep -A 20 '^languages:' "$SERENA_YML_CHECK" | grep '^- ' | sed 's/^- //' | tr -d ' ')
+
+  for LANG in $LANGS; do
+    case "$LANG" in
+      bash)
+        if command -v npm &>/dev/null && ! command -v bash-language-server &>/dev/null; then
+          npm install -g bash-language-server --silent 2>/dev/null
+          OUTPUT+="INSTALLED: bash-language-server (via npm) — Serena bash LSP"$'\n'
+        elif ! command -v npm &>/dev/null && ! command -v bash-language-server &>/dev/null; then
+          OUTPUT+="MISSING: bash-language-server — npm not available for install"$'\n'
+        fi
+        ;;
+      python|python_jedi)
+        # Python LSPs are auto-managed by Serena via uv — no manual install needed
+        ;;
+      typescript|typescript_vts)
+        # TypeScript LSPs are auto-managed by Serena — no manual install needed
+        ;;
+      go)
+        if ! command -v gopls &>/dev/null; then
+          if command -v go &>/dev/null; then
+            go install golang.org/x/tools/gopls@latest 2>/dev/null
+            OUTPUT+="INSTALLED: gopls — Serena Go LSP"$'\n'
+          else
+            OUTPUT+="MISSING: gopls — install Go first, then: go install golang.org/x/tools/gopls@latest"$'\n'
+          fi
+        fi
+        ;;
+      rust)
+        if ! command -v rust-analyzer &>/dev/null; then
+          if command -v rustup &>/dev/null; then
+            rustup component add rust-analyzer 2>/dev/null
+            OUTPUT+="INSTALLED: rust-analyzer (via rustup) — Serena Rust LSP"$'\n'
+          else
+            OUTPUT+="MISSING: rust-analyzer — install rustup first: curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh"$'\n'
+          fi
+        fi
+        ;;
+      cpp)
+        if ! command -v clangd &>/dev/null; then
+          if command -v brew &>/dev/null; then
+            brew install llvm --quiet 2>/dev/null
+            OUTPUT+="INSTALLED: clangd (via llvm) — Serena C/C++ LSP"$'\n'
+          else
+            OUTPUT+="MISSING: clangd — install: brew install llvm"$'\n'
+          fi
+        fi
+        ;;
+      java)
+        # jdtls is auto-managed by Serena — no manual install needed
+        ;;
+      csharp|csharp_omnisharp)
+        if ! command -v dotnet &>/dev/null; then
+          OUTPUT+="MISSING: dotnet SDK — required for C# LSP. Install: brew install dotnet"$'\n'
+        fi
+        ;;
+    esac
+  done
+fi
+
+if [[ -n "$INSTALL_NEEDED" ]]; then
+  OUTPUT+="ACTION: Install missing dependencies and restart session"$'\n'
+fi
 
 # 0. Auto git-init if no .git (fresh clone with deleted .git)
 if [[ ! -d "$PROJECT_ROOT/.git" ]]; then
