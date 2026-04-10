@@ -9,7 +9,8 @@ OUTPUT=""
 INSTALL_NEEDED=""
 
 # -1. MCP dependency check — ensure Serena and Context7 can run
-# Serena requires: uv/uvx (Python), language servers per language
+# Serena requires: uv/uvx (Python 3.13+), language servers per language
+# Serena init: uvx -p 3.13 --from git+https://github.com/oraios/serena serena init
 # Context7 requires: node/npx
 
 if ! command -v uv &>/dev/null; then
@@ -30,6 +31,28 @@ if ! command -v node &>/dev/null; then
     OUTPUT+="MISSING: node — Context7 will not work. Install: brew install node"$'\n'
     INSTALL_NEEDED="true"
   fi
+fi
+
+# Serena project init — if uv exists but .serena/project.yml does not,
+# run serena init to bootstrap the project configuration
+if command -v uvx &>/dev/null && [[ ! -f "$PROJECT_ROOT/.serena/project.yml" ]]; then
+  # Check if vibecode template exists — use it instead of serena init
+  if [[ -f "$PROJECT_ROOT/.vibecode/templates/serena-project.yml" ]]; then
+    mkdir -p "$PROJECT_ROOT/.serena"
+    cp "$PROJECT_ROOT/.vibecode/templates/serena-project.yml" "$PROJECT_ROOT/.serena/project.yml"
+    # Update project_name to match directory name
+    DIR_NAME=$(basename "$PROJECT_ROOT")
+    sed -i '' "s/project_name: \"vibecode\"/project_name: \"$DIR_NAME\"/" "$PROJECT_ROOT/.serena/project.yml"
+    # Create .gitignore for serena cache
+    printf '/cache\n/project.local.yml\n/memories\n' > "$PROJECT_ROOT/.serena/.gitignore"
+    OUTPUT+="SERENA: initialized from vibecode template (project: $DIR_NAME)"$'\n'
+  else
+    # No template — run serena init directly
+    uvx -p 3.13 --from "git+https://github.com/oraios/serena" serena init --project-root "$PROJECT_ROOT" 2>/dev/null
+    OUTPUT+="SERENA: initialized via 'serena init' — check .serena/project.yml"$'\n'
+  fi
+  OUTPUT+="ACTION: Restart session for Serena to pick up new project config"$'\n'
+  INSTALL_NEEDED="true"
 fi
 
 # Check language servers based on .serena/project.yml languages
