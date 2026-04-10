@@ -97,7 +97,7 @@ proje-adi/
 │   ├── skills/             ← self-check, handoff-protocol, phase-gate...
 │   └── scripts/            ← db-backup.sh, db-restore.sh
 ├── .claude/                ← committed
-│   ├── commands/           ← /vibe-go, /vibe-done, /vibe-compact, /vibe-plan, /vibe-scaffold, /vibe-status
+│   ├── commands/           ← /vibe-go, /vibe-done, /vibe-compact, /vibe-plan, /vibe-status
 │   ├── hooks/              ← pre-tool-use, notification, session-start
 │   ├── rules/              ← path-scoped auto-applied rules
 │   └── settings.json       ← hook registrations, permissions

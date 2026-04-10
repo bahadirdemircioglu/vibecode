@@ -11,7 +11,7 @@ Vibecode, Claude Code ile yazılım geliştirirken karşılaşılan temel sorunl
 
 | Sorun | Çözüm |
 |-------|-------|
-| Her projede aynı dosyaları tekrar yazıyorsun | **`/vibe-scaffold`** + hazır **`.vibecode/templates/`** |
+| Her projede aynı dosyaları tekrar yazıyorsun | **Clone workflow** + hazır **`.vibecode/templates/`** |
 | Session geçişlerinde bağlam kaybı | **HANDOFF.md** + **`/vibe-go`** ile otomatik yükleme |
 | Hangi skill'i yüklemem gerektiği belirsiz | **Otomatik stack detection** — config dosyalarından skill tespiti |
 | Aynı hatalar tekrar ediyor | **Error Memory** — yapılandırılmış hata hafızası |
@@ -28,17 +28,19 @@ git clone <this-repo> ~/Dev/vibecode
 cd ~/Dev/vibecode
 ```
 
-### 2. İlk Projeyi Oluştur
+### 2. Yeni Proje Oluştur
 
-```
-/vibe-scaffold my-awesome-app ~/Dev/my-awesome-app
+```bash
+git clone <vibecode-repo> my-awesome-app
+cd my-awesome-app
+rm -rf .git README.md
+claude
 ```
 
-Bu komut otomatik olarak:
-- Dizin yapısını oluşturur (backend, frontend, docs, data, .vibecode)
-- Standart dosyaları kopyalar (10 standard → `.vibecode/standards/`)
-- CLAUDE.md, Makefile, docker-compose.yml, .env.example kopyalar
-- İlk CHANGELOG.md, progress.md, decisions.md oluşturur
+Session-start hook otomatik olarak:
+- `git init` + ilk commit yapar
+- `.serena/project.yml` proje ismini dizin adından günceller
+- MCP server'lar (Serena + Context7) hemen kullanılabilir
 
 ### 3. Çalışmaya Başla
 
@@ -49,12 +51,6 @@ Bu komut otomatik olarak:
 ---
 
 ## Proje Yaşam Döngüsü
-
-### /vibe-scaffold — Projeyi Oluştur
-
-```
-/vibe-scaffold proje-adi /hedef/dizin
-```
 
 ### /vibe-plan — Mimariyi Tasarla
 
@@ -99,7 +95,6 @@ State'i HANDOFF.md'ye kaydeder, context'i sıkıştırır.
 
 | Komut | Ne Yapar |
 |-------|----------|
-| `/vibe-scaffold [isim]` | Yeni proje oluşturur |
 | `/vibe-plan [feature]` | Mimari plan yazar, onay bekler |
 | `/vibe-go [task]` | State + skills yükler, başlar |
 | `/vibe-done` | Verify + docs + HANDOFF.md + commit önerisi |
@@ -229,7 +224,7 @@ vibecode/
 │   ├── scripts/                 ← Yardımcı shell scriptler
 │   └── templates/               ← Scaffold şablonları
 ├── .claude/
-│   ├── commands/                ← Slash komutları (/vibe-go, /vibe-done, /vibe-compact, /vibe-plan, /vibe-scaffold, /vibe-status)
+│   ├── commands/                ← Slash komutları (/vibe-go, /vibe-done, /vibe-compact, /vibe-plan, /vibe-status)
 │   ├── hooks/                   ← session-start.sh, pre-tool-use.js, notification.js
 │   ├── rules/                   ← Path-scoped kodlama kuralları (8 dosya)
 │   └── settings.json            ← Hook registrations, permissions
@@ -240,7 +235,7 @@ vibecode/
     └── progress.md
 ```
 
-> `backend/`, `frontend/`, `Makefile`, `docker-compose.yml` — `/vibe-scaffold` ile oluşturulur.
+> `backend/`, `frontend/`, `Makefile`, `docker-compose.yml` — proje setup sırasında oluşturulur.
 
 ---
 

@@ -9,46 +9,15 @@ Execute these steps in order:
 ### 0. MCP Setup & Check
 Ensure MCP servers are configured and running before any work begins:
 
-1. **Check `.mcp.json`** — If it does NOT exist in the project root, create it:
-```json
-{
-  "mcpServers": {
-    "serena": {
-      "command": "uvx",
-      "args": ["--from", "git+https://github.com/oraios/serena", "serena", "start-mcp-server", "--project-from-cwd"]
-    },
-    "context7": {
-      "command": "npx",
-      "args": ["-y", "@upstash/context7-mcp@latest"]
-    }
-  }
-}
-```
-If the file was just created, tell the user: "`.mcp.json` created — session restart needed for MCP servers to load. Run `/vibe-go` again after restart."  Then **STOP**.
+1. **Check `.mcp.json`** — Should already exist (tracked in git). If missing for any reason, create it with Serena (`--project-from-cwd`) and Context7 servers, then WARN: "`.mcp.json` was missing and recreated — restart session for MCP servers." Then **STOP**.
 
-2. **Check `.serena/project.yml`** — If it does NOT exist, auto-detect and create:
-   - Detect languages from project files:
-     - `*.py`, `pyproject.toml`, `requirements.txt` → `python`
-     - `package.json`, `*.ts`, `*.tsx` → `typescript`
-     - `go.mod` → `go`
-     - `Cargo.toml` → `rust`
-     - `Gemfile` → `ruby`
-     - `pom.xml`, `build.gradle` → `java`
-     - `build.gradle.kts` → `kotlin`
-     - `*.csproj`, `*.sln` → `csharp`
-     - `pubspec.yaml` → `dart`
-     - `mix.exs` → `elixir`
-     - `composer.json` → `php`
-     - `*.tf` → `terraform`
-     - `*.sh` → `bash`
-     - `*.swift`, `Package.swift` → `swift`
-     - `*.scala`, `build.sbt` → `scala`
-     - `*.zig` → `zig`
-     - `*.lua` → `lua`
-     - `*.cpp`, `*.c`, `CMakeLists.txt` → `cpp`
-   - Create `.serena/project.yml` with detected languages (use template from `.vibecode/templates/serena-project.yml` if available, replacing `{{PROJECT_NAME}}` and languages list)
-   - Create `.serena/.gitignore` with: `/cache`, `/project.local.yml`, `/memories`
-   - WARN: "`.serena/project.yml` created with languages: [list]. Restart session for Serena to pick it up." Then **STOP**.
+2. **Check `.serena/project.yml`** — Should already exist (tracked in git). If missing, auto-detect languages from project files and create it:
+   - Language detection: `*.py`/`pyproject.toml` → python, `package.json`/`*.ts` → typescript, `go.mod` → go, `Cargo.toml` → rust, `Gemfile` → ruby, `pom.xml`/`build.gradle` → java, `*.csproj` → csharp, `composer.json` → php, `*.tf` → terraform, `*.sh` → bash, `*.cpp`/`CMakeLists.txt` → cpp, etc.
+   - Use template from `.vibecode/templates/serena-project.yml` if available
+   - Also create `.serena/.gitignore` with: `/cache`, `/project.local.yml`, `/memories`
+   - WARN: "`.serena/project.yml` created — restart session for Serena." Then **STOP**.
+   
+   If it exists but task needs a language not listed → WARN and add it, then note restart is needed.
 
 3. **Verify MCPs** — Call `get_current_config` on Serena:
    - Active project with correct languages → "Serena: OK"

@@ -7,6 +7,25 @@ set -euo pipefail
 PROJECT_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
 OUTPUT=""
 
+# 0. Auto git-init if no .git (fresh clone with deleted .git)
+if [[ ! -d "$PROJECT_ROOT/.git" ]]; then
+  git -C "$PROJECT_ROOT" init -q 2>/dev/null
+  git -C "$PROJECT_ROOT" add -A 2>/dev/null
+  git -C "$PROJECT_ROOT" commit -q -m "Initial commit from vibecode template" 2>/dev/null
+  OUTPUT+="GIT: auto-initialized and committed (fresh project)"$'\n'
+fi
+
+# 0b. Update .serena/project.yml project_name if still "vibecode"
+SERENA_YML="$PROJECT_ROOT/.serena/project.yml"
+if [[ -f "$SERENA_YML" ]]; then
+  DIR_NAME=$(basename "$PROJECT_ROOT")
+  CURRENT_NAME=$(grep -m1 'project_name:' "$SERENA_YML" | sed 's/.*: *"\(.*\)"/\1/')
+  if [[ "$CURRENT_NAME" == "vibecode" && "$DIR_NAME" != "vibecode" ]]; then
+    sed -i '' "s/project_name: \"vibecode\"/project_name: \"$DIR_NAME\"/" "$SERENA_YML"
+    OUTPUT+="SERENA: project_name updated to \"$DIR_NAME\""$'\n'
+  fi
+fi
+
 # 1. Check HANDOFF.md
 if [[ -f "$PROJECT_ROOT/HANDOFF.md" ]]; then
   STATUS=$(grep -m1 '^\- \*\*Status:\*\*' "$PROJECT_ROOT/HANDOFF.md" 2>/dev/null | sed 's/.*\*\*Status:\*\* *//' || echo "unknown")

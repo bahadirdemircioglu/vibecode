@@ -33,6 +33,16 @@ Use `/vibe-go [task]` for the full sequence. Summary:
 2. **Load skills** — scan `.vibecode/skills/` for task-matching skills
 3. **Confirm** — "Ready: [task] | Skills: [loaded list]"
 
+### New Project Setup (Clone Workflow)
+
+1. `git clone <vibecode-repo> <project-name>`
+2. `cd <project-name>`
+3. `rm -rf .git README.md`
+4. Run `claude` — Serena and Context7 available immediately
+5. `/vibe-go [first-task]` to begin
+
+> `.git` is auto-initialized by session-start hook. Project name is auto-detected from directory.
+
 ---
 
 ## Tools
@@ -74,7 +84,7 @@ project-root/
 └── docker-compose.yml
 ```
 
-> `backend/`, `frontend/`, `Makefile`, `docker-compose.yml` are created by `/vibe-scaffold`.
+> `backend/`, `frontend/`, `Makefile`, `docker-compose.yml` are created during project setup.
 
 ---
 
@@ -97,7 +107,6 @@ If a skill defines an anti-pattern, avoid it.
 | `/vibe-done` | Verify + update docs + write HANDOFF.md + propose commit |
 | `/vibe-plan [feature]` | Architecture plan, wait for approval |
 | `/vibe-compact` | Save state to HANDOFF.md, then compact context |
-| `/vibe-scaffold [name]` | Initialize new project from template |
 | `/vibe-security-review [file]` | OWASP Top 10 security review with patched code |
 | `/vibe-status` | Show session state and MCP health |
 
@@ -129,7 +138,7 @@ If a skill defines an anti-pattern, avoid it.
 ## Quick Reference
 
 ```
-New project?          →  /vibe-scaffold → /vibe-plan → /vibe-go
+New project?          →  clone → rm -rf .git README.md → claude → /vibe-go
 Existing project?     →  /vibe-go [task]
 Searching code?       →  Serena (preferred) or Grep
 3rd party library?    →  Context7 or official docs
