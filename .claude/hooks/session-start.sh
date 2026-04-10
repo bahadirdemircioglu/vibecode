@@ -8,15 +8,59 @@ PROJECT_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
 OUTPUT=""
 INSTALL_NEEDED=""
 
-# -1. MCP dependency check — ensure Serena and Context7 can run
+# -1. OS & package manager detection
+# Supports: macOS (brew), Debian/Ubuntu (apt), Fedora/RHEL (dnf/yum), Alpine (apk), Arch (pacman)
+HOST_OS="$(uname -s)"
+PKG_MGR=""
+if command -v brew &>/dev/null; then
+  PKG_MGR="brew"
+elif command -v apt-get &>/dev/null; then
+  PKG_MGR="apt"
+elif command -v dnf &>/dev/null; then
+  PKG_MGR="dnf"
+elif command -v yum &>/dev/null; then
+  PKG_MGR="yum"
+elif command -v apk &>/dev/null; then
+  PKG_MGR="apk"
+elif command -v pacman &>/dev/null; then
+  PKG_MGR="pacman"
+fi
+
+# Portable sed -i (macOS uses sed -i '', Linux uses sed -i)
+sedi() {
+  if [[ "$HOST_OS" == "Darwin" ]]; then
+    sed -i '' "$@"
+  else
+    sed -i "$@"
+  fi
+}
+
+# Install a system package using detected package manager
+# Usage: pkg_install <pkg_brew> <pkg_apt> <pkg_dnf> <pkg_apk> <pkg_pacman>
+pkg_install() {
+  local name="$1" pkg_brew="${2:-$1}" pkg_apt="${3:-$1}" pkg_dnf="${4:-$1}" pkg_apk="${5:-$1}" pkg_pacman="${6:-$1}"
+  case "$PKG_MGR" in
+    brew)   brew install "$pkg_brew" --quiet 2>/dev/null && return 0 ;;
+    apt)    sudo apt-get install -y -qq "$pkg_apt" 2>/dev/null && return 0 ;;
+    dnf)    sudo dnf install -y -q "$pkg_dnf" 2>/dev/null && return 0 ;;
+    yum)    sudo yum install -y -q "$pkg_dnf" 2>/dev/null && return 0 ;;
+    apk)    sudo apk add --quiet "$pkg_apk" 2>/dev/null && return 0 ;;
+    pacman) sudo pacman -S --noconfirm --quiet "$pkg_pacman" 2>/dev/null && return 0 ;;
+  esac
+  return 1
+}
+
+# -0. MCP dependency check — ensure Serena and Context7 can run
 # Serena requires: uv/uvx (Python 3.13+), language servers per language
 # Serena init: uvx -p 3.13 --from git+https://github.com/oraios/serena serena init
 # Context7 requires: node/npx
 
 if ! command -v uv &>/dev/null; then
-  if command -v brew &>/dev/null; then
-    brew install uv --quiet 2>/dev/null
-    OUTPUT+="INSTALLED: uv (via Homebrew) — Serena dependency"$'\n'
+  # uv installs the same way on all platforms via official installer
+  if curl -LsSf https://astral.sh/uv/install.sh 2>/dev/null | sh 2>/dev/null; then
+    # Refresh PATH to pick up uv
+    export PATH="$HOME/.local/bin:$HOME/.cargo/bin:$PATH"
+    OUTPUT+="INSTALLED: uv (via official installer) — Serena dependency"$'\n'
   else
     OUTPUT+="MISSING: uv — Serena will not work. Install: curl -LsSf https://astral.sh/uv/install.sh | sh"$'\n'
     INSTALL_NEEDED="true"
@@ -24,30 +68,42 @@ if ! command -v uv &>/dev/null; then
 fi
 
 if ! command -v node &>/dev/null; then
-  if command -v brew &>/dev/null; then
-    brew install node --quiet 2>/dev/null
-    OUTPUT+="INSTALLED: node (via Homebrew) — Context7 dependency"$'\n'
+  if [[ -n "$PKG_MGR" ]]; then
+    # Node.js package names differ across distros
+    if pkg_install "node" "node" "nodejs" "nodejs" "nodejs" "nodejs"; then
+      OUTPUT+="INSTALLED: node (via $PKG_MGR) — Context7 dependency"$'\n'
+    else
+      OUTPUT+="MISSING: node — Context7 will not work. Install nodejs for your platform"$'\n'
+      INSTALL_NEEDED="true"
+    fi
   else
-    OUTPUT+="MISSING: node — Context7 will not work. Install: brew install node"$'\n'
+    OUTPUT+="MISSING: node — no package manager found. Install: https://nodejs.org"$'\n'
     INSTALL_NEEDED="true"
+  fi
+fi
+
+# npm may not come with node on some distros (e.g. Debian splits nodejs/npm)
+if command -v node &>/dev/null && ! command -v npm &>/dev/null; then
+  if [[ "$PKG_MGR" == "apt" ]]; then
+    sudo apt-get install -y -qq npm 2>/dev/null
+    OUTPUT+="INSTALLED: npm (via apt) — required for Context7 and LSP packages"$'\n'
+  elif [[ "$PKG_MGR" == "dnf" || "$PKG_MGR" == "yum" ]]; then
+    sudo "$PKG_MGR" install -y -q npm 2>/dev/null
+    OUTPUT+="INSTALLED: npm (via $PKG_MGR)"$'\n'
   fi
 fi
 
 # Serena project init — if uv exists but .serena/project.yml does not,
 # run serena init to bootstrap the project configuration
 if command -v uvx &>/dev/null && [[ ! -f "$PROJECT_ROOT/.serena/project.yml" ]]; then
-  # Check if vibecode template exists — use it instead of serena init
   if [[ -f "$PROJECT_ROOT/.vibecode/templates/serena-project.yml" ]]; then
     mkdir -p "$PROJECT_ROOT/.serena"
     cp "$PROJECT_ROOT/.vibecode/templates/serena-project.yml" "$PROJECT_ROOT/.serena/project.yml"
-    # Update project_name to match directory name
     DIR_NAME=$(basename "$PROJECT_ROOT")
-    sed -i '' "s/project_name: \"vibecode\"/project_name: \"$DIR_NAME\"/" "$PROJECT_ROOT/.serena/project.yml"
-    # Create .gitignore for serena cache
+    sedi "s/project_name: \"vibecode\"/project_name: \"$DIR_NAME\"/" "$PROJECT_ROOT/.serena/project.yml"
     printf '/cache\n/project.local.yml\n/memories\n' > "$PROJECT_ROOT/.serena/.gitignore"
     OUTPUT+="SERENA: initialized from vibecode template (project: $DIR_NAME)"$'\n'
   else
-    # No template — run serena init directly
     uvx -p 3.13 --from "git+https://github.com/oraios/serena" serena init --project-root "$PROJECT_ROOT" 2>/dev/null
     OUTPUT+="SERENA: initialized via 'serena init' — check .serena/project.yml"$'\n'
   fi
@@ -98,11 +154,10 @@ if [[ -f "$SERENA_YML_CHECK" ]]; then
         ;;
       cpp)
         if ! command -v clangd &>/dev/null; then
-          if command -v brew &>/dev/null; then
-            brew install llvm --quiet 2>/dev/null
-            OUTPUT+="INSTALLED: clangd (via llvm) — Serena C/C++ LSP"$'\n'
+          if pkg_install "clangd" "llvm" "clang-tools-extra" "clang-extra-tools" "clang" "clang"; then
+            OUTPUT+="INSTALLED: clangd (via $PKG_MGR) — Serena C/C++ LSP"$'\n'
           else
-            OUTPUT+="MISSING: clangd — install: brew install llvm"$'\n'
+            OUTPUT+="MISSING: clangd — install clang/llvm for your platform"$'\n'
           fi
         fi
         ;;
@@ -111,7 +166,7 @@ if [[ -f "$SERENA_YML_CHECK" ]]; then
         ;;
       csharp|csharp_omnisharp)
         if ! command -v dotnet &>/dev/null; then
-          OUTPUT+="MISSING: dotnet SDK — required for C# LSP. Install: brew install dotnet"$'\n'
+          OUTPUT+="MISSING: dotnet SDK — required for C# LSP. See: https://dotnet.microsoft.com/download"$'\n'
         fi
         ;;
     esac
@@ -136,7 +191,7 @@ if [[ -f "$SERENA_YML" ]]; then
   DIR_NAME=$(basename "$PROJECT_ROOT")
   CURRENT_NAME=$(grep -m1 'project_name:' "$SERENA_YML" | sed 's/.*: *"\(.*\)"/\1/')
   if [[ "$CURRENT_NAME" == "vibecode" && "$DIR_NAME" != "vibecode" ]]; then
-    sed -i '' "s/project_name: \"vibecode\"/project_name: \"$DIR_NAME\"/" "$SERENA_YML"
+    sedi "s/project_name: \"vibecode\"/project_name: \"$DIR_NAME\"/" "$SERENA_YML"
     OUTPUT+="SERENA: project_name updated to \"$DIR_NAME\""$'\n'
   fi
 fi
