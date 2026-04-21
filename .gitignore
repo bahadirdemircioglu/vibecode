@@ -4,3 +4,6 @@ Thumbs.db
 
 # Worktrees (temporary)
 .claude/worktrees/
+
+# Serena (auto-generated per project, not part of template)
+.serena/
