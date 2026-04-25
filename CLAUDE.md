@@ -22,6 +22,7 @@ Read the relevant standard before writing code in that area.
 | Security / auth            | `.vibecode/standards/security.md`             |
 | Backup / data              | `.vibecode/standards/backup.md`               |
 | Project-specific decisions | `docs/constraints/*.md`                       |
+| Architecture plans index   | `docs/architecture/INDEX.md` (tek otorite — `ls docs/architecture/` çekme) |
 
 ---
 
@@ -138,6 +139,16 @@ If a skill defines an anti-pattern, avoid it.
    1-2 satır değişiklik → Opus direkt yazsın, mikro-spec gereksiz.
    3+ satır → mikro-spec zorunlu. Sonnet döndükten sonra kodu oku ve review et.
    Max 2 Sonnet denemesi — 2. başarısızlıkta Opus devralır.
+10. **Model routing — Sonnet-first politikası:**
+    - Default model: **Sonnet**. Opus sadece planlama (`/vibe-plan`), mimari karar, derin reasoning için.
+    - Session start hook'u Opus tespit ederse uyarı verir; kullanıcı `/model sonnet` ile geçer (auto-switch YOK).
+    - **Sonnet eskalasyon kuralları:**
+      - **Planlama / mimari karar** → Sonnet doğrudan `Agent(model:opus)` çağırır
+      - **Belirsizlik (kod kararı)** → Sonnet "BELIRSIZ: [soru]" raporlar, tahmin yapmaz
+      - **2 deneme kuralı** → Aynı kod sorununda 2 başarısız denemeden sonra otomatik `Agent(model:opus)` (3. deneme YOK).
+        "Aynı sorun" = aynı dosya path + benzer hata mesajı (substring match).
+    - **Geri dönüş:** Opus *talimat* döndürür → Sonnet uygular.
+      İstisna: derin reasoning gereken kod (concurrency, kompleks algoritma, cryptography) → Opus subagent doğrudan yazar; Sonnet review eder.
 
 ---
 

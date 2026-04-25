@@ -92,7 +92,7 @@ Ready: $ARGUMENTS
   Permissions: [OK / eksik yetkiler listesi]
   Skills available: [list by name — NOT loaded yet]
   Constraints: [loaded list or "skipped — not relevant"]
-  Model routing: Opus (planning/review) → Sonnet (code writing)
+  Model routing: Sonnet-first (default) → Opus (planning / 2-fail escalation)
 ```
 
 ### 6. Context Rules & Model Routing
@@ -101,18 +101,21 @@ Ready: $ARGUMENTS
 - **Standards:** Load the relevant standard ONLY when about to write code in that area.
 - **Files:** Don't read files "just in case." Read only what the current step requires.
 
-**Üç Fazlı Delegasyon Protokolü (Opus ↔ Sonnet):**
+**Model routing — Sonnet-first:**
 
-| Faz | Model | Ne Yapar |
-|-----|-------|----------|
-| SPEC | Opus | Mikro-spec üretir: dosya yolu + pseudo-code + pattern referansı + YAPMA listesi |
-| WRITE | Sonnet | Mikro-spec'i birebir koda çevirir. Belirsizse kod yazmaz, raporlar |
-| REVIEW | Opus | Kodu okur, spec'e uygunluğu kontrol eder. Küçük fix = Opus yapar |
+| Default | Eskalasyon (Sonnet → Opus) |
+|---------|----------------------------|
+| **Sonnet** (kod yazma, edit, dosya okuma, basit debug) | 1. `/vibe-plan` çağrısı (Opus zorunlu) |
+| | 2. Mimari / pattern kararı gerektiren durumlar |
+| | 3. **2 başarısız deneme** sonrası kod sorunları (otomatik `Agent(model:opus)`) |
+| | 4. Belirsizlik → "BELIRSIZ: [soru]" raporu (kod yazma, kullanıcıya sor) |
 
-**Kısa yol:** 1-2 satır değişiklik → mikro-spec atla, Opus direkt yazsın.
-**Limit:** Max 2 Sonnet denemesi — 2. başarısızlıkta Opus devralır.
+**Geri dönüş:** Opus *talimat* döndürür → Sonnet uygular. İstisna: derin reasoning gerektiren kod (concurrency, kompleks algoritma, cryptography) → Opus subagent doğrudan yazar.
+
+**"Aynı sorun" tanımı (2-deneme kuralı için):** aynı dosya path + benzer hata mesajı. Kararsızsanız eskalasyona gidin.
+
+**Mikro-spec (Opus → Sonnet kod yazımı):** Sadece Opus main context'te ise gerekli. Sonnet main olduğunda kendi kendine kod yazar. Detay: `.vibecode/standards/architecture.md §4`.
+
 **Paralel:** Bağımsız dosyalar için Sonnet subagent'lar paralel çalışabilir.
-
-Detaylı protokol: `.vibecode/standards/architecture.md §4`
 
 Begin work after confirmation.

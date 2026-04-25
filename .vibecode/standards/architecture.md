@@ -132,3 +132,31 @@ MIKRO-SPEC:
    - **Max 2 Sonnet denemesi** — 2. denemede de başarısızsa Opus kendi yazar
 
 **Paralel delegasyon:** Bağımsız dosyalar için birden fazla Sonnet subagent paralel çalışabilir. Dosyalar arası bağımlılık varsa sıralı çalıştır.
+
+---
+
+### Sonnet-First Eskalasyon Protokolü
+
+> **Bağlam:** Default model **Sonnet**. Yukarıdaki üç fazlı protokol Opus *main context*'tey­ken geçerli. Sonnet main olduğunda aşağıdaki eskalasyon kuralları çalışır.
+
+| Tetikleyici | Eylem | Notlar |
+|-------------|-------|--------|
+| Planlama / mimari karar | `Agent(model:opus, subagent_type:Plan)` | `/vibe-plan` zaten zorunlu Opus |
+| Kararsızlık (kod kararı) | "BELIRSIZ: [soru]" — kullanıcıya rapor | Sonnet tahmin yapmaz |
+| 2x kod başarısızlığı | `Agent(model:opus, prompt:"Diagnose + fix: [error + 2 attempts]")` | Otomatik, kullanıcı onayı gerekmez |
+| Derin reasoning gerektiren kod | `Agent(model:opus)` doğrudan kod yazar | Concurrency, kompleks algoritma, cryptography |
+
+**"Aynı sorun" tanımı (2-deneme kuralı için):**
+- Aynı dosya path'i + aynı veya benzer hata mesajı (substring match)
+- Test başarısızlığı durumunda: aynı test adı + aynı assertion error
+- Kararsızsanız → eskalasyona gidin (under-escalation, over-escalation'dan ucuzdur)
+
+**Geri dönüş kuralı:**
+- Opus *talimat* döndürür ("Şu fix'i uygula: [step-by-step]") → Sonnet uygular
+- İstisna: derin reasoning gerektiren kod → Opus doğrudan yazar; Sonnet review eder
+- Token tasarrufu için ana akış Sonnet'te kalmalı — Opus subagent ayrı context'tir
+
+**Anti-pattern'ler:**
+- ❌ Her belirsizlikte Opus'a sormak (eskalasyon overhead'i tasarrufu bozar)
+- ❌ 3. denemeyi Sonnet'le yapmak (2 deneme sonrası otomatik eskalasyon zorunlu)
+- ❌ Plan kalitesini test etmek için Sonnet'le plan üretmek (plan = Opus zorunlu)

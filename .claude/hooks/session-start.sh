@@ -8,6 +8,13 @@ PROJECT_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
 OUTPUT=""
 INSTALL_NEEDED=""
 
+# Read hook input from stdin once (used for model detection below).
+# Stdin contains JSON from Claude Code hook protocol; may be empty on manual runs.
+HOOK_INPUT=""
+if [[ ! -t 0 ]]; then
+  HOOK_INPUT="$(cat 2>/dev/null || echo '')"
+fi
+
 # -1. OS & package manager detection
 # Supports: macOS (brew), Debian/Ubuntu (apt), Fedora/RHEL (dnf/yum), Alpine (apk), Arch (pacman)
 HOST_OS="$(uname -s)"
@@ -188,6 +195,16 @@ fi
 
 # 0. Auto git-init if no .git (fresh clone with deleted .git)
 if [[ ! -d "$PROJECT_ROOT/.git" ]]; then
+  # Fresh clone tespit edildi — vibecode template artifact'larını temizle
+  # docs/architecture/ vibecode'un kendi meta-planlarını içeriyor; yeni proje için temiz başlamalı
+  if [[ -d "$PROJECT_ROOT/docs/architecture" ]]; then
+    find "$PROJECT_ROOT/docs/architecture" -maxdepth 1 -name '*-plan.md' -type f -delete 2>/dev/null
+    if [[ -f "$PROJECT_ROOT/.vibecode/templates/architecture-INDEX.md" ]]; then
+      cp "$PROJECT_ROOT/.vibecode/templates/architecture-INDEX.md" "$PROJECT_ROOT/docs/architecture/INDEX.md"
+      OUTPUT+="ARCH: docs/architecture/ template planları silindi, INDEX boş başlatıldı"$'\n'
+    fi
+  fi
+
   git -C "$PROJECT_ROOT" init -q 2>/dev/null
   git -C "$PROJECT_ROOT" add -A 2>/dev/null
   git -C "$PROJECT_ROOT" commit -q -m "Initial commit from vibecode template" 2>/dev/null
@@ -208,6 +225,51 @@ fi
 # 0c. Serena onboarding is handled by Serena itself — not by this hook.
 # The hook only creates .serena/project.yml (config). Serena's own onboarding
 # tool creates memories when Claude calls it in the first session.
+
+# 0d. Model check — Sonnet-first politikası
+# Opus tespit edilirse kullanıcıya Sonnet'e geçmeyi öner (auto-switch YOK).
+MODEL=""
+
+# Birincil: hook input JSON'dan
+if [[ -n "$HOOK_INPUT" ]]; then
+  if command -v jq &>/dev/null; then
+    MODEL="$(echo "$HOOK_INPUT" | jq -r '.model // empty' 2>/dev/null)"
+  fi
+  # jq yoksa ya da boş döndüyse regex fallback
+  if [[ -z "$MODEL" ]]; then
+    MODEL="$(echo "$HOOK_INPUT" | grep -o '"model"[[:space:]]*:[[:space:]]*"[^"]*"' | head -1 | sed 's/.*"\([^"]*\)"$/\1/')"
+  fi
+fi
+
+# Yedek: en güncel session JSONL'den son assistant mesajının modeli
+if [[ -z "$MODEL" ]]; then
+  ENCODED_PROJECT="$(echo "$PROJECT_ROOT" | sed 's|/|-|g')"
+  SESSION_DIR="$HOME/.claude/projects$ENCODED_PROJECT"
+  if [[ -d "$SESSION_DIR" ]]; then
+    LATEST_SESSION="$(ls -t "$SESSION_DIR"/*.jsonl 2>/dev/null | head -1)"
+    if [[ -f "$LATEST_SESSION" ]] && command -v jq &>/dev/null; then
+      # Son 50 satırı tersten tara, ilk model alanını yakala
+      MODEL="$(awk '{a[NR]=$0} END{for(i=NR;i>NR-50 && i>0;i--) print a[i]}' "$LATEST_SESSION" 2>/dev/null \
+        | jq -r 'select(.message.model) | .message.model' 2>/dev/null | head -1)"
+    fi
+  fi
+fi
+
+# Family check (substring match — yeni model release'lerine resilience)
+if [[ -n "$MODEL" ]]; then
+  case "$MODEL" in
+    *opus*)
+      OUTPUT+="MODEL: Opus tespit edildi (${MODEL}). Sonnet'e geçmek için: /model sonnet"$'\n'
+      OUTPUT+="       Bilinçli olarak Opus istediyseniz (planlama/derin debug) görmezden gelin."$'\n'
+      ;;
+    *haiku*)
+      OUTPUT+="MODEL: Haiku tespit edildi. Hızlı yanıt için OK; karmaşık iş için: /model sonnet"$'\n'
+      ;;
+    *sonnet*)
+      : # hedef model, sessiz geç
+      ;;
+  esac
+fi
 
 # 1. Check HANDOFF.md
 if [[ -f "$PROJECT_ROOT/HANDOFF.md" ]]; then

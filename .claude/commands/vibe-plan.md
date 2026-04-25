@@ -35,6 +35,8 @@ Switch Serena to read-only planning mode to prevent accidental file writes durin
 - Read all files in `docs/constraints/*.md`
 
 ### 2. Research
+- **Read `docs/architecture/INDEX.md`** — bir satır özetlerden ilgili eski planları tespit et (mevcut planların tek otoritesi; `ls` çekme)
+- Sadece **ilgili** plan dosyalarını targeted Read et (hepsini değil)
 - Use Serena to analyze existing codebase for related code
 - Use Context7 for any third-party library decisions
 - Review `docs/decisions.md` for prior architectural decisions
@@ -76,10 +78,17 @@ Write `docs/architecture/$ARGUMENTS-plan.md` with these sections:
 [Decisions that need user input before proceeding]
 ```
 
-### 4. Present Plan
+### 4. Update INDEX
+Append a one-line entry to `docs/architecture/INDEX.md` under "Aktif Planlar":
+```
+- [$ARGUMENTS]($ARGUMENTS-plan.md) — bir cümlelik özet (~80 karakter)
+```
+If a previous plan is superseded by this one, **move** that line to "Superseded / Arşivlenmiş" with note: `superseded by [$ARGUMENTS]`.
+
+### 5. Present Plan
 Show the complete plan to the user.
 
-### 5. Wait for Approval
+### 6. Wait for Approval
 **STOP HERE.** Do NOT proceed without explicit user approval.
 
-Say: "Plan written to `docs/architecture/$ARGUMENTS-plan.md`. Please review and approve before I begin implementation."
+Say: "Plan written to `docs/architecture/$ARGUMENTS-plan.md` (INDEX güncellendi). Please review and approve before I begin implementation."
