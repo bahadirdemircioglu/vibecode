@@ -16,6 +16,8 @@ Vibecode, Claude Code ile yazılım geliştirirken karşılaşılan temel sorunl
 | Hangi skill'i yüklemem gerektiği belirsiz | **Otomatik stack detection** — config dosyalarından skill tespiti |
 | Aynı hatalar tekrar ediyor | **Error Memory** — yapılandırılmış hata hafızası |
 | Doğru standart yüklenemiyor | **pre-tool-use hook** — dosya path'ine göre uyarı |
+| Opus'ta rutin iş = pahalı | **Sonnet-first routing** — hook Opus tespit ederse `/model sonnet` önerir |
+| Plan discovery için `ls` token yiyor | **`docs/architecture/INDEX.md`** — tek otorite, targeted Read |
 
 ---
 
@@ -39,8 +41,10 @@ claude
 
 Session-start hook otomatik olarak:
 - `git init` + ilk commit yapar
+- `docs/architecture/` template planlarını siler, INDEX'i boş başlatır
 - `.serena/project.yml` proje ismini dizin adından günceller
 - MCP server'lar (Serena + Context7) hemen kullanılabilir
+- Aktif model Opus ise `/model sonnet` önerisi verir (auto-switch yok)
 
 ### 3. Çalışmaya Başla
 
@@ -58,7 +62,11 @@ Session-start hook otomatik olarak:
 /vibe-plan uygulama-adi
 ```
 
-`docs/architecture/` altına plan yazar, onay bekler.
+1. `docs/architecture/INDEX.md` okunur (tek otorite — `ls` çekilmez)
+2. İlgili eski planlar targeted Read edilir
+3. Yeni plan `docs/architecture/<slug>-plan.md` olarak yazılır
+4. INDEX'e bir satır özet eklenir
+5. Onay beklenir
 
 ### /vibe-go — Çalışmaya Başla
 
@@ -196,6 +204,8 @@ Mesaj sayısını izler, context büyüdüğünde uyarı verir.
 6. Kod arama için Serena'yı tercih et (varsa)
 7. Max 3 dosya/adım — büyük değişikliklerde subagent kullan
 8. Yeni özellik veya mimari değişiklik — plan yaz, onay bekle
+9. Sonnet subagent'lara mikro-spec ver, max 2 deneme — sonra Opus devralır
+10. **Sonnet-first routing:** Default Sonnet. Opus sadece planlama / mimari karar / 2-fail eskalasyon / derin reasoning için. Sonnet kararsız kaldığında veya 2 kez başarısız olduğunda otomatik Opus'a eskale eder.
 
 ---
 
@@ -229,6 +239,7 @@ vibecode/
 │   ├── rules/                   ← Path-scoped kodlama kuralları (8 dosya)
 │   └── settings.json            ← Hook registrations, permissions
 └── docs/
+    ├── architecture/            ← Plan dosyaları + INDEX.md (plan discovery'nin tek otoritesi)
     ├── constraints/             ← Proje kısıtlamaları
     ├── CHANGELOG.md
     ├── decisions.md             ← ADR'ler
@@ -268,6 +279,8 @@ vibecode/
 | Yeni servis eklemem gerekiyor | `/vibe-plan redis-cache-ekleme` |
 | Hangi skill'i yüklemeliyim? | Otomatik — session başında tespit edilir |
 | Claude kuralları atladı | `pre-tool-use.js` hook uyarı verir |
+| Yanlışlıkla Opus ile açıldım | Hook `/model sonnet` öneriyor — komutu çalıştır |
+| Sonnet aynı bug'ı 2 kez çözemedi | Otomatik — Sonnet `Agent(model:opus)` çağırır |
 
 ---
 
