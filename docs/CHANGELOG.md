@@ -5,6 +5,37 @@
 
 ---
 
+## [2026-04-30] — Add continuous-doc-maintainer skill and /vibe-doc-sync command
+
+### Changes
+- **What:** Created `continuous-doc-maintainer` skill (v4 spec, plain-Markdown adaptation) — 13-step pipeline with idempotency, schema-driven sync, blocking security linter, append-only audit trail. Added `/vibe-doc-sync` slash command for manual triggering. Integrated automatic shadow-mode run into `/vibe-done` Step 4b. Added `docs/CHANGELOG_INTERNAL.md` audit ledger. Added `.vibecode/state/` to gitignore. ADR-003 (Doc-Sync) superseded by ADR-005.
+- **Why:** Manual `/vibe-done` checklist was the only doc-sync mechanism — no pruning of deleted endpoints, no schema-truth enforcement, no idempotency, no audit trail, no blocking security linter for secrets in docs. ADR-003's session-tracking proposal didn't address these structural gaps. v4 spec from user closes all of them.
+- **How:** New skill at `.vibecode/skills/continuous-doc-maintainer/` with SKILL.md + input/output JSON schemas + audit-log template. New slash command at `.claude/commands/vibe-doc-sync.md`. `/vibe-done.md` Step 4b added. `documentation.md` §6 added. `CLAUDE.md` slash commands table updated. ADR-005 documents rationale + alternatives.
+
+### Affected Files
+- `.vibecode/skills/continuous-doc-maintainer/SKILL.md` — new skill (created)
+- `.vibecode/skills/continuous-doc-maintainer/resources/input-schema.json` — new (created)
+- `.vibecode/skills/continuous-doc-maintainer/resources/output-schema.json` — new (created)
+- `.vibecode/skills/continuous-doc-maintainer/resources/audit-log-template.md` — new (created)
+- `.claude/commands/vibe-doc-sync.md` — new slash command (created)
+- `docs/CHANGELOG_INTERNAL.md` — new audit ledger (created)
+- `docs/architecture/continuous-doc-maintainer-plan.md` — architecture plan (created)
+- `docs/architecture/INDEX.md` — plan reference added
+- `.vibecode/standards/documentation.md` — §6 added
+- `.claude/commands/vibe-done.md` — Step 4b added
+- `CLAUDE.md` — `/vibe-doc-sync` added to slash commands table
+- `.gitignore` — `.vibecode/state/` added
+- `docs/decisions.md` — ADR-003 superseded; ADR-005 added
+- `docs/progress.md` — Doc-Sync System replaced by Continuous Doc Maintainer (Complete)
+
+### Notes
+- Default mode is `shadow` — no doc files are written without `--live` flag or user confirmation after preview
+- Step 9 security linter (BLOCKING) prevents writing API keys, JWT, AWS access keys, private key blocks to docs
+- `.vibecode/state/doc-hashes.json` is local-only (gitignored) — idempotency cache
+- Out of scope (separate plans): Mintlify migration, `pre-tool-use.js` blocking secret scan, multi-agent doc lockfile
+
+---
+
 ## [2026-03-27] — Add security-review skill and /security-review command
 
 ### Changes

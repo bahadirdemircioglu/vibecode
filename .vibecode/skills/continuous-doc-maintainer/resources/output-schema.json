@@ -1,0 +1,59 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ContinuousDocMaintainer.Output",
+  "type": "object",
+  "required": ["action", "mode", "execution_tier", "target_file", "reasoning"],
+  "properties": {
+    "action": {
+      "enum": ["update", "create", "delete", "skip", "blocked"],
+      "description": "Final disposition for the target file"
+    },
+    "mode": { "enum": ["shadow", "live"] },
+    "execution_tier": { "enum": ["fast", "full"] },
+    "dependency_level": {
+      "enum": ["atomic", "independent"],
+      "description": "Atomic: must commit with related changes. Independent: standalone commit."
+    },
+    "target_file": {
+      "type": "string",
+      "description": "Primary doc file affected. For multi-file outputs, return one entry per file."
+    },
+    "reasoning": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Ordered list of justifications (classification, target resolution, prune reasons, schema deltas, security findings)"
+    },
+    "changes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["op"],
+        "properties": {
+          "op": { "enum": ["modify_section", "insert_section", "delete_section"] },
+          "heading": { "type": "string" },
+          "after_heading": { "type": "string" },
+          "new_content": { "type": "string" },
+          "diff": { "type": "string" },
+          "line_start": { "type": "integer" },
+          "line_end": { "type": "integer" }
+        }
+      }
+    },
+    "hash_before": {
+      "type": "string",
+      "description": "sha256 first 12 chars of target_file body before change (empty for create)"
+    },
+    "hash_after": {
+      "type": "string",
+      "description": "sha256 first 12 chars of target_file body after change (empty for delete)"
+    },
+    "commit_message": {
+      "type": "string",
+      "description": "Conventional Commits format: docs(<scope>): <subject>"
+    },
+    "blocked_reason": {
+      "type": "string",
+      "description": "Required when action=blocked. E.g., 'secret-detected: AWS access key'"
+    }
+  }
+}

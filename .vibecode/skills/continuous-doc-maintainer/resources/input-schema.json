@@ -1,0 +1,65 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ContinuousDocMaintainer.Input",
+  "type": "object",
+  "required": ["diff", "changed_files", "metadata", "mode", "execution_tier"],
+  "properties": {
+    "diff": {
+      "type": "string",
+      "description": "Unified diff string for the change set"
+    },
+    "changed_files": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Repo-relative paths of files changed in this diff"
+    },
+    "metadata": {
+      "type": "object",
+      "required": ["type", "scope"],
+      "properties": {
+        "type": { "enum": ["api", "ui", "config", "admin", "user"] },
+        "scope": {
+          "type": "string",
+          "description": "Domain scope (e.g., auth, dashboard, settings)"
+        }
+      }
+    },
+    "existing_docs": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Repo-relative paths of doc files that may be affected"
+    },
+    "doc_index": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Optional list of all doc files (for full-tier reference graph)"
+    },
+    "schema_sources": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Glob patterns for schema files (OpenAPI, Pydantic, SQLAlchemy)"
+    },
+    "screenshots": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Disabled in v4.0 plain-MD adaptation. Reserved for future visual diff."
+    },
+    "previous_hashes": {
+      "type": "object",
+      "additionalProperties": { "type": "string" },
+      "description": "Map of doc file path → last known content hash (from .vibecode/state/doc-hashes.json)"
+    },
+    "mode": {
+      "enum": ["shadow", "live"],
+      "default": "shadow"
+    },
+    "execution_tier": {
+      "enum": ["fast", "full"],
+      "default": "fast"
+    },
+    "lock_state": {
+      "type": "object",
+      "description": "Reserved for future multi-agent locking. Currently unused."
+    }
+  }
+}

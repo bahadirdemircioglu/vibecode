@@ -5,6 +5,7 @@
 
 ## Aktif Planlar
 
+- [continuous-doc-maintainer](continuous-doc-maintainer-plan.md) — Auditable+idempotent doc skill: prune, schema-sync, security-lint, audit log.
 - [clone-workflow](clone-workflow-plan.md) — Clone tabanlı proje setup; Serena/Context7 restart-free ilk oturumda çalışsın.
 - [model-routing-sonnet-first](model-routing-sonnet-first-plan.md) — Default Sonnet, Opus eskalasyon (planlama / 2-fail / belirsizlik); session-start hook Opus uyarısı verir.
 - [opus-sonnet-delegation](opus-sonnet-delegation-plan.md) — Üç fazlı protokol: Opus mikro-spec → Sonnet write → Opus review.

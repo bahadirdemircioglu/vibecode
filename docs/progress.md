@@ -65,19 +65,28 @@
 
 ---
 
-## Doc-Sync System (ADR-003)
-**Added:** 2026-03-26 | **Version:** —
-**Status:** 🔴 Blocked (ADR-001 ve ADR-002 sonrası)
+## Continuous Doc Maintainer (ADR-005, supersedes ADR-003)
+**Added:** 2026-04-30 | **Version:** —
+**Status:** 🟢 Complete
 
 ### Scope
-- Session-scoped "etkilenen dokümanlar" listesi
-- Hook bazlı dosya-doküman eşleştirme
-- `/vibe-done` entegrasyonu — toplu güncelleme
+- `.vibecode/skills/continuous-doc-maintainer/SKILL.md` — 13-step v4 pipeline
+  (classification → target → prune → schema-sync → security-lint → patch → audit)
+- `.claude/commands/vibe-doc-sync.md` — `/vibe-doc-sync [--live] [--tier full] [paths...]`
+- `docs/CHANGELOG_INTERNAL.md` — append-only audit ledger
+- `.vibecode/state/doc-hashes.json` — idempotency state (gitignored)
+- `/vibe-done` Step 4b — auto-shadow run with user confirmation
 
 ### Dependencies
-- ADR-002 (Skill Orchestrator) — hook altyapısı paylaşımı
+- None (independent of ADR-001/ADR-002)
 
-### Open Tasks
-- [ ] Dosya yolu → doküman eşleşme kurallarını tanımla
-- [ ] Tracking state formatını belirle
-- [ ] `/vibe-done` komutuna entegre et
+### Completed Tasks
+- [x] Skill SKILL.md (13 adım, plain-MD adaptasyonu)
+- [x] Input/output JSON schema
+- [x] Audit log template + initial CHANGELOG_INTERNAL.md
+- [x] /vibe-doc-sync slash command
+- [x] documentation.md §6 referansı
+- [x] /vibe-done Step 4b entegrasyonu
+- [x] CLAUDE.md slash commands tablosu
+- [x] .gitignore — state file
+- [x] Architecture plan + ADR-005

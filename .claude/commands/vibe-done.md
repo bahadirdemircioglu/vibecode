@@ -39,6 +39,21 @@ Read `.vibecode/standards/documentation.md` and run the full checklist:
 
 Checkpoint: "Documentation updated: [list of files]"
 
+### 4b. Continuous Doc Maintainer (Auto Shadow Run)
+Run `/vibe-doc-sync` (no args = shadow mode, fast tier) to detect any drift the
+manual checklist missed:
+1. Skill scans `git diff` against `docs/api/`, `docs/user/`, `docs/admin/`,
+   `docs/setup/`
+2. Outputs proposed changes (no writes in shadow mode)
+3. If proposals exist: ask user "Apply N proposed doc updates? (y / pick / n)"
+4. On approval: re-run with `--live` to write
+5. Audit entry appended to `docs/CHANGELOG_INTERNAL.md` (always — even for skip/blocked)
+
+If Step 9 (security linter) blocks: report `blocked` items to user, do NOT bypass.
+Fix the source (remove secret/PII from code or env file) before proceeding.
+
+Checkpoint: "Doc sync: <N updated / N skipped / N blocked>"
+
 ### 5. Update CHANGELOG
 Add entry at top of `docs/CHANGELOG.md` using the format from documentation standards.
 

@@ -7,3 +7,6 @@ Thumbs.db
 
 # Serena (auto-generated per project, not part of template)
 .serena/
+
+# Continuous-doc-maintainer idempotency state (local cache, not repo content)
+.vibecode/state/

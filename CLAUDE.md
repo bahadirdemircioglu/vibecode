@@ -109,6 +109,7 @@ If a skill defines an anti-pattern, avoid it.
 | `/vibe-plan [feature]` | Architecture plan, wait for approval |
 | `/vibe-compact` | Save state to HANDOFF.md, then compact context |
 | `/vibe-security-review [file]` | OWASP Top 10 security review with patched code |
+| `/vibe-doc-sync [--live] [--tier full] [paths...]` | Continuous doc maintainer — sync docs with code (shadow default) |
 | `/vibe-status` | Show session state and MCP health |
 
 ---

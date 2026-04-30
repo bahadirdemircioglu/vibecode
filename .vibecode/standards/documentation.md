@@ -130,3 +130,25 @@ Update when a new feature, service, or module is added:
 - Every new env variable → entry in `docs/setup/environment.md`
 - Tome container auto-reloads on file change (live-mounted volume)
 - Write plain Markdown — no custom shortcodes unless confirmed Tome supports them
+
+---
+
+## 6. Continuous Doc Maintainer (skill)
+
+Manual checklist (§1) is the floor; the `continuous-doc-maintainer` skill is the
+ceiling — automated, auditable, schema-driven sync.
+
+- **Skill:** `.vibecode/skills/continuous-doc-maintainer/SKILL.md`
+- **Slash command:** `/vibe-doc-sync [--live] [--tier full] [paths...]`
+- **Default:** `mode=shadow, tier=fast` — produces a proposed change set, does not write
+- **Audit log:** `docs/CHANGELOG_INTERNAL.md` (append-only, machine-parsable)
+- **State (gitignored):** `.vibecode/state/doc-hashes.json` — idempotency hashes
+- **Auto-trigger:** `/vibe-done` Step 4 runs the skill in shadow mode and asks before applying
+
+Use the skill when:
+- Code change merged → API/UI/config docs may be stale
+- Endpoint or feature deleted → prune doc sections + dangling references
+- OpenAPI / Pydantic / SQLAlchemy schema changed → regenerate examples
+
+Step 9 of the skill is a **blocking** security linter — secrets/tokens never reach
+docs. If it blocks, fix the source (don't bypass the skill).
