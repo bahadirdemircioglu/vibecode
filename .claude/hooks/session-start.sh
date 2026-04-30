@@ -90,14 +90,48 @@ if ! command -v node &>/dev/null; then
 fi
 
 # npm may not come with node on some distros (e.g. Debian splits nodejs/npm)
+# On macOS/Arch/Alpine, npm ships with node — if it's still missing, brew/apk/pacman will reinstall node+npm.
 if command -v node &>/dev/null && ! command -v npm &>/dev/null; then
-  if [[ "$PKG_MGR" == "apt" ]]; then
-    sudo apt-get install -y -qq npm 2>/dev/null
-    OUTPUT+="INSTALLED: npm (via apt) — required for Context7 and LSP packages"$'\n'
-  elif [[ "$PKG_MGR" == "dnf" || "$PKG_MGR" == "yum" ]]; then
-    sudo "$PKG_MGR" install -y -q npm 2>/dev/null
-    OUTPUT+="INSTALLED: npm (via $PKG_MGR)"$'\n'
-  fi
+  case "$PKG_MGR" in
+    apt)
+      if sudo apt-get install -y -qq npm 2>/dev/null; then
+        OUTPUT+="INSTALLED: npm (via apt) — required for Context7 and LSP packages"$'\n'
+      else
+        OUTPUT+="MISSING: npm — apt install failed. Try: sudo apt-get install npm"$'\n'
+      fi
+      ;;
+    dnf|yum)
+      if sudo "$PKG_MGR" install -y -q npm 2>/dev/null; then
+        OUTPUT+="INSTALLED: npm (via $PKG_MGR)"$'\n'
+      else
+        OUTPUT+="MISSING: npm — $PKG_MGR install failed. Try: sudo $PKG_MGR install npm"$'\n'
+      fi
+      ;;
+    brew)
+      if brew install node --quiet 2>/dev/null; then
+        OUTPUT+="INSTALLED: npm (via brew reinstall of node) — npm ships with node"$'\n'
+      else
+        OUTPUT+="MISSING: npm — expected to ship with node. Try: brew reinstall node"$'\n'
+      fi
+      ;;
+    apk)
+      if sudo apk add --quiet npm 2>/dev/null; then
+        OUTPUT+="INSTALLED: npm (via apk)"$'\n'
+      else
+        OUTPUT+="MISSING: npm — apk install failed. Try: sudo apk add npm"$'\n'
+      fi
+      ;;
+    pacman)
+      if sudo pacman -S --noconfirm --quiet npm 2>/dev/null; then
+        OUTPUT+="INSTALLED: npm (via pacman)"$'\n'
+      else
+        OUTPUT+="MISSING: npm — pacman install failed. Try: sudo pacman -S npm"$'\n'
+      fi
+      ;;
+    *)
+      OUTPUT+="MISSING: npm — no supported package manager. Install nodejs+npm: https://nodejs.org"$'\n'
+      ;;
+  esac
 fi
 
 # Serena project init — if uv exists but .serena/project.yml does not,
@@ -127,8 +161,11 @@ if [[ -f "$SERENA_YML_CHECK" ]]; then
     case "$LANG" in
       bash)
         if command -v npm &>/dev/null && ! command -v bash-language-server &>/dev/null; then
-          npm install -g bash-language-server --silent 2>/dev/null
-          OUTPUT+="INSTALLED: bash-language-server (via npm) — Serena bash LSP"$'\n'
+          if ( npm install -g bash-language-server --silent >/dev/null 2>&1 ) 2>/dev/null; then
+            OUTPUT+="INSTALLED: bash-language-server (via npm) — Serena bash LSP"$'\n'
+          else
+            OUTPUT+="MISSING: bash-language-server — npm install failed; try manually: npm install -g bash-language-server"$'\n'
+          fi
         elif ! command -v npm &>/dev/null && ! command -v bash-language-server &>/dev/null; then
           OUTPUT+="MISSING: bash-language-server — npm not available for install"$'\n'
         fi
