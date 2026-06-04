@@ -13,6 +13,7 @@
 - [serena-auto-activation](serena-auto-activation-plan.md) — `.mcp.json` `--project-from-cwd` + `.serena/project.yml` otomatik dil tespiti.
 - [serena-optimization](serena-optimization-plan.md) — Serena onboarding + symbol-level navigation + permission auto-grant.
 - [vibe-prefix-commands](vibe-prefix-commands-plan.md) — Custom slash command namespace çakışması için `vibe-` prefix kuralı.
+- [wrongstack-pattern-adoption](wrongstack-pattern-adoption-plan.md) — WrongStack'in permission/fleet/SDD desenlerini Claude-only vibecode'a uyarla (fork değil, provider katmanı hariç).
 
 ## Superseded / Arşivlenmiş
 

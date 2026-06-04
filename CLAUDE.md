@@ -107,6 +107,10 @@ If a skill defines an anti-pattern, avoid it.
 | `/vibe-go [task]` | Load state + skills + begin task |
 | `/vibe-done` | Verify + update docs + write HANDOFF.md + propose commit |
 | `/vibe-plan [feature]` | Architecture plan, wait for approval |
+| `/vibe-sdd [feature]` | Spec-Driven Development: question → spec → tasks → execute (between plan and go) |
+| `/vibe-fleet [task]` | Director: dispatch task across parallel role subagents, roll up results |
+| `/vibe-collab-debug [bug/paths]` | BugHunter → RefactorPlanner → Critic trio → verified fix plan |
+| `/vibe-goal [set\|status\|journal\|clear]` | Track a locked multi-session goal + journal (bounded, not autonomous) |
 | `/vibe-compact` | Save state to HANDOFF.md, then compact context |
 | `/vibe-security-review [file]` | OWASP Top 10 security review with patched code |
 | `/vibe-doc-sync [--live] [--tier full] [paths...]` | Continuous doc maintainer — sync docs with code (shadow default) |

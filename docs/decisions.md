@@ -351,3 +351,90 @@ concurrency reserved for future multi-agent scenarios.
 ADR-003 status updated to "Superseded by ADR-005." `progress.md` Doc-Sync System
 entry replaced by Continuous Doc Maintainer entry. Architecture plan file:
 `docs/architecture/continuous-doc-maintainer-plan.md`.
+
+---
+
+## ADR-006: WrongStack Pattern Adoption — Fleet + Hardening (Claude-only)
+**Date:** 2026-06-04 | **Status:** Accepted
+
+### Context
+
+WrongStack (https://github.com/WrongStack/WrongStack.git) tam teşekküllü, Claude Code'a
+alternatif bir terminal AI agent'ı (TypeScript monorepo, ~110 provider, 505-satır kernel,
+Director/fleet, SDD, goal engine, AES-256-GCM vault + per-tool permission policy, REPL/TUI/Web).
+Kullanıcı bu projeyi inceleyip "iyi fikirleri vibecode'a uyarlayalım, biz sadece Claude için
+yapıyoruz, provider kısımlarını dikkate alma" dedi.
+
+vibecode bir agent değil, Claude Code'u yapılandıran bir meta-framework. Dolayısıyla WrongStack'in
+**runtime mekaniği** (kernel, kendi agent loop'u, provider katmanı, üç yüzey) doğrudan taşınamaz —
+bunları Claude Code zaten sağlıyor. Taşınabilir olan **davranış/politika desenleridir**.
+
+### Decision
+
+WrongStack'in dört desenini Claude Code primitive'leriyle (slash command, subagent, hook, settings)
+uyarla. Provider katmanı (OpenAI/Google/models.dev) **tamamen kapsam dışı**. Fork edilmedi,
+greenfield agent kurulmadı.
+
+1. **İzin + güvenlik (en yüksek ROI):**
+   - `.claude/hooks/permission-policy.js` — risk-tier gate (destructive→hard block exit 2,
+     standard→advisory). subjectKey çıkarımı. `VIBE_YOLO=1` kaçış kapısı.
+   - `.claude/hooks/net-fs-guard.js` — SSRF guard (private/loopback/metadata + non-http blok,
+     `VIBE_ALLOW_PRIVATE_FETCH=1` kaçış) + sistem-yolu containment + symlink-escape blok.
+   - `settings.json` deny listesi genişletildi; iki hook PreToolUse'a kaydedildi.
+   - Standart: `security.md §7`.
+
+2. **Fleet / multi-agent:** `.claude/agents/*.md` altında 8 rol (explorer, architect, engineer,
+   tester, reviewer, bug-hunter, refactor-planner, critic) — WrongStack'in 46-rol kataloğundan
+   indirgendi. `agent-dispatch` (heuristik routing) + `subagent-budget-protocol` (delegasyon
+   disiplini) skill'leri. `/vibe-fleet` orkestrasyon komutu.
+
+3. **Akış komutları:** `/vibe-sdd` (Spec-Driven Development döngüsü), `/vibe-collab-debug`
+   (BugHunter→RefactorPlanner→Critic üçlüsü).
+
+4. **Skill manifest şeması:** `documentation.md §7` — yeni skill'ler için `triggers`/`scope`/`model`
+   frontmatter; mevcut 110+ skill opportunistic migrate (mass migration YOK).
+
+**Açık soruların kararı (kullanıcı "full yetki sende" dedi):**
+- **8 rol** (46 değil) — config framework için pratik minimum.
+- **`/vibe-goal` otonom DEĞİL** — kilitli hedef + günlük (pusula+defter), `/loop` ile denetimli
+  tekrar. Otonom eternal-engine reddedildi (kontrolsüz token/komut riski).
+- **SSRF default blok + env kaçış kapısı** (sert blok değil) — local-API testi için
+  `VIBE_ALLOW_PRIVATE_FETCH=1`.
+- **Migration sadece şema + yeni skill** — 110+ skill toplu migrate edilmez.
+- **Dosya adı** `wrongstack-pattern-adoption-plan.md` (ham görev string'i yerine).
+
+### Alternatives Considered
+
+1. **Greenfield Claude-only agent kur:** WrongStack mimarisiyle kendi terminal agent'ımızı yaz.
+   Reddedildi — devasa effort; Claude Code zaten agent. Kullanıcı "pattern'leri taşı" seçti.
+2. **WrongStack'i fork'la, provider katmanını sök:** TS monorepo'yu miras al. Reddedildi —
+   bakım yükü + Claude Code ile çift agent. Kullanıcı seçimi: uyarla.
+3. **AES-256-GCM secret vault'u taşı:** Reddedildi — Claude Code kendi credential store'unu
+   yönetir; kapsam dışı.
+4. **46 rolün tamamı:** Reddedildi — config framework için aşırı; 8 öz rol yeterli.
+5. **Otonom goal/eternal engine:** Reddedildi (yukarıda) — güvenlik/maliyet riski.
+
+### Consequences
+
+**Positive:**
+- Yıkıcı komutlar (rm -rf, force push, fork bomb, curl|bash) ve SSRF/dosya kaçışı artık
+  fail-closed bloklanıyor (14 test senaryosu doğrulandı).
+- Boş olan `.claude/agents/` artık 8 üretken rolle dolu; subagent fan-out yapılandırılmış.
+- `/vibe-sdd` ve `/vibe-collab-debug` gerçek boşlukları dolduruyor (spec-driven + doğrulanmış debug).
+- Tüm eklemeler additive ve config-only — çekirdek Claude Code değişmedi, geri alınabilir.
+- Newcomer guide (`docs/guides/wrongstack-features-guide.md`) sıfırdan kullanıma izin veriyor.
+
+**Negative:**
+- İki yeni PreToolUse hook'u her Bash/Write/Edit/WebFetch'te küçük bir overhead ekler (saf Node,
+  bağımlılıksız, parse hatasında exit 0 — session'ı kırmaz).
+- Hook'lar nadiren meşru bir komutu bloklayabilir (false positive) — env kaçış kapıları bunu çözer.
+- 8 rol + 4 komut + 2 skill bakım yüzeyi ekler.
+
+**Out of scope (bilinçli):**
+- Provider soyutlaması, models.dev, üç yüzey (REPL/TUI/Web), kendi kernel/agent loop'u,
+  secret vault, better-sqlite3 session storage.
+
+### Migration
+
+Additive — mevcut hiçbir şey kırılmadı. Plan: `docs/architecture/wrongstack-pattern-adoption-plan.md`
+(INDEX'e eklendi). Kullanım kılavuzu: `docs/guides/wrongstack-features-guide.md`.

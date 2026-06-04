@@ -5,6 +5,51 @@
 
 ---
 
+## [2026-06-04] — WrongStack pattern adoption: fleet roles + security hardening (Claude-only)
+
+### Changes
+- **What:** WrongStack'in dört desenini vibecode'a uyarladık (provider katmanı hariç). (1) İki
+  fail-closed PreToolUse güvenlik hook'u: `permission-policy.js` (risk-tier — destructive komutları
+  hard-block, standard'ları uyar) ve `net-fs-guard.js` (SSRF + sistem-yolu + symlink containment).
+  (2) Boş `.claude/agents/`'a 8 rol: explorer/architect/engineer/tester/reviewer/bug-hunter/
+  refactor-planner/critic. (3) Dört slash command: `/vibe-fleet` (Director orkestrasyonu),
+  `/vibe-sdd` (Spec-Driven Development), `/vibe-collab-debug` (3-rol debug), `/vibe-goal` (kilitli
+  hedef + günlük, otonom değil). (4) İki skill: `agent-dispatch`, `subagent-budget-protocol`.
+  (5) `settings.json` deny listesi genişletildi + iki hook kaydedildi. (6) Kapsamlı newcomer
+  kılavuzu: `docs/guides/wrongstack-features-guide.md`.
+- **Why:** WrongStack incelemesi 4 güçlü ama vibecode'da eksik desen ortaya çıkardı: rol-tabanlı
+  fleet, spec-driven dev, işbirlikçi debug ve agent-seviyesi izin/güvenlik sertleştirmesi. Provider
+  soyutlaması (OpenAI/Google/models.dev) ve runtime mekaniği (kernel/loop/yüzeyler) Claude Code
+  zaten sağladığı için bilinçle dışarıda bırakıldı. Detay: ADR-006.
+- **How:** Hook'lar saf Node (bağımlılıksız, parse hatasında exit 0), exit code 2 ile bloklar; 14
+  test senaryosuyla doğrulandı (destructive→blok, standard→uyarı, SSRF→blok, env kaçış kapıları
+  çalışıyor). Roller Claude Code subagent tanımı (frontmatter + tools + model). Komutlar `vibe-`
+  prefix kuralına uygun. Açık sorular kullanıcı "full yetki" verdiği için belgelenip karara bağlandı
+  (ADR-006): 8 rol, otonom-olmayan goal, SSRF env kaçışı, sadece-yeni-skill migration.
+
+### Affected Files
+- `.claude/hooks/permission-policy.js` — risk-tier permission hook (created)
+- `.claude/hooks/net-fs-guard.js` — SSRF + FS containment hook (created)
+- `.claude/agents/{explorer,architect,engineer,tester,reviewer,bug-hunter,refactor-planner,critic}.md` — 8 rol (created)
+- `.claude/commands/{vibe-fleet,vibe-sdd,vibe-collab-debug,vibe-goal}.md` — 4 slash command (created)
+- `.vibecode/skills/agent-dispatch/SKILL.md` — rol yönlendirme skill'i (created)
+- `.vibecode/skills/subagent-budget-protocol/SKILL.md` — delegasyon disiplini skill'i (created)
+- `.claude/settings.json` — deny listesi genişletildi + iki hook kaydedildi (modified)
+- `.vibecode/standards/security.md` — §7 izin/net-fs sertleştirme (modified)
+- `.vibecode/standards/documentation.md` — §7 skill manifest şeması (modified)
+- `CLAUDE.md` — slash command tablosuna 4 komut eklendi (modified)
+- `docs/architecture/wrongstack-pattern-adoption-plan.md` — mimari plan (created)
+- `docs/architecture/INDEX.md` — plan referansı eklendi (modified)
+- `docs/guides/wrongstack-features-guide.md` — kapsamlı kullanım kılavuzu (created)
+- `docs/decisions.md` — ADR-006 (modified)
+
+### Notes
+- Tüm değişiklikler additive ve config-only — çekirdek Claude Code davranışı değişmedi, geri alınabilir.
+- Hook kaçış kapıları: `VIBE_YOLO=1` (destructive blokları uyarıya indirir), `VIBE_ALLOW_PRIVATE_FETCH=1`
+  (yerel API fetch). Yalnızca izole/dev ortamlarında kullan.
+
+---
+
 ## [2026-04-30] — Add continuous-doc-maintainer skill and /vibe-doc-sync command
 
 ### Changes
