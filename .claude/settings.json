@@ -24,9 +24,15 @@
     "deny": [
       "Bash(rm -rf *)",
       "Bash(git push --force*)",
+      "Bash(git push -f *)",
       "Bash(git reset --hard*)",
+      "Bash(git clean -fd*)",
+      "Bash(git clean -df*)",
       "Bash(sudo *)",
       "Bash(chmod 777*)",
+      "Bash(chmod -R 777*)",
+      "Bash(dd if=*)",
+      "Bash(mkfs*)",
       "Bash(*> .env*)",
       "Bash(cat *.env*)",
       "Bash(pip install*)",
@@ -46,6 +52,26 @@
             "type": "command",
             "command": ".claude/hooks/pre-tool-use.js",
             "description": "Advisory: checks if relevant standard was loaded before writing code"
+          }
+        ]
+      },
+      {
+        "matcher": "Bash|Write|Edit|Read|WebFetch",
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".claude/hooks/permission-policy.js",
+            "description": "Risk-tier permission gate: hard-blocks destructive actions (rm -rf, force push, curl|bash, fork bombs), warns on standard-risk ops. VIBE_YOLO=1 downgrades blocks."
+          }
+        ]
+      },
+      {
+        "matcher": "WebFetch|Write|Edit|NotebookEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".claude/hooks/net-fs-guard.js",
+            "description": "SSRF guard (blocks private/loopback fetch targets) + system-path & symlink-escape containment for writes. VIBE_ALLOW_PRIVATE_FETCH=1 allows local fetch."
           }
         ]
       }

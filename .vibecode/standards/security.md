@@ -97,3 +97,48 @@ Log every API request with:
 - User ID (if authenticated)
 - Request ID (generated per request, passed in `X-Request-ID` header)
 - Do NOT log request/response bodies (privacy + size concerns)
+
+---
+
+## 7. Agent Permission & Net/FS Hardening (WrongStack-inspired)
+
+> **When to read:** Before changing `.claude/settings.json` permissions or the security hooks.
+> These layers protect the *agent itself* (the tools Claude runs), not the app it builds.
+
+Adapted from WrongStack's `permission-policy.ts`, `fetch.ts`, `replace.ts`, `_env.ts`. Two
+defensive layers sit in front of every tool call:
+
+### 7.1 Static deny-list (`settings.json` → `permissions.deny`)
+First line of defense — glob patterns the harness blocks before the tool runs. Covers the
+known-bad shapes (`rm -rf`, force push, `git clean -fd`, `sudo`, `chmod 777`, `dd if=`, `mkfs`,
+`.env` reads/writes, raw `node`/`python`/installs). Add a new glob here when you find a class of
+command that should never run.
+
+### 7.2 Risk-tier policy hook (`.claude/hooks/permission-policy.js`)
+Second layer — a `PreToolUse` hook that extracts the **subjectKey** (Bash→`command`,
+Write/Edit→`file_path`, WebFetch→`url`) and classifies it:
+
+| Tier | Action | Examples |
+|------|--------|----------|
+| **destructive** | **hard block** (exit 2, fail-closed) | `rm -rf`, force push, `git reset --hard`, fork bomb, `curl\|bash`, overwrite `.env` |
+| **standard** | advisory warning (allow) | plain `git push`, `docker compose down -v`, `npm publish`, `DROP TABLE` |
+
+Escape hatch: `VIBE_YOLO=1` downgrades destructive blocks to warnings — **sandboxed/disposable
+environments only**.
+
+### 7.3 Net/FS guard hook (`.claude/hooks/net-fs-guard.js`)
+Second layer for network and filesystem reach:
+- **SSRF:** `WebFetch` to a private/loopback/link-local target (incl. cloud metadata
+  `169.254.169.254`, `localhost`, `*.internal`) is blocked; non-`http(s)` schemes too. Escape
+  hatch: `VIBE_ALLOW_PRIVATE_FETCH=1` for local-API testing.
+- **System-path containment:** `Write`/`Edit` into `/etc`, `/usr`, `/bin`, `/boot`, `/sys`,
+  `/proc`, `/dev`, `/root/.ssh`, … is blocked. Project, `/tmp`, and `~/.claude` writes stay allowed
+  (so memory writes work).
+- **Symlink escape:** writing *through* a symlink whose real target leaves the workspace is blocked.
+
+### 7.4 Rules
+- Hooks are **fail-closed**: a destructive/SSRF match blocks the tool (exit code 2).
+- Never weaken a hook to get past a legitimate block — do the action manually or use the documented
+  env escape hatch for that one session.
+- Both hooks are pure Node, no dependencies, and exit 0 on any parse error (never break the session).
+- Test changes with piped JSON before committing (see the guide in `docs/guides/`).
