@@ -35,10 +35,20 @@ Show the task list + critical path. Ask the user to approve before any code. Thi
 no implementation until "OK".
 
 ### Phase 5 — Execute
+**Setup (once):** `.vibecode/scripts/sdd-workspace <feature-name>` çalıştır — `.vibecode/sdd/progress.md` oluşturur (veya mevcut ledger'ı devam ettirir).
+
 Work tasks in dependency order:
+- **Her görev öncesi:** `.vibecode/scripts/task-brief <spec-file> <N>` → `.vibecode/sdd/task-<N>-brief.md`
+  - Implementer subagent'a dosya yolunu ver (içeriği prompt'a gömme).
+  - Prompt şablonu: `.vibecode/prompts/sdd-implementer.md` + `TASK_BRIEF=<path>` + global constraints özeti.
 - Independent tasks → fan out with `/vibe-fleet` (engineer/tester roles).
-- Each task: implement → test → `make verify` → mark done.
-- Track status inline (pending / in-progress / done / blocked). On a blocker, stop and report.
+- Each task: implement → test → `make verify` → commit → mark done.
+- **Her görev sonrası:** `.vibecode/scripts/review-package <BASE_COMMIT> HEAD` → `.vibecode/sdd/review-*.md`
+  - Reviewer subagent'a diff dosyasını ver (içeriği prompt'a gömme).
+  - Prompt şablonu: `.vibecode/prompts/sdd-reviewer.md` + `REVIEW_PACKAGE=<path>` + `TASK_BRIEF=<path>`.
+  - Critical/Important bulgu varsa fix subagent → re-review.
+- **Her görev tamamlandığında:** `.vibecode/sdd/progress.md` ledger'ını güncelle (`- [x] Task N: ...`).
+- On a blocker, stop and report.
 - After each task, update CHANGELOG.md.
 
 ### Phase 6 — Done

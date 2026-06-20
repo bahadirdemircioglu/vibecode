@@ -1,0 +1,54 @@
+#!/usr/bin/env bash
+# review-package BASE HEAD [OUTFILE]
+# Generates a review package (commit log + stat + diff) between two git refs.
+set -euo pipefail
+
+if [[ $# -lt 2 ]]; then
+  echo "Usage: review-package BASE HEAD [OUTFILE]" >&2
+  exit 1
+fi
+
+BASE="$1"
+HEAD="$2"
+REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
+
+if ! git rev-parse --verify "$BASE" >/dev/null 2>&1; then
+  echo "Error: invalid git ref: $BASE" >&2
+  exit 1
+fi
+if ! git rev-parse --verify "$HEAD" >/dev/null 2>&1; then
+  echo "Error: invalid git ref: $HEAD" >&2
+  exit 1
+fi
+
+if [[ $# -ge 3 ]]; then
+  OUTFILE="$3"
+else
+  mkdir -p "$REPO_ROOT/.vibecode/sdd"
+  BASE_SHORT="$(git rev-parse --short "$BASE")"
+  HEAD_SHORT="$(git rev-parse --short "$HEAD")"
+  OUTFILE="$REPO_ROOT/.vibecode/sdd/review-${BASE_SHORT}..${HEAD_SHORT}.md"
+fi
+
+{
+  echo "# Review Package: $BASE..$HEAD"
+  echo ""
+  echo "## Commits"
+  echo '```'
+  git log --oneline "$BASE..$HEAD"
+  echo '```'
+  echo ""
+  echo "## Files Changed"
+  echo '```'
+  git diff --stat "$BASE" "$HEAD"
+  echo '```'
+  echo ""
+  echo "## Diff"
+  echo '```diff'
+  git diff -U10 "$BASE" "$HEAD"
+  echo '```'
+} > "$OUTFILE"
+
+COMMIT_COUNT="$(git log --oneline "$BASE..$HEAD" | wc -l | tr -d ' ')"
+FILE_SIZE="$(wc -c < "$OUTFILE" | tr -d ' ')"
+echo "review-package: wrote $OUTFILE ($COMMIT_COUNT commits, ${FILE_SIZE} bytes)"

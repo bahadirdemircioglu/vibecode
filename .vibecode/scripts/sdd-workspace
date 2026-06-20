@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+# sdd-workspace [FEATURE_NAME]
+# Initializes or resumes a .vibecode/sdd/ workspace with a progress ledger.
+set -euo pipefail
+
+FEATURE="${1:-unknown-feature}"
+REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
+SDD_DIR="$REPO_ROOT/.vibecode/sdd"
+PROGRESS="$SDD_DIR/progress.md"
+
+mkdir -p "$SDD_DIR"
+
+if [[ -f "$PROGRESS" ]]; then
+  echo "sdd-workspace: resuming existing session at $PROGRESS"
+  echo "---"
+  head -5 "$PROGRESS"
+  exit 0
+fi
+
+TODAY="$(date +%Y-%m-%d)"
+cat > "$PROGRESS" <<EOF
+# SDD Progress: $FEATURE
+Started: $TODAY
+
+## Tasks
+<!-- task-brief oluşturuldukça buraya ekle: -->
+<!-- - [ ] Task 1: açıklama -->
+
+## Blockers
+(yok)
+EOF
+
+echo "sdd-workspace: created $PROGRESS"

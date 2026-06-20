@@ -5,6 +5,8 @@
 
 ## Aktif Planlar
 
+- [superpowers-adoption](superpowers-adoption-plan.md) — obra/superpowers'tan SDD scripts + prompt şablonları + progress ledger ekle (kurulum hariç)
+
 - [continuous-doc-maintainer](continuous-doc-maintainer-plan.md) — Auditable+idempotent doc skill: prune, schema-sync, security-lint, audit log.
 - [clone-workflow](clone-workflow-plan.md) — Clone tabanlı proje setup; Serena/Context7 restart-free ilk oturumda çalışsın.
 - [model-routing-sonnet-first](model-routing-sonnet-first-plan.md) — Default Sonnet, Opus eskalasyon (planlama / 2-fail / belirsizlik); session-start hook Opus uyarısı verir.

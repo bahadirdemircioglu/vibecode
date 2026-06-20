@@ -5,6 +5,24 @@
 
 ---
 
+## [2026-06-20] — obra/superpowers SDD tooling adoption
+
+### Changes
+- **What:** SDD workflow için dosya tabanlı el değiştirme (file handoff) mekanizması eklendi.
+  (1) `.vibecode/scripts/task-brief` — plan dosyasından görev özeti çıkarır,
+  `.vibecode/sdd/task-<N>-brief.md` yazar.
+  (2) `.vibecode/scripts/review-package` — iki git ref arasındaki diff paketini
+  `.vibecode/sdd/review-*.md` olarak üretir.
+  (3) `.vibecode/scripts/sdd-workspace` — SDD çalışma alanı başlatır, `progress.md` ledger oluşturur.
+  (4) `.vibecode/prompts/sdd-implementer.md` — implementer subagent sözleşmesi.
+  (5) `.vibecode/prompts/sdd-reviewer.md` — reviewer subagent kriterleri (spec uyumu + kalite).
+  (6) `/vibe-sdd` Phase 5 güncellendi — her görev öncesi/sonrası script çağrıları + ledger yönetimi.
+  (7) `.gitignore`'a `.vibecode/sdd/` eklendi (çalışma zamanı dosyaları repo'ya karışmaz).
+- **Why:** Uzun SDD çalışmalarında context compaction sonrası ilerleme kayboluyor, subagent
+  prompt'ları görev metni + diff ile şişiyor. Dosya tabanlı el değiştirme her ikisini de çözer.
+- **Source:** obra/superpowers — kurulum dışı tooling (skill'ler zaten `superpowers:*` prefix
+  ile kuruluydu; sadece script/prompt/ledger katmanı eklendi).
+
 ## [2026-06-04] — WrongStack pattern adoption: fleet roles + security hardening (Claude-only)
 
 ### Changes

@@ -1,0 +1,44 @@
+#!/usr/bin/env bash
+# task-brief PLAN_FILE TASK_NUMBER [OUTFILE]
+# Extracts task N from a plan file and writes it to .vibecode/sdd/task-<N>-brief.md
+set -euo pipefail
+
+if [[ $# -lt 2 ]]; then
+  echo "Usage: task-brief PLAN_FILE TASK_NUMBER [OUTFILE]" >&2
+  exit 1
+fi
+
+PLAN_FILE="$1"
+TASK_N="$2"
+REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
+
+if [[ ! -f "$PLAN_FILE" ]]; then
+  echo "Error: plan file not found: $PLAN_FILE" >&2
+  exit 1
+fi
+
+if [[ $# -ge 3 ]]; then
+  OUTFILE="$3"
+else
+  mkdir -p "$REPO_ROOT/.vibecode/sdd"
+  OUTFILE="$REPO_ROOT/.vibecode/sdd/task-${TASK_N}-brief.md"
+fi
+
+# Extract the task block starting at heading "## Task N" or "### Task N" until next same-level heading
+awk -v n="$TASK_N" '
+BEGIN { in_task=0; fence=0; heading_re="^#{1,3}[[:space:]]+(Task[[:space:]]+" n "|" n "\\.)[[:space:]]*" }
+{
+  if ($0 ~ /^```/) fence = !fence
+  if (!fence && $0 ~ heading_re) { in_task=1; print; next }
+  if (in_task && !fence && $0 ~ /^#{1,3}[[:space:]]/ && $0 !~ heading_re) { in_task=0 }
+  if (in_task) print
+}
+' "$PLAN_FILE" > "$OUTFILE"
+
+if [[ ! -s "$OUTFILE" ]]; then
+  echo "Error: task $TASK_N not found in $PLAN_FILE" >&2
+  rm -f "$OUTFILE"
+  exit 1
+fi
+
+echo "task-brief: wrote $OUTFILE ($(wc -l < "$OUTFILE") lines)"

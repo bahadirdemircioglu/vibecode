@@ -10,3 +10,6 @@ Thumbs.db
 
 # Continuous-doc-maintainer idempotency state (local cache, not repo content)
 .vibecode/state/
+
+# SDD runtime workspace (task briefs, diff packages, progress ledger — local only)
+.vibecode/sdd/
