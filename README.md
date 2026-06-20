@@ -13,6 +13,8 @@ Vibecode, Claude Code ile yazılım geliştirirken karşılaşılan temel sorunl
 |-------|-------|
 | Her projede aynı dosyaları tekrar yazıyorsun | **Clone workflow** + hazır **`.vibecode/templates/`** |
 | Session geçişlerinde bağlam kaybı | **HANDOFF.md** + **`/vibe-go`** ile otomatik yükleme |
+| Uzun SDD çalışmalarında context compaction = ilerleme kaybı | **`.vibecode/sdd/progress.md`** ledger — kaldığın yerden devam |
+| Subagent prompt'ları görev metniyle şişiyor | **File handoff scripts** — görev ve diff dosyaya yazılır, path geçilir |
 | Hangi skill'i yüklemem gerektiği belirsiz | **Otomatik stack detection** — config dosyalarından skill tespiti |
 | Aynı hatalar tekrar ediyor | **Error Memory** — yapılandırılmış hata hafızası |
 | Doğru standart yüklenemiyor | **pre-tool-use hook** — dosya path'ine göre uyarı |
@@ -78,6 +80,35 @@ Session-start hook otomatik olarak:
 2. Config dosyalarından ilgili skill'ler tespit edilir (otomatik)
 3. "Ready: [task] | Skills: [list]" ile başlar
 
+### /vibe-sdd — Spec-Driven Development
+
+Büyük özellikler için kullan: `/vibe-plan`'dan sonra, kod yazmadan önce.
+
+```
+/vibe-sdd kullanici-yetkilendirme-sistemi
+```
+
+**Akış:**
+1. **Soru Fazı** — 3-6 hedefli soru sorar (kapsam, kabul kriterleri, non-goal'lar)
+2. **Spec** — `docs/architecture/<feature>-spec.md` yazar, onay bekler
+3. **Görev Listesi** — dependency sıralı görevler + kritik yol, onay bekler
+4. **Execute** — her görevi sırayla çalıştırır; bağımsız görevler `/vibe-fleet` ile paralel
+
+> SDD çalışması sırasında dahili scriptler otomatik çalışır — bunları manuel
+> kullanmak istersen bkz. [SDD Scriptleri](#sdd-scriptleri) bölümü.
+
+### /vibe-fleet — Paralel Subagent Orkestrasyonu
+
+```
+/vibe-fleet authentication middleware'i yaz ve testlerini ekle
+```
+
+Director olarak çalışır: görevi bağımsız parçalara böler, her parçayı doğru
+role gönderir, sonuçları toplar. Bağımsız alt görevler aynı anda çalışır.
+
+Roller: `explorer`, `architect`, `engineer`, `tester`, `reviewer`, `bug-hunter`,
+`refactor-planner`, `critic`.
+
 ### /vibe-done — Tamamla
 
 ```
@@ -99,16 +130,142 @@ State'i HANDOFF.md'ye kaydeder, context'i sıkıştırır.
 
 ---
 
+## SDD Scriptleri
+
+`/vibe-sdd` komutunun arka planda kullandığı araçlar. Manuel çalıştırabilirsin.
+
+### task-brief — Görev Özeti Çıkar
+
+Bir plan/spec dosyasındaki N. görevi okuyup ayrı bir dosyaya yazar.
+Subagent'a tüm plan yerine yalnızca o görevin dosya yolunu geçersin — prompt şişmez.
+
+```bash
+.vibecode/scripts/task-brief docs/architecture/auth-spec.md 3
+# → .vibecode/sdd/task-3-brief.md (34 satır)
+
+# Çıktı dosyasını kendin belirtmek istersen:
+.vibecode/scripts/task-brief docs/architecture/auth-spec.md 3 /tmp/task3.md
+```
+
+**Kullanım senaryosu:**
+```bash
+# Görev 2'yi çıkar, engineer subagent'a gönder
+.vibecode/scripts/task-brief docs/architecture/payment-spec.md 2
+# Claude'da:
+# "Şu görevi uygula: $(cat .vibecode/sdd/task-2-brief.md)"
+```
+
+### review-package — Diff Paketi Oluştur
+
+İki git ref arasındaki commit log + istatistik + unified diff'i tek dosyaya toplar.
+Reviewer subagent bu dosyayı okur — diff'i prompt'a yapıştırmana gerek kalmaz.
+
+```bash
+.vibecode/scripts/review-package HEAD~3 HEAD
+# → .vibecode/sdd/review-a1b2c3..d4e5f6.md (commit log + stat + diff)
+
+# Belirli commit'ler arası:
+.vibecode/scripts/review-package abc1234 HEAD /tmp/review.md
+```
+
+**Kullanım senaryosu:**
+```bash
+# Görev 2 tamamlandı, reviewer subagent için diff paketi oluştur
+BASE=$(git rev-parse HEAD~1)
+.vibecode/scripts/review-package $BASE HEAD
+# Claude'da:
+# "Şu diff'i incele: .vibecode/sdd/review-*.md"
+```
+
+### sdd-workspace — SDD Çalışma Alanı Başlat
+
+`.vibecode/sdd/` klasörünü oluşturur ve `progress.md` ledger dosyasını açar.
+Komut zaten `/vibe-sdd` başlangıcında otomatik çalışır; uzun çalışmalarda
+context compaction sonrası kaldığın yeri görmek için de kullanabilirsin.
+
+```bash
+.vibecode/scripts/sdd-workspace payment-sistemi
+# → .vibecode/sdd/progress.md oluşturuldu
+
+# Mevcut session varsa özet gösterir:
+.vibecode/scripts/sdd-workspace payment-sistemi
+# sdd-workspace: resuming existing session at .vibecode/sdd/progress.md
+# # SDD Progress: payment-sistemi
+# Started: 2026-06-20
+# ...
+```
+
+**`progress.md` örneği:**
+
+```markdown
+# SDD Progress: payment-sistemi
+Started: 2026-06-20
+
+## Tasks
+- [x] Task 1: Stripe webhook handler (commit: a1b2c3d)
+- [x] Task 2: Payment model + migration (commit: e4f5g6h)
+- [ ] Task 3: Frontend ödeme formu (IN PROGRESS)
+- [ ] Task 4: E2E ödeme testi
+
+## Blockers
+(yok)
+```
+
+> `.vibecode/sdd/` gitignore'da — çalışma zamanı dosyaları repo'ya karışmaz.
+
+---
+
+## Prompt Şablonları
+
+`/vibe-sdd` subagent dispatch'lerinde kullanılan sabit sözleşmeler.
+Şablonu güncellersen tüm gelecek dispatch'ler otomatik yeni versiyonu kullanır.
+
+| Dosya | Ne İşe Yarar |
+|-------|-------------|
+| `.vibecode/prompts/sdd-implementer.md` | Implementer subagent sözleşmesi: görevi oku → uygula → self-review → commit → raporla |
+| `.vibecode/prompts/sdd-reviewer.md` | Reviewer subagent kriterleri: spec uyumu + kod kalitesi — iki boyutlu verdict |
+
+### Reviewer Verdict Formatı
+
+Reviewer her zaman iki boyutu ayrı değerlendirir:
+
+```
+VERDICT: Approved | Needs Fixes
+
+## Spec Uyumu
+- [OK] Tüm gereksinimler karşılandı
+- [FAIL] Görev 2.3: rate limiting eksik — auth/middleware.py:45
+
+## Kod Kalitesi
+- [OK] Separation of concerns
+- [FAIL] tests/test_auth.py: sadece mock test, gerçek davranış test edilmiyor
+
+## Bulgular
+### Critical
+- auth/middleware.py:67 Token expiry kontrolü yok
+### Important
+- (yok)
+```
+
+Critical bulgu varsa fix subagent devreye girer; re-review sonrası merge edilir.
+
+---
+
 ## Komut Referansı
 
 | Komut | Ne Yapar |
 |-------|----------|
 | `/vibe-plan [feature]` | Mimari plan yazar, onay bekler |
 | `/vibe-go [task]` | State + skills yükler, başlar |
+| `/vibe-sdd [feature]` | Soru → spec → görev listesi → execute (non-trivial özellikler için) |
+| `/vibe-fleet [task]` | Director: görevi paralel subagent rollerine böler |
+| `/vibe-collab-debug [bug]` | BugHunter → RefactorPlanner → Critic üçlüsü → doğrulanmış fix planı |
+| `/vibe-goal [set\|status\|journal\|clear]` | Kilitli çok-session hedefi + günlük |
 | `/vibe-done` | Verify + docs + HANDOFF.md + commit önerisi |
 | `/vibe-compact` | State kaydeder, context temizler |
-| `/vibe-status` | Session durumunu gösterir |
+| `/vibe-doc-sync [--live] [--tier full] [paths...]` | Dokümanları kodla senkronize eder |
 | `/vibe-security-review [file]` | OWASP Top 10 güvenlik taraması |
+| `/vibe-status` | Session durumunu gösterir |
 
 ---
 
@@ -188,9 +345,22 @@ Write/Edit öncesinde çalışır (advisory — bloklamaz):
 - İlgili skill'leri önerir
 - Doküman güncelleme hatırlatması yapar
 
+### permission-policy.js — Güvenlik Kapısı
+
+Riskli komutları tier'a göre değerlendirir (hard-block veya uyarı):
+- `rm -rf`, force push, `DROP TABLE` → hard-block
+- `curl | bash`, eval with external input → hard-block
+- Diğer riskli komutlar → uyarı + onay gerektirir
+
+### net-fs-guard.js — Ağ + Dosya Sistemi Koruması
+
+- SSRF riskli URL'leri engeller
+- Sistem yollarına (`/etc/`, `/usr/`) yazma girişimlerini engeller
+- Symlink traversal saldırılarını önler
+
 ### notification.js — Context Monitor
 
-Mesaj sayısını izler, context büyüdüğünde uyarı verir.
+Mesaj sayısını izler, context büyüdüğünde `/vibe-compact` önerir.
 
 ---
 
@@ -232,10 +402,19 @@ vibecode/
 │   ├── skills/                  ← 110+ AI skill
 │   ├── memories/errors/         ← Hata hafızası
 │   ├── scripts/                 ← Yardımcı shell scriptler
+│   │   ├── task-brief           ← SDD: plan'dan görev özeti çıkarır
+│   │   ├── review-package       ← SDD: diff paketi oluşturur
+│   │   ├── sdd-workspace        ← SDD: çalışma alanı + progress ledger başlatır
+│   │   ├── scaffold.sh
+│   │   ├── db-backup.sh
+│   │   └── db-restore.sh
+│   ├── prompts/                 ← Subagent prompt şablonları
+│   │   ├── sdd-implementer.md   ← Implementer subagent sözleşmesi
+│   │   └── sdd-reviewer.md      ← Reviewer subagent kriterleri
 │   └── templates/               ← Scaffold şablonları
 ├── .claude/
-│   ├── commands/                ← Slash komutları (/vibe-go, /vibe-done, /vibe-compact, /vibe-plan, /vibe-status)
-│   ├── hooks/                   ← session-start.sh, pre-tool-use.js, notification.js
+│   ├── commands/                ← Slash komutları (vibe-go, vibe-done, vibe-sdd, vibe-fleet, ...)
+│   ├── hooks/                   ← session-start.sh, pre-tool-use.js, permission-policy.js, net-fs-guard.js, notification.js
 │   ├── rules/                   ← Path-scoped kodlama kuralları (8 dosya)
 │   └── settings.json            ← Hook registrations, permissions
 └── docs/
@@ -247,6 +426,7 @@ vibecode/
 ```
 
 > `backend/`, `frontend/`, `Makefile`, `docker-compose.yml` — proje setup sırasında oluşturulur.
+> `.vibecode/sdd/` — gitignore'da; çalışma zamanı dosyaları (brief'ler, diff'ler, ledger).
 
 ---
 
@@ -275,12 +455,15 @@ vibecode/
 |-------|-------|
 | Context doldu | `/vibe-compact` |
 | Farklı task'a geçmem gerekiyor | `/vibe-compact` → `/vibe-go yeni-task` |
-| Session kapandı, nerede kalmıştım? | `/vibe-go devam-et` |
+| Session kapandı, nerede kalmıştım? | `/vibe-go devam-et` (HANDOFF.md okunur) |
+| SDD ortasında context sıkıştı | `/vibe-go` → `.vibecode/sdd/progress.md`'e bak, kaldığın görevden devam |
 | Yeni servis eklemem gerekiyor | `/vibe-plan redis-cache-ekleme` |
 | Hangi skill'i yüklemeliyim? | Otomatik — session başında tespit edilir |
 | Claude kuralları atladı | `pre-tool-use.js` hook uyarı verir |
 | Yanlışlıkla Opus ile açıldım | Hook `/model sonnet` öneriyor — komutu çalıştır |
 | Sonnet aynı bug'ı 2 kez çözemedi | Otomatik — Sonnet `Agent(model:opus)` çağırır |
+| Riskli komut bloklandı | `permission-policy.js` hard-block — komutu gözden geçir |
+| Büyük özellik, nereden başlayacağım? | `/vibe-plan` → `/vibe-sdd` → `/vibe-fleet` sırasıyla |
 
 ---
 
@@ -288,7 +471,7 @@ vibecode/
 
 | Repo | Ne Alındı |
 |------|-----------|
-| [superpowers](https://github.com/obra/superpowers) | SKILL.md formatı, verification-before-completion |
+| [superpowers](https://github.com/obra/superpowers) | SKILL.md formatı; `task-brief` / `review-package` / `sdd-workspace` scriptleri; implementer + reviewer prompt şablonları; progress ledger deseni |
 | [everything-claude-code](https://github.com/affaan-m/everything-claude-code) | 5-layer architecture, strategic-compact |
 | [get-shit-done](https://github.com/gsd-build/get-shit-done) | HANDOFF.md, context monitor, workflow guard |
 | [obsidian-skills](https://github.com/kepano/obsidian-skills) | YAML frontmatter, minimal skill design |
