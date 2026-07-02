@@ -16,6 +16,7 @@
 - [serena-optimization](serena-optimization-plan.md) — Serena onboarding + symbol-level navigation + permission auto-grant.
 - [vibe-prefix-commands](vibe-prefix-commands-plan.md) — Custom slash command namespace çakışması için `vibe-` prefix kuralı.
 - [wrongstack-pattern-adoption](wrongstack-pattern-adoption-plan.md) — WrongStack'in permission/fleet/SDD desenlerini Claude-only vibecode'a uyarla (fork değil, provider katmanı hariç).
+- [vibe-manager-integration](vibe-manager-integration-plan.md) — buraksu42/vibe-manager skill'inin (tek dosya, 4270 satır) vibecode'a eklenebilirliği + entegrasyon değerlendirmesi.
 
 ## Superseded / Arşivlenmiş
 
