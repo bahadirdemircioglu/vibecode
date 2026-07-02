@@ -147,7 +147,7 @@ If a skill defines an anti-pattern, avoid it.
    3+ satır → mikro-spec zorunlu. Sonnet döndükten sonra kodu oku ve review et.
    Max 2 Sonnet denemesi — 2. başarısızlıkta Opus devralır.
 10. **Model routing — Sonnet-first politikası:**
-    - Default model: **Sonnet**. Opus sadece planlama (`/vibe-plan`), mimari karar, derin reasoning için.
+    - Default model: **Sonnet**. Opus mimari karar ve derin reasoning için. `/vibe-plan` planlaması **Fable subagent'ında** koşar (bkz. `.claude/commands/vibe-plan.md`) — Opus'a gitmez.
     - Session start hook'u Opus tespit ederse uyarı verir; kullanıcı `/model sonnet` ile geçer (auto-switch YOK).
     - **Sonnet eskalasyon kuralları:**
       - **Planlama / mimari karar** → Sonnet doğrudan `Agent(model:opus)` çağırır

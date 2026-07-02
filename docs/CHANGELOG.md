@@ -26,8 +26,16 @@
   (normal dev'i blokluyordu; tehlikeli vektörler zaten permission-policy + net-fs-guard'da).
   (6) **Belgeler** — `.serena/project.yml`'in "tracked in git" iddiası düzeltildi (gerçekte
   gitignore'da, hook üretir); bayat analiz raporu güncellendi; `.DS_Store` dosyaları temizlendi.
+  (7) **permission-policy.js false-positive** — destructive kalıplar (`sudo`, `rm -rf`, `DROP TABLE`)
+  artık tırnak içi VERİ'de (ör. `git commit -m "..."` mesajı, `echo "..."`) eşleşmiyor; yalnızca
+  gerçekten çalıştırılan komutlarda bloklar. `eval`/`sh -c`/`bash -c` gibi eval-construct'lar
+  fail-safe olarak ham taranmaya devam eder (bypass yok). 6 senaryoluk davranış testi ile doğrulandı.
+  (8) **`/vibe-plan` → Fable routing** — planlama muhakemesi ana oturum yerine senkron bir Fable
+  subagent'ına (`Agent(subagent_type: "claude", model: "fable")`) dispatch edilir; ana oturum
+  yalnızca MCP kurulumu + sunum + onay kapısını yönetir. CLAUDE.md model routing kuralı güncellendi.
 - **Why:** Advisory hook mesajları sessizce kayboluyordu; context monitor yanlış event'te idi;
-  belge/gerçek tutarsızlıkları ve aşırı-agresif deny kuralları vardı.
+  belge/gerçek tutarsızlıkları ve aşırı-agresif deny kuralları vardı; destructive guard commit
+  mesajlarında yanlış tetikleniyordu; planlama pahalı Opus yerine Fable'da koşmalıydı.
 - **Source:** Dahili proje incelemesi.
 
 ## [2026-06-20] — obra/superpowers SDD tooling adoption

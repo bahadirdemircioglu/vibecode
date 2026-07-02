@@ -6,7 +6,7 @@ description: "Create an architecture plan for a new feature or project"
 
 Create a detailed architecture plan. Do NOT write any code until the plan is approved.
 
-> **Model:** This command runs entirely on Opus. Do NOT delegate to Sonnet subagents — planning requires deep reasoning.
+> **Model:** Planlama muhakemesi **Fable** üzerinde koşar. Bu oturum (ana oturum) hangi modelde olursa olsun yalnızca **orkestrasyon** yapar: MCP kurulumu, Serena planning-mode, sunum ve onay kapısı. Asıl araştırma + plan yazımı bir **Fable subagent'ına** dispatch edilir: `Agent(subagent_type: "claude", model: "fable")` — bu tipin `Write` + Serena/Context7 erişimi vardır (`architect` tipinde Write yok, bu yüzden kullanılmaz). Sonnet'e delege ETME.
 
 ### 0. MCP Setup & Check
 Ensure MCP servers are configured and running before any work begins:
@@ -27,68 +27,79 @@ If Serena is unavailable, WARN the user and ask if they want to continue without
 ### 0.5 Serena Planning Mode
 Switch Serena to read-only planning mode to prevent accidental file writes during planning:
 - Call `switch_modes` with `["planning", "interactive"]`
-- This disables all write tools in Serena — only read/search/analysis tools remain active
+- This disables all write tools in Serena — only read/search/analysis tools remain active. The Fable subagent shares this Serena connection, so it also inherits read-only mode.
 - After plan is approved and implementation begins (via `/vibe-go`), mode automatically returns to `["editing", "interactive"]`
 
-### 1. Load Standards
-- Read `.vibecode/standards/architecture.md`
-- Read all files in `docs/constraints/*.md`
+### 1. Dispatch Fable Planning Subagent
+Steps 1a–1d (standart yükleme, araştırma, plan yazımı, INDEX güncelleme) **tek bir Fable subagent'ında** koşar. Ana oturum bu subagent'ı `Agent(subagent_type: "claude", model: "fable", run_in_background: false)` ile **senkron** çağırır (onay kapısından önce plan dosyası hazır olmalı).
 
-### 2. Research
-- **Read `docs/architecture/INDEX.md`** — bir satır özetlerden ilgili eski planları tespit et (mevcut planların tek otoritesi; `ls` çekme)
-- Sadece **ilgili** plan dosyalarını targeted Read et (hepsini değil)
-- Use Serena to analyze existing codebase for related code
-- Use Context7 for any third-party library decisions
-- Review `docs/decisions.md` for prior architectural decisions
+Subagent'a verilecek mikro-spec (aynen ilet):
 
-### 3. Create Architecture Plan
-Write `docs/architecture/$ARGUMENTS-plan.md` with these sections:
+> **Görev:** `$ARGUMENTS` için mimari plan yaz. Model: Fable. KOD YAZMA — sadece plan dosyası.
+>
+> **1a. Standartları yükle**
+> - Read `.vibecode/standards/architecture.md`
+> - Read all files in `docs/constraints/*.md`
+>
+> **1b. Araştır**
+> - Read `docs/architecture/INDEX.md` — bir satır özetlerden ilgili eski planları tespit et (mevcut planların tek otoritesi; `ls docs/architecture/` ÇEKME).
+> - Sadece **ilgili** plan dosyalarını targeted Read et (hepsini değil).
+> - Serena ile mevcut kod tabanında ilgili kodu analiz et (`get_symbols_overview` → `find_symbol`).
+> - Üçüncü parti kütüphane kararları için Context7 kullan.
+> - `docs/decisions.md` içindeki önceki mimari kararları gözden geçir.
+>
+> **1c. Plan dosyasını yaz** — `docs/architecture/$ARGUMENTS-plan.md`, şu şablonla (N/A bölümleri atla):
+>
+> ```markdown
+> # Architecture Plan: $ARGUMENTS
+>
+> ## Overview & Goals
+> [What this feature does and why it's needed]
+>
+> ## Directory Structure Changes
+> [New directories, files to create or modify]
+>
+> ## Tech Decisions
+> [Libraries, patterns, approaches — with rationale for each]
+>
+> ## Database Schema
+> [New tables, columns, relationships, indexes — skip if N/A]
+>
+> ## API Contract
+> [New endpoints: method, path, request/response shapes — skip if N/A]
+>
+> ## Docker Services
+> [New containers, volumes, networks — skip if N/A]
+>
+> ## Port Assignments
+> [Read from `.vibecode/standards/ports.md` — assigned ports for any new services]
+>
+> ## Security Considerations
+> [Auth, CORS, rate limiting, input validation relevant to this feature]
+>
+> ## Migration Plan
+> [Steps to implement without breaking existing functionality]
+>
+> ## Open Questions
+> [Decisions that need user input before proceeding]
+> ```
+>
+> **1d. INDEX'i güncelle** — `docs/architecture/INDEX.md` içinde "Aktif Planlar" altına tek satır ekle:
+> ```
+> - [$ARGUMENTS]($ARGUMENTS-plan.md) — bir cümlelik özet (~80 karakter)
+> ```
+> Bu plan önceki bir planı geçersiz kılıyorsa, o satırı "Superseded / Arşivlenmiş" bölümüne **taşı**: `superseded by [$ARGUMENTS]`.
+>
+> **DÖNÜŞ:** Yazdığın plan dosyasının yolunu + 3-5 maddelik özet + Open Questions listesini döndür.
+>
+> **YAPMA:** Kod yazma, uygulama yapma, test yazma, plan dosyası dışında dosya değiştirme, `ls docs/architecture/` çekme, onay kapısını atlama.
 
-```markdown
-# Architecture Plan: $ARGUMENTS
+Subagent döndükten sonra ana oturum plan dosyasını okur ve devam eder.
 
-## Overview & Goals
-[What this feature does and why it's needed]
+### 2. Present Plan
+Show the complete plan to the user (subagent'ın döndürdüğü özeti + dosya içeriğini).
 
-## Directory Structure Changes
-[New directories, files to create or modify]
-
-## Tech Decisions
-[Libraries, patterns, approaches — with rationale for each]
-
-## Database Schema
-[New tables, columns, relationships, indexes — skip if N/A]
-
-## API Contract
-[New endpoints: method, path, request/response shapes — skip if N/A]
-
-## Docker Services
-[New containers, volumes, networks — skip if N/A]
-
-## Port Assignments
-[Read from ports file — assigned ports for any new services]
-
-## Security Considerations
-[Auth, CORS, rate limiting, input validation relevant to this feature]
-
-## Migration Plan
-[Steps to implement without breaking existing functionality]
-
-## Open Questions
-[Decisions that need user input before proceeding]
-```
-
-### 4. Update INDEX
-Append a one-line entry to `docs/architecture/INDEX.md` under "Aktif Planlar":
-```
-- [$ARGUMENTS]($ARGUMENTS-plan.md) — bir cümlelik özet (~80 karakter)
-```
-If a previous plan is superseded by this one, **move** that line to "Superseded / Arşivlenmiş" with note: `superseded by [$ARGUMENTS]`.
-
-### 5. Present Plan
-Show the complete plan to the user.
-
-### 6. Wait for Approval
+### 3. Wait for Approval
 **STOP HERE.** Do NOT proceed without explicit user approval.
 
-Say: "Plan written to `docs/architecture/$ARGUMENTS-plan.md` (INDEX güncellendi). Please review and approve before I begin implementation."
+Say: "Plan written to `docs/architecture/$ARGUMENTS-plan.md` (INDEX güncellendi, Fable ile yazıldı). Please review and approve before I begin implementation."

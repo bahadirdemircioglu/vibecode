@@ -30,6 +30,21 @@ async function readStdin() {
   return Buffer.concat(chunks).toString('utf-8');
 }
 
+// For Bash, keyword rules must match EXECUTED commands, not quoted DATA.
+// A destructive word inside a `git commit -m "..."` message or an `echo "..."`
+// is text, not a command, and must not trigger a hard block. We strip single-
+// and double-quoted spans before matching — UNLESS the command uses a shell-
+// eval construct (eval / sh -c / bash -c / ...), where quoted content IS
+// executed and must stay inspected (fail-safe: inspect raw). Non-Bash tools
+// (file paths, URLs) are returned unchanged.
+function sanitizeForMatch(toolName, subject) {
+  if (toolName !== 'Bash') return subject;
+  const evalConstruct = /\beval\b|\b(?:ba|z|da)?sh\s+-c\b/i.test(subject);
+  if (evalConstruct) return subject;
+  // Double quotes first (may contain single quotes / heredoc bodies), then single.
+  return subject.replace(/"[^"]*"/g, '""').replace(/'[^']*'/g, "''");
+}
+
 // subjectKey: which field of tool_input is the "trust subject" to inspect.
 function extractSubject(toolName, input) {
   if (!input) return '';
@@ -84,11 +99,15 @@ async function main() {
   const subject = extractSubject(toolName, input.tool_input);
   if (!subject) process.exit(0);
 
+  // What the rules match against: executed commands, not quoted data.
+  // `subject` is still used for the human-readable block/warning text.
+  const matchTarget = sanitizeForMatch(toolName, subject);
+
   const yolo = process.env.VIBE_YOLO === '1';
 
   // --- Destructive tier ---
   for (const rule of DESTRUCTIVE) {
-    if (rule.re.test(subject)) {
+    if (rule.re.test(matchTarget)) {
       if (yolo) {
         // Downgraded to advisory because VIBE_YOLO=1 — inject as context,
         // do not block. (PreToolUse: additionalContext, not decision/message.)
@@ -114,7 +133,7 @@ async function main() {
 
   // --- Standard tier (advisory) ---
   for (const rule of STANDARD) {
-    if (rule.re.test(subject)) {
+    if (rule.re.test(matchTarget)) {
       console.log(JSON.stringify({
         hookSpecificOutput: {
           hookEventName: 'PreToolUse',
