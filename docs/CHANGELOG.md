@@ -5,6 +5,27 @@
 
 ---
 
+## [2026-07-02] — /vibe-update: upstream framework sync command
+
+### Changes
+- **What:** Türetilmiş projelerin, geliştikçe değişen vibecode framework dosyalarını
+  (standards/skills/hooks/commands/CLAUDE.md) upstream'den güvenle güncelleyebilmesi
+  için `/vibe-update` komutu eklendi.
+  (1) `.vibecode/scripts/vibe-update` — GitHub tarball'ı çeker (`codeload.github.com`,
+  `VIBECODE_UPSTREAM_DIR` ile lokal klon/offline modu), her framework dosyasını
+  **hash-tabanlı 3-yön** (base/current/upstream) sınıflandırır: UPDATE/ADD auto-apply,
+  CONFLICT sor, USERONLY/USERADD/DELETED dokunma. Self-guard (vibecode'un kendisinde no-op,
+  exit 3) + dirty-tree guard (exit 4).
+  (2) `.claude/commands/vibe-update.md` — scan → rapor → clean apply → çakışmalarda diff+onay
+  → manifest yenile → CHANGELOG + commit önerisi.
+  (3) `.vibecode/VERSION` — türeme anındaki baseline hash manifesti; `session-start.sh`
+  fresh-clone'da yazar (ilk commit'e dahil), kullanıcı özelleştirmelerini tespit için.
+- **Why:** vibecode'daki iyileştirmeler (ör. hook düzeltmeleri) türetilmiş projelere
+  ulaşmıyordu; projeler eski framework sürümünde takılı kalıyordu.
+- **Verify:** 13 senaryoluk offline entegrasyon testi (tüm bucket'lar + apply-clean +
+  apply-one + dirty-guard + manifest) — hepsi geçti.
+- **Source:** Dahili özellik.
+
 ## [2026-07-02] — Framework review fixes: hook schema + hardening
 
 ### Changes

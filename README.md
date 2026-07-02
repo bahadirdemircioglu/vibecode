@@ -20,6 +20,7 @@ Vibecode, Claude Code ile yazılım geliştirirken karşılaşılan temel sorunl
 | Doğru standart yüklenemiyor | **pre-tool-use hook** — dosya path'ine göre uyarı |
 | Opus'ta rutin iş = pahalı | **Sonnet-first routing** — hook Opus tespit ederse `/model sonnet` önerir |
 | Plan discovery için `ls` token yiyor | **`docs/architecture/INDEX.md`** — tek otorite, targeted Read |
+| vibecode gelişince türetilmiş projen eski sürümde kalıyor | **`/vibe-update`** — framework dosyalarını upstream'den hash-tabanlı güvenli merge ile senkronize eder |
 
 ---
 
@@ -265,6 +266,7 @@ Critical bulgu varsa fix subagent devreye girer; re-review sonrası merge edilir
 | `/vibe-compact` | State kaydeder, context temizler |
 | `/vibe-doc-sync [--live] [--tier full] [paths...]` | Dokümanları kodla senkronize eder |
 | `/vibe-security-review [file]` | OWASP Top 10 güvenlik taraması |
+| `/vibe-update [ref]` | Framework dosyalarını (standards/skills/hooks/commands) upstream vibecode'dan senkronize eder — hash-tabanlı güvenli merge |
 | `/vibe-status` | Session durumunu gösterir |
 
 ---

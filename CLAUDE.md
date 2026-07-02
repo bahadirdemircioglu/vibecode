@@ -116,6 +116,7 @@ If a skill defines an anti-pattern, avoid it.
 | `/vibe-compact` | Save state to HANDOFF.md, then compact context |
 | `/vibe-security-review [file]` | OWASP Top 10 security review with patched code |
 | `/vibe-doc-sync [--live] [--tier full] [paths...]` | Continuous doc maintainer — sync docs with code (shadow default) |
+| `/vibe-update [ref]` | Sync framework files (standards/skills/hooks/commands) from upstream vibecode — hash-based safe merge |
 | `/vibe-status` | Show session state and MCP health |
 
 ---

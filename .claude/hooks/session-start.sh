@@ -247,6 +247,16 @@ if [[ ! -d "$PROJECT_ROOT/.git" ]]; then
   fi
 
   git -C "$PROJECT_ROOT" init -q 2>/dev/null
+
+  # Record the vibecode framework baseline so /vibe-update can later detect which
+  # framework files the user has customized (hash-based 3-way merge). Written
+  # BEFORE the initial commit so .vibecode/VERSION ships in it.
+  if [[ -x "$PROJECT_ROOT/.vibecode/scripts/vibe-update" ]]; then
+    if bash "$PROJECT_ROOT/.vibecode/scripts/vibe-update" init >/dev/null 2>&1; then
+      OUTPUT+="VIBE-UPDATE: framework baseline recorded (.vibecode/VERSION)"$'\n'
+    fi
+  fi
+
   git -C "$PROJECT_ROOT" add -A 2>/dev/null
   git -C "$PROJECT_ROOT" commit -q -m "Initial commit from vibecode template" 2>/dev/null
   OUTPUT+="GIT: auto-initialized and committed (fresh project)"$'\n'
