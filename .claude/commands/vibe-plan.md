@@ -13,7 +13,7 @@ Ensure MCP servers are configured and running before any work begins:
 
 1. **Check `.mcp.json`** — Should already exist (tracked in git). If missing for any reason, create it with Serena (`--project-from-cwd`) and Context7 servers, then WARN: "`.mcp.json` was missing and recreated — restart session for MCP servers." Then **STOP**.
 
-2. **Check `.serena/project.yml`** — Should already exist (tracked in git). If missing, auto-detect languages and create it. If task needs a language not listed, add it and note restart is needed.
+2. **Check `.serena/project.yml`** — NOT tracked in git (it is in `.gitignore`); the session-start hook auto-creates it from `.vibecode/templates/serena-project.yml` on first run. If missing, auto-detect languages and create it. If task needs a language not listed, add it and note restart is needed.
 
 3. **Verify MCPs** — Call `get_current_config` on Serena:
    - Active project with correct languages → "Serena: OK"

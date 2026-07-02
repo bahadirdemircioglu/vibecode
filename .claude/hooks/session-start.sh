@@ -2,7 +2,9 @@
 # Runs on SessionStart — detects project gaps and shows session state
 # Output is kept SHORT (max 10 lines) to avoid noise on every session.
 
-set -euo pipefail
+# -u + pipefail for safety, but NOT -e: this is a best-effort startup hook;
+# a single failing probe must never abort the whole session-start output.
+set -uo pipefail
 
 PROJECT_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
 OUTPUT=""
@@ -42,17 +44,19 @@ sedi() {
   fi
 }
 
-# Install a system package using detected package manager
+# Install a system package using detected package manager.
 # Usage: pkg_install <pkg_brew> <pkg_apt> <pkg_dnf> <pkg_apk> <pkg_pacman>
+# NOTE: sudo uses -n (non-interactive) so a missing sudo password fails fast
+# instead of hanging the session-start hook on a hidden password prompt.
 pkg_install() {
   local name="$1" pkg_brew="${2:-$1}" pkg_apt="${3:-$1}" pkg_dnf="${4:-$1}" pkg_apk="${5:-$1}" pkg_pacman="${6:-$1}"
   case "$PKG_MGR" in
     brew)   brew install "$pkg_brew" --quiet 2>/dev/null && return 0 ;;
-    apt)    sudo apt-get install -y -qq "$pkg_apt" 2>/dev/null && return 0 ;;
-    dnf)    sudo dnf install -y -q "$pkg_dnf" 2>/dev/null && return 0 ;;
-    yum)    sudo yum install -y -q "$pkg_dnf" 2>/dev/null && return 0 ;;
-    apk)    sudo apk add --quiet "$pkg_apk" 2>/dev/null && return 0 ;;
-    pacman) sudo pacman -S --noconfirm --quiet "$pkg_pacman" 2>/dev/null && return 0 ;;
+    apt)    sudo -n apt-get install -y -qq "$pkg_apt" 2>/dev/null && return 0 ;;
+    dnf)    sudo -n dnf install -y -q "$pkg_dnf" 2>/dev/null && return 0 ;;
+    yum)    sudo -n yum install -y -q "$pkg_dnf" 2>/dev/null && return 0 ;;
+    apk)    sudo -n apk add --quiet "$pkg_apk" 2>/dev/null && return 0 ;;
+    pacman) sudo -n pacman -S --noconfirm --quiet "$pkg_pacman" 2>/dev/null && return 0 ;;
   esac
   return 1
 }
@@ -94,14 +98,14 @@ fi
 if command -v node &>/dev/null && ! command -v npm &>/dev/null; then
   case "$PKG_MGR" in
     apt)
-      if sudo apt-get install -y -qq npm 2>/dev/null; then
+      if sudo -n apt-get install -y -qq npm 2>/dev/null; then
         OUTPUT+="INSTALLED: npm (via apt) — required for Context7 and LSP packages"$'\n'
       else
         OUTPUT+="MISSING: npm — apt install failed. Try: sudo apt-get install npm"$'\n'
       fi
       ;;
     dnf|yum)
-      if sudo "$PKG_MGR" install -y -q npm 2>/dev/null; then
+      if sudo -n "$PKG_MGR" install -y -q npm 2>/dev/null; then
         OUTPUT+="INSTALLED: npm (via $PKG_MGR)"$'\n'
       else
         OUTPUT+="MISSING: npm — $PKG_MGR install failed. Try: sudo $PKG_MGR install npm"$'\n'
@@ -115,14 +119,14 @@ if command -v node &>/dev/null && ! command -v npm &>/dev/null; then
       fi
       ;;
     apk)
-      if sudo apk add --quiet npm 2>/dev/null; then
+      if sudo -n apk add --quiet npm 2>/dev/null; then
         OUTPUT+="INSTALLED: npm (via apk)"$'\n'
       else
         OUTPUT+="MISSING: npm — apk install failed. Try: sudo apk add npm"$'\n'
       fi
       ;;
     pacman)
-      if sudo pacman -S --noconfirm --quiet npm 2>/dev/null; then
+      if sudo -n pacman -S --noconfirm --quiet npm 2>/dev/null; then
         OUTPUT+="INSTALLED: npm (via pacman)"$'\n'
       else
         OUTPUT+="MISSING: npm — pacman install failed. Try: sudo pacman -S npm"$'\n'
@@ -357,7 +361,12 @@ if [[ -d "$PROJECT_ROOT/.git" ]]; then
   fi
 fi
 
-# 5. Stack detection — map dependencies to available skills
+# 5. Stack detection — map dependencies to available skills.
+# NOTE: not every referenced skill ships in .vibecode/skills/. Extended-stack
+# skills (django-pro, nextjs-best-practices, golang-pro, rust-pro, terraform-
+# specialist, etc.) resolve from the user-level catalog ($HOME/.claude/skills)
+# when present. skill_exists() checks BOTH dirs and add_skill silently skips
+# any skill found in neither — detection degrades gracefully, never errors.
 SKILLS=""
 SKILL_DIRS=("$PROJECT_ROOT/.vibecode/skills" "$HOME/.claude/skills")
 

@@ -37,8 +37,6 @@
       "Bash(cat *.env*)",
       "Bash(pip install*)",
       "Bash(npm install*)",
-      "Bash(python *)",
-      "Bash(node *)",
       "Read(**/.env)",
       "Read(**/.env.local)"
     ]
@@ -76,13 +74,13 @@
         ]
       }
     ],
-    "Notification": [
+    "UserPromptSubmit": [
       {
         "hooks": [
           {
             "type": "command",
             "command": ".claude/hooks/notification.js",
-            "description": "Monitors context size and warns at 60K/80K token thresholds"
+            "description": "Per-turn context monitor — warns at ~60K/80K token thresholds (per session)"
           }
         ]
       }

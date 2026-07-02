@@ -18,9 +18,15 @@ Sistemin en güçlü yanlarından biri "Token Economy" yaklaşımıdır.
 - **Güvenli Altyapı:** Docker üzerinde root olmayan kullanıcı kullanımı ve güvenlik taramaları (`make audit`) standartlaştırılmıştır.
 
 ## 4. Gelişim Önerileri ve Fikirler
-- **Skill Otomasyonu:** Task analizi yaparak hangi skill'in yüklenmesi gerektiğini otomatik öneren bir "Skill Orchestrator" geliştirilebilir.
-- **Tome Entegrasyonu Geliştirme:** Dokümantasyonun (Tome) kod değişiklikleriyle otomatik senkronize olması için bir "doc-sync" skill'i eklenebilir.
-- **Hata Analiz Hafızası:** `/done` aşamasında karşılaşılan ve çözülen hataların `memories/` altına daha yapılandırılmış şekilde kaydedilmesi, AI'ın gelecekte benzer hataları yapmasını önleyebilir.
+
+Raporun ilk versiyonundaki üç öneri bu tarihten sonra **uygulandı**:
+- ✅ **Skill Otomasyonu** → `.claude/hooks/pre-tool-use.js` dosya path'ine göre ilgili skill'leri önerir; `session-start.sh` stack detection ile config dosyalarından skill tespiti yapar.
+- ✅ **Doc-Sync** → `/vibe-doc-sync` komutu + `continuous-doc-maintainer` skill'i (shadow/live modları).
+- ✅ **Hata Analiz Hafızası** → `.vibecode/memories/errors/` altında yapılandırılmış hata geçmişi.
+
+Açık kalan / sıradaki fikirler:
+- **Hook çıktı şeması sürüm testi:** Hook'ların `hookSpecificOutput.additionalContext` şemasını CI'da doğrulayan küçük bir test (Claude Code şema değişikliklerine karşı regresyon koruması).
+- **Extended-stack skill paketleme:** Stack detection'ın referans verdiği django/next/go/rust/terraform skill'lerinin `.vibecode/skills/`'e taşınması (şu an user-level kataloğa düşüyor).
 
 ## 5. Sonuç
 Vibecode, bireysel bir geliştiricinin AI ile çalışma verimini katlayacak, kurumsal düzeyde bir "AI Developer Experience" (ADX) sunmaktadır. Proje, sadece bir şablon değil, bir geliştirme metodolojisidir.

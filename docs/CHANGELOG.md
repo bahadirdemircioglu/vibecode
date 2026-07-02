@@ -5,6 +5,31 @@
 
 ---
 
+## [2026-07-02] — Framework review fixes: hook schema + hardening
+
+### Changes
+- **What:** Proje geneli gözden geçirme bulgularının düzeltmesi.
+  (1) **Hook çıktı şeması** — `pre-tool-use.js` ve `permission-policy.js` advisory çıktıları
+  geçersiz `{decision:"approve", message}` yerine doğru `hookSpecificOutput.additionalContext`
+  şemasına taşındı (eski şemada mesajlar Claude'a hiç ulaşmıyordu). Destructive hard-block
+  exit-2 + stderr olarak korundu.
+  (2) **notification.js** — `Notification` (seyrek olay) yerine `UserPromptSubmit` (tur başına)
+  event'ine taşındı; state dosyası artık `session_id` ile anahtarlı (`os.tmpdir()`), böylece
+  eşzamanlı projeler birbirinin sayacını ezmiyor.
+  (3) **pre-tool-use.js** — ölü `filePath.includes('import')` koşulu kaldırıldı; frontend
+  kuralı `.claude/hooks/` (Claude lifecycle hook'ları) için false-positive vermeyecek şekilde
+  daraltıldı; JSDoc "Four-layer" olarak düzeltildi.
+  (4) **session-start.sh** — `sudo` çağrıları `sudo -n` yapıldı (gizli şifre prompt'unda asılmayı
+  önler); `set -e` kaldırıldı (best-effort startup); extended-stack skill'lerin user-level
+  kataloğa zarifçe düştüğü belgelendi.
+  (5) **settings.json** — aşırı geniş `Bash(python *)` / `Bash(node *)` deny kuralları kaldırıldı
+  (normal dev'i blokluyordu; tehlikeli vektörler zaten permission-policy + net-fs-guard'da).
+  (6) **Belgeler** — `.serena/project.yml`'in "tracked in git" iddiası düzeltildi (gerçekte
+  gitignore'da, hook üretir); bayat analiz raporu güncellendi; `.DS_Store` dosyaları temizlendi.
+- **Why:** Advisory hook mesajları sessizce kayboluyordu; context monitor yanlış event'te idi;
+  belge/gerçek tutarsızlıkları ve aşırı-agresif deny kuralları vardı.
+- **Source:** Dahili proje incelemesi.
+
 ## [2026-06-20] — obra/superpowers SDD tooling adoption
 
 ### Changes

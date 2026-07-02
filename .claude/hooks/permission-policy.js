@@ -90,10 +90,13 @@ async function main() {
   for (const rule of DESTRUCTIVE) {
     if (rule.re.test(subject)) {
       if (yolo) {
-        // Downgraded to advisory because VIBE_YOLO=1
+        // Downgraded to advisory because VIBE_YOLO=1 — inject as context,
+        // do not block. (PreToolUse: additionalContext, not decision/message.)
         console.log(JSON.stringify({
-          decision: 'approve',
-          message: `⛔→⚠️ [permission-policy] DESTRUCTIVE allowed via VIBE_YOLO: ${rule.why}\n   subject: ${subject.slice(0, 200)}`,
+          hookSpecificOutput: {
+            hookEventName: 'PreToolUse',
+            additionalContext: `⛔→⚠️ [permission-policy] DESTRUCTIVE allowed via VIBE_YOLO: ${rule.why}\n   subject: ${subject.slice(0, 200)}`,
+          },
         }));
         process.exit(0);
       }
@@ -113,8 +116,10 @@ async function main() {
   for (const rule of STANDARD) {
     if (rule.re.test(subject)) {
       console.log(JSON.stringify({
-        decision: 'approve',
-        message: `⚠️ [permission-policy] Heads-up — ${rule.why}. Proceed only if intended.`,
+        hookSpecificOutput: {
+          hookEventName: 'PreToolUse',
+          additionalContext: `⚠️ [permission-policy] Heads-up — ${rule.why}. Proceed only if intended.`,
+        },
       }));
       process.exit(0);
     }

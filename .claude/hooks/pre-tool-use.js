@@ -3,13 +3,14 @@
 /**
  * Pre-Tool-Use Hook — Standards + MCP + Doc Enforcement (Advisory)
  *
- * Three-layer advisory system:
+ * Four-layer advisory system:
  * 1. Standards enforcement — reminds to load relevant standard files
  * 2. MCP availability — reminds to verify Serena + Context7 before code ops
  * 3. Skill suggestions — recommends relevant skills based on file paths (ADR-002)
  * 4. Doc update reminder — reminds that documentation must be updated
  *
- * This hook is advisory — it warns but does not block.
+ * This hook is advisory — it injects context (additionalContext) but never
+ * blocks or auto-approves. The normal permission flow always proceeds.
  * Input: JSON from stdin (Claude Code hook protocol)
  * Output: JSON to stdout with optional "message" for warnings
  */
@@ -57,7 +58,7 @@ async function main() {
   if (isCodeFile) {
     mcpReminders.push('Verify Serena MCP is available — use Serena for ALL code search (never grep/find).');
   }
-  if (isCodeFile && (filePath.includes('import') || isBackendCode || isFrontendCode)) {
+  if (isCodeFile && (isBackendCode || isFrontendCode)) {
     mcpReminders.push('Verify Context7 MCP for any third-party library calls.');
   }
 
@@ -81,8 +82,10 @@ async function main() {
     warnings.push('Writing backend code — ensure .vibecode/standards/backend.md was loaded first.');
   }
 
-  // Check frontend code
-  if (filePath.includes('/frontend/') || filePath.includes('/components/') || filePath.includes('/pages/') || filePath.includes('/hooks/') || filePath.includes('/store/')) {
+  // Check frontend code. Exclude .claude/hooks/ — those are Claude Code
+  // lifecycle hooks, not React hooks, and must not trip the frontend rule.
+  const isClaudeInternal = filePath.includes('/.claude/') || filePath.startsWith('.claude/');
+  if (!isClaudeInternal && (filePath.includes('/frontend/') || filePath.includes('/components/') || filePath.includes('/pages/') || filePath.includes('/hooks/') || filePath.includes('/store/'))) {
     warnings.push('Writing frontend code — ensure .vibecode/standards/frontend.md was loaded first.');
   }
 
@@ -151,10 +154,15 @@ async function main() {
   }
 
   if (messages.length > 0) {
-    // Output advisory message — does not block, just warns/suggests
+    // Advisory only — inject as additionalContext (PreToolUse hook schema).
+    // Does NOT block or auto-approve; the normal permission flow proceeds.
+    // NOTE: legacy {decision:"approve", message} is NOT valid for PreToolUse
+    // and was silently dropped — additionalContext is the supported channel.
     console.log(JSON.stringify({
-      decision: "approve",
-      message: messages.join('\n')
+      hookSpecificOutput: {
+        hookEventName: "PreToolUse",
+        additionalContext: messages.join('\n')
+      }
     }));
   }
 

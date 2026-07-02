@@ -43,6 +43,8 @@ Use `/vibe-go [task]` for the full sequence. Summary:
 5. `/vibe-go [first-task]` to begin
 
 > `.git` is auto-initialized by session-start hook. Project name is auto-detected from directory.
+> `.serena/project.yml` is **not** tracked in git — the session-start hook creates it from
+> `.vibecode/templates/serena-project.yml` on first run (a restart may be needed for Serena to pick it up).
 
 ---
 
