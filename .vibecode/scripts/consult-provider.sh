@@ -150,14 +150,26 @@ err="$(printf '%s' "$body" | jq -r '.error.message // empty' 2>/dev/null)"
 
 [[ "$http_code" == "200" ]] || fail "provider returned HTTP $http_code"
 
-# Prefer message.content; fall back to reasoner-style reasoning_content and the
-# legacy .text field so a slightly different shape still yields usable text.
-content="$(printf '%s' "$body" \
-  | jq -r '.choices[0].message.content // .choices[0].message.reasoning_content // .choices[0].text // empty' 2>/dev/null)"
+jqr() { printf '%s' "$body" | jq -r "$1 // empty" 2>/dev/null; }
+content="$(jqr '.choices[0].message.content')"   # may be "" (empty string)
+finish="$(jqr '.choices[0].finish_reason')"
+# Legacy/alt answer field, just in case a provider uses it.
+[[ -n "$content" ]] || content="$(jqr '.choices[0].text')"
 
 if [[ -z "$content" ]]; then
-  # Non-secret snippet so the caller can see WHAT came back (proxy HTML page,
-  # empty choices, null content from a length cutoff, unexpected shape, …).
+  # Reasoning models (DeepSeek v4-*) put chain-of-thought in `reasoning_content`
+  # and the ANSWER in `content`. If max_tokens is exhausted by reasoning, `content`
+  # comes back "" with finish_reason=length — the #1 cause of a "no content" reply.
+  if [[ "$finish" == "length" ]]; then
+    fail "response truncated before the answer (finish_reason=length). Raise max_tokens in .vibecode/config/ai-providers.json — reasoning models (deepseek-v4-*) burn tokens on reasoning first; try 8192+."
+  fi
+  # Finished but only reasoning present → surface that rather than nothing.
+  reasoning="$(jqr '.choices[0].message.reasoning_content')"
+  if [[ -n "$reasoning" ]]; then
+    printf '%s\n' "$reasoning"; exit 0
+  fi
+  # Non-secret snippet so the caller can see WHAT came back (proxy HTML, empty
+  # choices, unexpected shape, …). The body carries no API key.
   snippet="$(printf '%s' "$body" | tr '\n\r\t' '   ' | cut -c1-300)"
   fail "empty/unparseable provider response (HTTP $http_code). body[0:300]: ${snippet:-<empty>}"
 fi

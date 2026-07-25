@@ -58,6 +58,12 @@
 - Yanıt ayrıştırma sağlamlaştırması: `content` boşsa `reasoning_content`/`text` alanlarına düşer
   (reasoner modelleri); parse başarısızsa advisory'de gövdenin ilk 300 karakteri gösterilir;
   `CONSULT_DEBUG=1` ham yanıtı stderr'e döker. HTTP 200 içinde gelen `error` objesi de yakalanır.
+- **Model/quota düzeltmesi (canlı DeepSeek testi):** shipped default model `deepseek-chat` artık
+  geçersiz → `deepseek-v4-pro` yapıldı (geçerli: `deepseek-v4-pro`|`deepseek-v4-flash`). v4-* reasoning
+  modelleri token'ı önce reasoning'e harcadığından `max_tokens: 2048` yetmiyor (`content` boş,
+  `finish_reason=length`) → default `max_tokens: 8192`, `timeout_seconds: 120`. Script artık
+  `finish_reason=length` durumunda "max_tokens'ı artır" şeklinde net advisory verir. Gerçek 30KB'lik
+  planla uçtan uca doğrulandı (JSON escaping `jq --arg` ile güvenli).
 
 ## [2026-07-02] — /vibe-update: upstream framework sync command
 

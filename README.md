@@ -94,10 +94,10 @@ edilir. **Son söz her zaman senin modelinde** kalır — DeepSeek yalnızca dan
          "enabled": true,              // ← false → true
          "request_shape": "openai-compatible",
          "base_url": "https://api.deepseek.com",
-         "model": "deepseek-chat",
+         "model": "deepseek-v4-pro",   // geçerli model'ler: deepseek-v4-pro | deepseek-v4-flash
          "api_key_env": "DEEPSEEK_API_KEY",
-         "timeout_seconds": 45,
-         "max_tokens": 2048
+         "timeout_seconds": 120,
+         "max_tokens": 8192            // reasoning modelleri önce reasoning'e token harcar → yüksek tut
        }
      }
    }
