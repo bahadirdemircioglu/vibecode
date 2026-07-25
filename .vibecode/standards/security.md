@@ -148,7 +148,7 @@ Second layer for network and filesystem reach:
 ## 8. External AI Consultation — Secret Hygiene (`/vibe-plan` Step 1.5)
 
 > **When to read:** Before touching `.vibecode/config/ai-providers.json`,
-> `.vibecode/scripts/consult-provider.sh`, the root `.env`, or `/vibe-plan` Step 1.5.
+> `.vibecode/scripts/consult-provider.sh`, the framework provider secret, or `/vibe-plan` Step 1.5.
 
 `/vibe-plan` can optionally send a draft plan to an external provider (v1: DeepSeek) for a critique
 round (see ADR-007, `docs/architecture/multi-ai-plan-consultation-plan.md`). Unlike §7's hooks, this
@@ -160,22 +160,30 @@ config silently falls back to the normal single-model flow.
   holds only *which* provider/model/endpoint and the **name** of the env var to read
   (`api_key_env`) — never a key value. The schema has no field to hold a key, so a key can't be
   committed here by accident.
-- **The key itself** lives in the root `.env` (gitignored — see root `.gitignore`). Only
-  `.env.example` (placeholder) is tracked. This is the framework's first own secret file; derived
-  projects already had `.env` (backend), the framework itself did not until this feature.
+- **The key itself is NEVER the project's own `.env`.** vibecode is usually layered inside another
+  project, whose root `.env` belongs to *that app*; the framework must not mix its provider key into
+  it (nor risk it being committed with the app). The key resolution order is:
+  1. `$DEEPSEEK_API_KEY` (or the configured `api_key_env`) **already exported** in your shell rc.
+  2. `$VIBECODE_ENV_FILE` — explicit path override.
+  3. `.vibecode/providers.env` — project-local override, **gitignored** (root `.gitignore`). Use only
+     when you are sure that path is gitignored *in the host project*.
+  4. `~/.config/vibecode/providers.env` — **machine-global, recommended**: outside every repo, set
+     once, reused across all projects, impossible to commit.
+  Only `.vibecode/providers.env.example` (placeholder) is tracked.
 
 ### 8.2 Key handling rules
-- `consult-provider.sh` reads the key from the env var named by `api_key_env`. If unset, it extracts
-  **only that one line** from root `.env` — **no `source`/`eval`**, so `.env` is never executed.
+- `consult-provider.sh` first checks the env var named by `api_key_env`; if unset it extracts **only
+  that one line** from the first secret file found (order above) — **no `source`/`eval`**, so the file
+  is never executed. The project's own `.env` is **never** read.
 - The key travels **only** in the `curl` `Authorization: Bearer` header. It is **never** printed to
   stdout/stderr, never logged, never interpolated into the plan or the critique.
 - `curl -sS` (no verbose/echo); on error the script surfaces HTTP status + provider error *message*,
   **never** request headers.
 - **Why this doesn't circumvent the §7.1 `.env` deny-list:** that deny-list stops *Claude's own*
-  Read/`cat` tool calls from pulling `.env` into the model's context. The script reads `.env` inside
-  its own subprocess and emits only the critique text — the key never reaches the model. Running the
-  script via Bash (`consult-provider.sh <plan>`) puts no `.env` token in the command string, so the
-  deny-list is neither triggered nor bypassed.
+  Read/`cat` tool calls from pulling secrets into the model's context. The script reads its own
+  secret file inside a subprocess and emits only the critique text — the key never reaches the model.
+  Running the script via Bash (`consult-provider.sh <plan>`) puts no secret path in the command
+  string, so the deny-list is neither triggered nor bypassed.
 
 ### 8.3 Privacy & opt-in
 - **Opt-in = configuring it.** No external call happens unless a maintainer sets

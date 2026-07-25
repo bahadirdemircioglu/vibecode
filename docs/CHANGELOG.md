@@ -18,10 +18,12 @@
   `max_tokens`). Ships `enabled: false` → varsayılan davranış BİREBİR eskisi gibi (sıfır dış çağrı).
   (2) `.vibecode/scripts/consult-provider.sh` — bash+curl+jq, tek istek/tek cevap; skip/error
   sözleşmesi (exit 0+boş=sessiz atla, exit 1+stderr=advisory atla); `--exclude-appendix` ile round 2+
-  Appendix kırpma; API key'i env'den ya da root `.env`'den tek-satır çıkararak okur (source/eval yok,
-  key asla yazdırılmaz).
-  (3) `.env.example` (root, yeni) + root `.gitignore`'a `.env`/`.env.local` eklendi — framework'ün
-  ilk kendi secret dosyası.
+  Appendix kırpma; API key'i env var → `$VIBECODE_ENV_FILE` → `.vibecode/providers.env` →
+  `~/.config/vibecode/providers.env` sırasıyla tek-satır çıkararak okur (source/eval yok, key asla
+  yazdırılmaz). **Projenin kendi `.env`'i asla okunmaz** — vibecode başka projenin içinde katman
+  olduğundan kök `.env` o uygulamanındır (kullanıcı geri bildirimi).
+  (3) `.vibecode/providers.env.example` (yeni) + `.gitignore`'a `.vibecode/providers.env` eklendi —
+  framework secret'ı projenin env'inden ayrı; makine-geneli `~/.config/vibecode/providers.env` önerilir.
   (4) `.claude/commands/vibe-plan.md` — Step 1.5 convergence loop + `--no-consult` kaçış kapısı.
   (5) `.vibecode/standards/security.md` §8 — harici AI danışma secret hijyeni + fail-open gerekçesi.
   (6) `.claude/settings.json` — `consult-provider.sh` + DeepSeek curl allow-list satırları.
@@ -40,8 +42,8 @@
 ### Affected Files
 - `.vibecode/config/ai-providers.json` — provider registry (created)
 - `.vibecode/scripts/consult-provider.sh` — consultation script (created)
-- `.env.example` — root secret template (created)
-- `.gitignore` — `.env`/`.env.local` eklendi (modified)
+- `.vibecode/providers.env.example` — framework secret template (created; projenin `.env`'inden ayrı)
+- `.gitignore` — `.vibecode/providers.env` eklendi (modified)
 - `.claude/commands/vibe-plan.md` — Step 1.5 + header notu (modified)
 - `.vibecode/standards/security.md` — §8 (modified)
 - `.claude/settings.json` — allow-list (modified)

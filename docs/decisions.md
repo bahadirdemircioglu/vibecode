@@ -465,8 +465,12 @@ ikinci bir provider istiyor, ama minimal ve config-driven biçimde (ağır regis
    danışman; entegrasyon/durdurma kararını asla vermiyor. Döngü orkestrasyonda; script döngüsüz.
 
 2. **İki katmanlı config.** `.vibecode/config/ai-providers.json` (non-secret, git'e girer — provider/
-   model/endpoint + `api_key_env` **ismi**, key değeri yok) + root `.env` (secret, gitignore'a yeni
-   eklendi; sadece `.env.example` tracked). Framework'ün ilk kendi secret dosyası.
+   model/endpoint + `api_key_env` **ismi**, key değeri yok) + ayrı bir **framework secret'ı**. Key
+   **projenin kendi `.env`'ine KOYULMAZ**: vibecode başka bir projenin içinde katman olarak
+   çalıştığından kök `.env` o uygulamanın env'idir (bkz. kullanıcı geri bildirimi, aşağıdaki refinement).
+   Çözüm sırası: (1) shell'de export'lu env var, (2) `$VIBECODE_ENV_FILE`, (3) `.vibecode/providers.env`
+   (proje-yerel, gitignored), (4) `~/.config/vibecode/providers.env` (makine-geneli, önerilen).
+   Sadece `.vibecode/providers.env.example` tracked.
 
 3. **Danışma turu hook değil, ayrı script.** `.vibecode/scripts/consult-provider.sh` (bash+curl+jq),
    `/vibe-plan` orkestrasyonundan Bash tool ile explicit çağrılır. Hook reddedildi: network I/O + uzun
@@ -512,10 +516,13 @@ ikinci bir provider istiyor, ama minimal ve config-driven biçimde (ağır regis
 - Yeni bakım yüzeyi: 1 config + 1 script + Step 1.5 akışı.
 
 **Design refinement (plandan sapma, kayıt altında):** Plan Security §3 "script `.env`'i parse etmesin,
-kullanıcı manuel `source .env` etsin" diyordu. Implementasyonda bunun yerine — mevcut `db-backup.sh`
-deseniyle tutarlı — script env var yoksa root `.env`'den **yalnızca ilgili tek key'i** güvenli biçimde
-çıkarır (`source`/`eval` YOK, key asla yazdırılmaz). Deny-list'in amacı (key'in Claude context'ine
-girmemesi) tam korunur; UX iyileşir (her oturumda manuel source gerekmez). Gerekçe: `security.md §8.2`.
+kullanıcı manuel `source .env` etsin" diyordu. İlk implementasyon bunun yerine root `.env`'den tek-key
+okuyordu; ancak **kullanıcı geri bildirimi** üzerine bu düzeltildi: vibecode başka bir projenin içinde
+kullanıldığından kök `.env` o uygulamanın env'idir ve framework key'i oraya karışmamalı. Nihai tasarım:
+script **projenin `.env`'ini hiç okumaz**; key'i env var → `$VIBECODE_ENV_FILE` → `.vibecode/providers.env`
+(gitignored) → `~/.config/vibecode/providers.env` (makine-geneli, önerilen) sırasıyla, yalnızca ilgili
+tek satırı çıkararak alır (`source`/`eval` YOK, key asla yazdırılmaz). Deny-list'in amacı tam korunur.
+Gerekçe: `security.md §8.1–8.2`.
 
 ### Migration
 

@@ -103,13 +103,27 @@ edilir. **Son söz her zaman senin modelinde** kalır — DeepSeek yalnızca dan
    }
    ```
 
-2. API key'i `.env`'e koy (gitignore'da — asla commit edilmez):
+2. API key'i ver — **projenin `.env`'ine KOYMA.** vibecode başka bir projenin içinde
+   katman olarak çalıştığı için kök `.env` senin uygulamanın env'idir; framework key'i
+   oraya karışmamalı. Aşağıdakilerden **birini** seç (script bu sırayla arar):
 
    ```bash
-   cp .env.example .env
-   # .env'i düzenle, DEEPSEEK_API_KEY değerini gir:
-   #   DEEPSEEK_API_KEY=sk-...   (key: https://platform.deepseek.com/api_keys)
+   # (a) Shell rc'de export et — makine geneli, dosya gerekmez:
+   echo 'export DEEPSEEK_API_KEY=sk-...' >> ~/.zshrc && source ~/.zshrc
+
+   # (b) ÖNERİLEN — makine geneli dosya (bir kez ayarla, tüm projelerde çalışır,
+   #     hiçbir repo'ya karışmaz):
+   mkdir -p ~/.config/vibecode
+   cp .vibecode/providers.env.example ~/.config/vibecode/providers.env
+   # → ~/.config/vibecode/providers.env dosyasını düzenle, DEEPSEEK_API_KEY gir
+
+   # (c) Proje-yerel override (gitignore'da) — yalnızca bu yolun host projede
+   #     gitignore'landığından eminsen:
+   cp .vibecode/providers.env.example .vibecode/providers.env
    ```
+
+   Key adı, config'teki `api_key_env` ile aynı olmalı (`DEEPSEEK_API_KEY`).
+   (key: https://platform.deepseek.com/api_keys)
 
 **Kullanım:**
 
