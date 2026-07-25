@@ -19,7 +19,8 @@
       "Bash(docker compose logs*)",
       "Bash(docker compose exec * pytest*)",
       "Bash(docker compose exec * npm test*)",
-      "Bash(docker compose exec * ruff*)"
+      "Bash(docker compose exec * ruff*)",
+      "Bash(.vibecode/scripts/consult-provider.sh*)"
     ],
     "deny": [
       "Bash(rm -rf *)",

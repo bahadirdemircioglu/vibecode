@@ -6,7 +6,7 @@ description: "Create an architecture plan for a new feature or project"
 
 Create a detailed architecture plan. Do NOT write any code until the plan is approved.
 
-> **Model:** Planlama muhakemesi **Fable** üzerinde koşar. Bu oturum (ana oturum) hangi modelde olursa olsun yalnızca **orkestrasyon** yapar: MCP kurulumu, Serena planning-mode, sunum ve onay kapısı. Asıl araştırma + plan yazımı bir **Fable subagent'ına** dispatch edilir: `Agent(subagent_type: "claude", model: "fable")` — bu tipin `Write` + Serena/Context7 erişimi vardır (`architect` tipinde Write yok, bu yüzden kullanılmaz). Sonnet'e delege ETME.
+> **Model:** Planlama muhakemesi **Fable** üzerinde koşar. Bu oturum (ana oturum) hangi modelde olursa olsun yalnızca **orkestrasyon** yapar: MCP kurulumu, Serena planning-mode, harici AI danışma turu (Step 1.5), sunum ve onay kapısı. Asıl araştırma + plan yazımı bir **Fable subagent'ına** dispatch edilir: `Agent(subagent_type: "claude", model: "fable")` — bu tipin `Write` + Serena/Context7 erişimi vardır (`architect` tipinde Write yok, bu yüzden kullanılmaz). Sonnet'e delege ETME.
 
 ### 0. MCP Setup & Check
 Ensure MCP servers are configured and running before any work begins:
@@ -95,6 +95,62 @@ Subagent'a verilecek mikro-spec (aynen ilet):
 > **YAPMA:** Kod yazma, uygulama yapma, test yazma, plan dosyası dışında dosya değiştirme, `ls docs/architecture/` çekme, onay kapısını atlama.
 
 Subagent döndükten sonra ana oturum plan dosyasını okur ve devam eder.
+
+### 1.5 Consultation — Harici AI Danışma Turu (OPSİYONEL, bounded convergence loop)
+
+> Taslak plan hazır olduktan sonra, yapılandırılmışsa, plan harici bir AI sağlayıcısına
+> (v1: **DeepSeek**) eleştiri için gönderilir; makul öneriler entegre edilir; DeepSeek yeni
+> esaslı itiraz üretmeyene (`CONVERGED`) **veya** `max_rounds`'a ulaşana kadar tekrarlanır.
+> **Son söz her zaman Fable'dadır** — DeepSeek yalnızca danışman. Tüm döngü mantığı burada,
+> orkestrasyonda; `consult-provider.sh` script'i çok-tur bilmez (her round tek istek/tek cevap).
+> Mekanizma **fail-open**: her hata/eksik yapılandırma normal akışa sessizce/kesintisiz döner —
+> bu bir güvenlik kapısı değil, opsiyonel bir kalite adımıdır (bkz. `security.md §8`).
+
+**0. Kaçış kapısı:** `$ARGUMENTS` içinde `--no-consult` varsa → bu adımı TAMAMEN atla, doğrudan
+   Step 2. (Hassas planlar için; config değiştirmeye gerek kalmaz. Not: `--no-consult` bayrağını
+   Step 1'de plan dosya adı/slug'ından da çıkar — dosya adına karışmasın.)
+
+**1. Ön kontrol:** `.vibecode/config/ai-providers.json` yoksa → sessizce Step 2. Varsa devam.
+   (Script zaten tüm kontrolleri kendi yapar; buradaki amaç gereksiz Bash çağrısından kaçınmak.)
+
+**2. Convergence döngüsü** — `round = 1`, `max_rounds` = config'teki değer (default 3):
+
+   **a. Script'i çağır (Bash tool ile, round başına BİR kez):**
+   ```
+   .vibecode/scripts/consult-provider.sh <plan-dosya-yolu>            # round 1
+   .vibecode/scripts/consult-provider.sh <plan-dosya-yolu> --exclude-appendix   # round 2+
+   ```
+   `--exclude-appendix` (round 2+): DeepSeek'e kendi önceki turlarının çıktısını (Appendix)
+   geri besleme — feedback-bloat/döngüsel referans önlemi (script Appendix başlığından itibaren kırpar).
+
+   **b. Script sonucunu yorumla:**
+   - **exit 0 + boş stdout** → provider disabled / key yok / config yok → **sessizce Step 2'ye geç**
+     ("Danışma turu atlandı: provider yapılandırılmamış" — tek satır, `round==1` ise).
+   - **exit ≠ 0 + stderr** → hata/timeout/non-200 → döngü BURADA durur ("Danışma turu round N'de
+     durdu: <stderr>"). O ana kadarki entegrasyonlar KORUNUR → Step 2. (Sadece oturum-içi advisory,
+     kalıcı log YOK.)
+   - **exit 0 + eleştiri metni** → şeffaflık için tek satır bas: **"Danışma turu round N: plan
+     DeepSeek'e gönderildi, geri bildirim alındı."** → adım c.
+
+   **c. Entegrasyon + convergence kararı (senkron Fable subagent):** Step 1'deki aynı slug için
+   `Agent(subagent_type: "claude", model: "fable", run_in_background: false)` çağır. Mikro-spec:
+   > Round N. Sana mevcut plan dosyası (`<yol>`) + aşağıdaki harici eleştiri veriliyor. (1) Makul/
+   > isabetli önerileri plana ENTEGRE et (ilgili bölümleri güncelle; katılmadıklarını uygulama).
+   > (2) Plan dosyasının SONUNDA `## Appendix: External Review (DeepSeek)` bölümü yoksa oluştur;
+   > altına `### Round N` alt-başlığı ekle: DeepSeek'in ham eleştirisi + hangi önerileri
+   > aldığın/reddettiğin (gerekçeli, kısa liste). (3) Son satırında bir CONVERGENCE VERDICT döndür:
+   > `VERDICT: CONVERGED` (yeni esaslı/aksiyon alınabilir itiraz kalmadı) VEYA `VERDICT: CONTINUE`
+   > (DeepSeek'in görüşü tekrar sorulmaya değer yeni bir açı içeriyor). KOD YAZMA, sadece plan dosyası.
+   >
+   > **[buraya script'in stdout'undaki eleştiri metnini yapıştır]**
+
+   **d. Döngü kontrolü:**
+   - Verdict `CONVERGED` → döngü biter → Step 2.
+   - Verdict `CONTINUE` **ve** `round < max_rounds` → `round++`, adım a'ya dön.
+   - Verdict `CONTINUE` **ve** `round == max_rounds` → cap doldu, döngü biter
+     ("Danışma turu: max_rounds (N) doldu, mevcut haliyle devam ediliyor") → Step 2.
+
+Döngü bittiğinde nihai plan (bir/çok round entegre edilmiş veya hiç consultation olmamış) hazırdır.
 
 ### 2. Present Plan
 Show the complete plan to the user (subagent'ın döndürdüğü özeti + dosya içeriğini).

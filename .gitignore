@@ -13,3 +13,8 @@ Thumbs.db
 
 # SDD runtime workspace (task briefs, diff packages, progress ledger — local only)
 .vibecode/sdd/
+
+# Framework secrets — API keys for external AI providers (/vibe-plan consultation).
+# Only .env.example is tracked; the real .env must never be committed.
+.env
+.env.local

@@ -438,3 +438,87 @@ greenfield agent kurulmadı.
 
 Additive — mevcut hiçbir şey kırılmadı. Plan: `docs/architecture/wrongstack-pattern-adoption-plan.md`
 (INDEX'e eklendi). Kullanım kılavuzu: `docs/guides/wrongstack-features-guide.md`.
+
+---
+
+## ADR-007: Multi-AI Plan Consultation — DeepSeek Danışma Turu
+**Date:** 2026-07-25 | **Status:** Accepted
+
+### Context
+
+`/vibe-plan` tek modelli: Fable subagent standartları okur, araştırır, planı yazar, onay kapısına
+sunar. Kullanıcı, plan kalitesini ikinci bir modelin bakış açısıyla artırmak istedi: "önce bizim
+model planı hazırlasın, sonra diğer provider'a sorsun, nihai haline beraber getirsinler." İlk etapta
+sadece DeepSeek, ama provider + API key eklenebilir/genişletilebilir bir yapı gerekiyor.
+
+Bu, ADR-006'nın (WrongStack) **kasıtlı olarak kapsam dışı** bıraktığı "provider katmanı"na dokunuyor —
+o karar WrongStack'in ~110-provider ağır soyutlamasını reddetmişti. Fark: kullanıcı şimdi *gerçekten*
+ikinci bir provider istiyor, ama minimal ve config-driven biçimde (ağır registry değil).
+
+### Decision
+
+`/vibe-plan`'e opsiyonel **Step 1.5 "consultation"** eklendi — bir **bounded convergence loop**:
+
+1. **Çok-tur, convergence'a kadar (tek-tur değil).** `max_rounds` cap (default 3). Her round: DeepSeek
+   eleştirir → Fable subagent makul önerileri entegre eder + `CONVERGED`/`CONTINUE` verdict verir.
+   Döngü `CONVERGED` **veya** `max_rounds` ile durur. **Son söz her zaman Fable'da** — DeepSeek
+   danışman; entegrasyon/durdurma kararını asla vermiyor. Döngü orkestrasyonda; script döngüsüz.
+
+2. **İki katmanlı config.** `.vibecode/config/ai-providers.json` (non-secret, git'e girer — provider/
+   model/endpoint + `api_key_env` **ismi**, key değeri yok) + root `.env` (secret, gitignore'a yeni
+   eklendi; sadece `.env.example` tracked). Framework'ün ilk kendi secret dosyası.
+
+3. **Danışma turu hook değil, ayrı script.** `.vibecode/scripts/consult-provider.sh` (bash+curl+jq),
+   `/vibe-plan` orkestrasyonundan Bash tool ile explicit çağrılır. Hook reddedildi: network I/O + uzun
+   timeout hook katmanına uymaz, "opsiyonel + görünür" davranış hook'un sessiz doğasıyla çelişir,
+   ADR-006 zaten hook overhead'ini not etmişti. `vibe-update` script deseniyle tutarlı.
+
+4. **Minimal provider abstraction (YAGNI).** Sadece `openai-compatible` kod yolu implemente edildi.
+   `request_shape` alanı şemaya **şimdiden** eklendi (ileri-uyum) ama tek geçerli değer var; farklı
+   wire-format'lar (anthropic-native/gemini-native) gelecekte `case` dalı olarak eklenecek — şimdi
+   yazılmadı.
+
+5. **Fail-open.** Bu bir güvenlik kapısı değil, kalite adımı. Config yok / disabled / key yok / hata /
+   timeout → normal tek-modelli akışa sessizce döner. §7 hook'larının fail-closed felsefesinden
+   **bilinçli** sapma.
+
+**Kullanıcı kararları ("full otonom, kalan soruların cevabını sen ver"):**
+- **Çok-tur** (convergence'a kadar), `max_rounds=3` cap.
+- **Tetikleme:** `enabled: true` = otomatik + `--no-consult` per-call kaçış kapısı.
+- **Appendix:** aynı plan dosyasında, tur-tur log (`### Round N`).
+- **Uzun plan:** round 2+ Appendix hariç gönderilir; token hatası → kısmi-başarıyla dur.
+- **Hata logu:** sadece oturum-içi advisory (başarı zaten Appendix'te iz bırakır).
+- **`request_shape`:** şimdiden şemada, tek değer destekli.
+
+### Alternatives Considered
+
+1. **PreToolUse/PostToolUse hook** ile Write'ı yakalayıp otomatik tetikle → reddedildi (path filtresi
+   kırılgan, network I/O hook'a uymaz, sessiz doğa "görünür danışma" ile çelişir).
+2. **Custom MCP tool** olarak danışma → reddedildi (tek REST çağrısı için MCP server aşırı mühendislik).
+3. **Tek-tur danışma** → reddedildi (kullanıcı "nihai hale gelene kadar" dedi → convergence loop).
+4. **Ağır provider registry** (WrongStack tarzı) → reddedildi (YAGNI; config-driven minimal yeter).
+5. **Node/SDK ile script** → reddedildi (repo script'leri bash+jq; yeni runtime tutarsızlık yaratır).
+
+### Consequences
+
+**Positive:**
+- Plan kalitesi ikinci bir modelin eleştirisiyle artabilir; şeffaflık (Appendix + tur bildirimi) korunur.
+- Provider/apikey katmanı genişletilebilir ama minimal — 2. OpenAI-uyumlu provider = config satırı.
+- `enabled: false` default + fail-open → sıfır regresyon riski, geri alınabilir, additive.
+
+**Negative:**
+- Plan içeriği üçüncü parti API'ye gidiyor (opt-in + `--no-consult` + `enabled:false` ile yönetiliyor).
+- Çok-turlu danışma her round için ek gecikme/maliyet (`max_rounds` cap ile sınırlı).
+- Yeni bakım yüzeyi: 1 config + 1 script + Step 1.5 akışı.
+
+**Design refinement (plandan sapma, kayıt altında):** Plan Security §3 "script `.env`'i parse etmesin,
+kullanıcı manuel `source .env` etsin" diyordu. Implementasyonda bunun yerine — mevcut `db-backup.sh`
+deseniyle tutarlı — script env var yoksa root `.env`'den **yalnızca ilgili tek key'i** güvenli biçimde
+çıkarır (`source`/`eval` YOK, key asla yazdırılmaz). Deny-list'in amacı (key'in Claude context'ine
+girmemesi) tam korunur; UX iyileşir (her oturumda manuel source gerekmez). Gerekçe: `security.md §8.2`.
+
+### Migration
+
+Additive — mevcut hiçbir şey kırılmadı; `enabled: false` ile `/vibe-plan` davranışı birebir aynı.
+Plan: `docs/architecture/multi-ai-plan-consultation-plan.md` (INDEX'te). Gelecek: 2. provider talebi
+gelince `request_shape` case dalı + config satırı (kod değişikliği minimal).

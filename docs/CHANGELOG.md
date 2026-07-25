@@ -5,6 +5,55 @@
 
 ---
 
+## [2026-07-25] — /vibe-plan: multi-AI consultation round (DeepSeek)
+
+### Changes
+- **What:** `/vibe-plan`'e opsiyonel bir **harici AI danışma turu (Step 1.5)** eklendi. Fable taslak
+  planı yazdıktan sonra, yapılandırılmışsa plan bir sağlayıcıya (v1: **DeepSeek**) eleştiri için
+  gönderilir; makul öneriler entegre edilir; DeepSeek yeni esaslı itiraz üretmeyene (`CONVERGED`)
+  **veya** `max_rounds`'a (default 3) ulaşana kadar **bounded convergence loop** olarak tekrarlanır.
+  Son söz her zaman Fable'dadır (DeepSeek yalnızca danışman).
+  (1) `.vibecode/config/ai-providers.json` — non-secret provider registry (`active_provider`,
+  `max_rounds`, provider başına `enabled`/`request_shape`/`base_url`/`model`/`api_key_env`/`timeout`/
+  `max_tokens`). Ships `enabled: false` → varsayılan davranış BİREBİR eskisi gibi (sıfır dış çağrı).
+  (2) `.vibecode/scripts/consult-provider.sh` — bash+curl+jq, tek istek/tek cevap; skip/error
+  sözleşmesi (exit 0+boş=sessiz atla, exit 1+stderr=advisory atla); `--exclude-appendix` ile round 2+
+  Appendix kırpma; API key'i env'den ya da root `.env`'den tek-satır çıkararak okur (source/eval yok,
+  key asla yazdırılmaz).
+  (3) `.env.example` (root, yeni) + root `.gitignore`'a `.env`/`.env.local` eklendi — framework'ün
+  ilk kendi secret dosyası.
+  (4) `.claude/commands/vibe-plan.md` — Step 1.5 convergence loop + `--no-consult` kaçış kapısı.
+  (5) `.vibecode/standards/security.md` §8 — harici AI danışma secret hijyeni + fail-open gerekçesi.
+  (6) `.claude/settings.json` — `consult-provider.sh` + DeepSeek curl allow-list satırları.
+- **Why:** Plan kalitesini ikinci bir modelin bakış açısıyla artırmak; genişletilebilir ama minimal
+  bir provider/apikey config katmanı kurmak (WrongStack'in provider soyutlamasının kasıtlı olarak
+  hariç bıraktığı katman — ADR-006 — şimdi minimal, config-driven biçimde açıldı). Detay: ADR-007.
+- **How:** Döngü mantığı tamamen `/vibe-plan` orkestrasyonunda; script çok-tur bilmez ve fail-open
+  (opsiyonel kalite adımı, güvenlik kapısı değil — §7 hook'larının fail-closed felsefesinden bilinçli
+  sapma). Design refinement: plan "kullanıcı `.env`'i manuel source etsin" diyordu; implementasyonda
+  `db-backup.sh` deseniyle tutarlı, güvenli tek-key okuma yapıldı (deny-list'in amacı korunur — key
+  Claude context'ine hiç girmez).
+- **Verify:** Skip/error yolları (config yok / disabled / key yok / eksik arg / eksik dosya) + Appendix
+  kırpma + payload jq inşası + lokal mock sunucuya karşı HTTP+parse başarı yolu test edildi.
+- **Source:** Kullanıcı özelliği (Fable ile planlandı, Opus ile uygulandı).
+
+### Affected Files
+- `.vibecode/config/ai-providers.json` — provider registry (created)
+- `.vibecode/scripts/consult-provider.sh` — consultation script (created)
+- `.env.example` — root secret template (created)
+- `.gitignore` — `.env`/`.env.local` eklendi (modified)
+- `.claude/commands/vibe-plan.md` — Step 1.5 + header notu (modified)
+- `.vibecode/standards/security.md` — §8 (modified)
+- `.claude/settings.json` — allow-list (modified)
+- `docs/architecture/multi-ai-plan-consultation-plan.md` — mimari plan (created)
+- `docs/architecture/INDEX.md` — plan referansı (modified)
+- `docs/decisions.md` — ADR-007 (modified)
+- `README.md` — özellik kullanım bölümü + problem tablosu + dizin ağacı (modified)
+
+### Notes
+- Varsayılan `enabled: false` — hiçbir plan bilinçli opt-in (config + key) olmadan dışarı gönderilmez.
+- Kaçış kapısı: `/vibe-plan <feature> --no-consult` → o çağrıda danışmayı atlar.
+
 ## [2026-07-02] — /vibe-update: upstream framework sync command
 
 ### Changes

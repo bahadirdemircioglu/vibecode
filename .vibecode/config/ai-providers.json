@@ -1,0 +1,16 @@
+{
+  "active_provider": "deepseek",
+  "max_rounds": 3,
+  "providers": {
+    "deepseek": {
+      "enabled": false,
+      "request_shape": "openai-compatible",
+      "base_url": "https://api.deepseek.com",
+      "chat_path": "/chat/completions",
+      "model": "deepseek-chat",
+      "api_key_env": "DEEPSEEK_API_KEY",
+      "timeout_seconds": 45,
+      "max_tokens": 2048
+    }
+  }
+}

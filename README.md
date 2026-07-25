@@ -21,6 +21,7 @@ Vibecode, Claude Code ile yazılım geliştirirken karşılaşılan temel sorunl
 | Opus'ta rutin iş = pahalı | **Sonnet-first routing** — hook Opus tespit ederse `/model sonnet` önerir |
 | Plan discovery için `ls` token yiyor | **`docs/architecture/INDEX.md`** — tek otorite, targeted Read |
 | vibecode gelişince türetilmiş projen eski sürümde kalıyor | **`/vibe-update`** — framework dosyalarını upstream'den hash-tabanlı güvenli merge ile senkronize eder |
+| Plan tek modelin bakış açısıyla sınırlı | **Multi-AI consultation** — `/vibe-plan` planı DeepSeek'e danışıp convergence'a kadar birlikte olgunlaştırır (opt-in, kapalı gelir) |
 
 ---
 
@@ -69,7 +70,67 @@ Session-start hook otomatik olarak:
 2. İlgili eski planlar targeted Read edilir
 3. Yeni plan `docs/architecture/<slug>-plan.md` olarak yazılır
 4. INDEX'e bir satır özet eklenir
-5. Onay beklenir
+5. (Opsiyonel) Harici AI danışma turu — bkz. aşağıdaki bölüm
+6. Onay beklenir
+
+### /vibe-plan — Harici AI Danışma (Multi-AI Consultation, DeepSeek)
+
+`/vibe-plan` taslak planı yazdıktan sonra, **isteğe bağlı olarak** ikinci bir AI sağlayıcısına
+(şu an **DeepSeek**) danışabilir: plan eleştiri için gönderilir, makul öneriler entegre edilir,
+DeepSeek yeni esaslı itiraz üretmeyene (`CONVERGED`) **veya** `max_rounds`'a ulaşana kadar tekrar
+edilir. **Son söz her zaman senin modelinde** kalır — DeepSeek yalnızca danışman. Varsayılan
+**kapalı**; açmadıkça `/vibe-plan` eskisi gibi tek modelle çalışır.
+
+**Nasıl açılır (opt-in — iki adım):**
+
+1. `.vibecode/config/ai-providers.json` içinde `enabled`'ı `true` yap:
+
+   ```json
+   {
+     "active_provider": "deepseek",
+     "max_rounds": 3,
+     "providers": {
+       "deepseek": {
+         "enabled": true,              // ← false → true
+         "request_shape": "openai-compatible",
+         "base_url": "https://api.deepseek.com",
+         "model": "deepseek-chat",
+         "api_key_env": "DEEPSEEK_API_KEY",
+         "timeout_seconds": 45,
+         "max_tokens": 2048
+       }
+     }
+   }
+   ```
+
+2. API key'i `.env`'e koy (gitignore'da — asla commit edilmez):
+
+   ```bash
+   cp .env.example .env
+   # .env'i düzenle, DEEPSEEK_API_KEY değerini gir:
+   #   DEEPSEEK_API_KEY=sk-...   (key: https://platform.deepseek.com/api_keys)
+   ```
+
+**Kullanım:**
+
+```
+/vibe-plan odeme-sistemi                # enabled ise otomatik danışır
+/vibe-plan odeme-sistemi --no-consult   # bu planda danışmayı atla (hassas plan)
+```
+
+**Nasıl çalışır:**
+- Her turda tek satır bildirim: *"Danışma turu round N: plan DeepSeek'e gönderildi, geri bildirim alındı."*
+- DeepSeek'in ham görüşü + hangi önerilerin alındığı/reddedildiği, plan dosyasının sonuna
+  `## Appendix: External Review (DeepSeek)` bölümü olarak tur-tur eklenir (şeffaflık).
+- Config yok / key yok / hata / timeout → **sessizce** normal tek-modelli akışa döner (fail-open —
+  danışma bir kalite adımıdır, planı asla bloklamaz).
+
+**Gizlilik:** Plan içeriği DeepSeek API'sine gider. Hassas planlar için `enabled: false` bırak veya
+`--no-consult` kullan. API key asla loglanmaz/plana yazılmaz. Detay: `.vibecode/standards/security.md §8`.
+
+**Başka provider eklemek:** Config, OpenAI-uyumlu chat-completions şekline (`request_shape:
+"openai-compatible"`) uyan her sağlayıcıyı destekler — `providers`'a yeni bir giriş + `.env`'e key
+eklemek yeter, kod değişmez. (OpenAI-uyumlu olmayan wire-format'lar ileride `case` dalı olarak eklenecek.)
 
 ### /vibe-go — Çalışmaya Başla
 
@@ -403,10 +464,12 @@ vibecode/
 │   ├── standards/               ← Kodlama standartları (10 dosya, on-demand yüklenir)
 │   ├── skills/                  ← 110+ AI skill
 │   ├── memories/errors/         ← Hata hafızası
+│   ├── config/                  ← ai-providers.json (harici AI provider registry — /vibe-plan danışma)
 │   ├── scripts/                 ← Yardımcı shell scriptler
 │   │   ├── task-brief           ← SDD: plan'dan görev özeti çıkarır
 │   │   ├── review-package       ← SDD: diff paketi oluşturur
 │   │   ├── sdd-workspace        ← SDD: çalışma alanı + progress ledger başlatır
+│   │   ├── consult-provider.sh  ← /vibe-plan: harici AI danışma (DeepSeek)
 │   │   ├── scaffold.sh
 │   │   ├── db-backup.sh
 │   │   └── db-restore.sh

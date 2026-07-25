@@ -142,3 +142,50 @@ Second layer for network and filesystem reach:
   env escape hatch for that one session.
 - Both hooks are pure Node, no dependencies, and exit 0 on any parse error (never break the session).
 - Test changes with piped JSON before committing (see the guide in `docs/guides/`).
+
+---
+
+## 8. External AI Consultation — Secret Hygiene (`/vibe-plan` Step 1.5)
+
+> **When to read:** Before touching `.vibecode/config/ai-providers.json`,
+> `.vibecode/scripts/consult-provider.sh`, the root `.env`, or `/vibe-plan` Step 1.5.
+
+`/vibe-plan` can optionally send a draft plan to an external provider (v1: DeepSeek) for a critique
+round (see ADR-007, `docs/architecture/multi-ai-plan-consultation-plan.md`). Unlike §7's hooks, this
+step is **fail-open** by design — it is a quality bonus, not a security gate, so any error or missing
+config silently falls back to the normal single-model flow.
+
+### 8.1 Secret storage
+- **Provider registry** (`.vibecode/config/ai-providers.json`) is **non-secret** and git-tracked. It
+  holds only *which* provider/model/endpoint and the **name** of the env var to read
+  (`api_key_env`) — never a key value. The schema has no field to hold a key, so a key can't be
+  committed here by accident.
+- **The key itself** lives in the root `.env` (gitignored — see root `.gitignore`). Only
+  `.env.example` (placeholder) is tracked. This is the framework's first own secret file; derived
+  projects already had `.env` (backend), the framework itself did not until this feature.
+
+### 8.2 Key handling rules
+- `consult-provider.sh` reads the key from the env var named by `api_key_env`. If unset, it extracts
+  **only that one line** from root `.env` — **no `source`/`eval`**, so `.env` is never executed.
+- The key travels **only** in the `curl` `Authorization: Bearer` header. It is **never** printed to
+  stdout/stderr, never logged, never interpolated into the plan or the critique.
+- `curl -sS` (no verbose/echo); on error the script surfaces HTTP status + provider error *message*,
+  **never** request headers.
+- **Why this doesn't circumvent the §7.1 `.env` deny-list:** that deny-list stops *Claude's own*
+  Read/`cat` tool calls from pulling `.env` into the model's context. The script reads `.env` inside
+  its own subprocess and emits only the critique text — the key never reaches the model. Running the
+  script via Bash (`consult-provider.sh <plan>`) puts no `.env` token in the command string, so the
+  deny-list is neither triggered nor bypassed.
+
+### 8.3 Privacy & opt-in
+- **Opt-in = configuring it.** No external call happens unless a maintainer sets
+  `enabled: true` **and** provides a key. The shipped default is `enabled: false`.
+- **Transparency:** every round prints a one-line notice ("plan DeepSeek'e gönderildi") so plan
+  content is never sent to a third party without a visible trace.
+- **Escape hatch:** `/vibe-plan <feature> --no-consult` skips consultation for one call (sensitive
+  plans) without editing config.
+- **Third-party retention:** plan content (architecture, possibly business context) leaves your
+  machine. The provider's data-retention/training policy is out of scope (their ToS) — for
+  confidential plans, keep `enabled: false` or use `--no-consult`.
+- **Timeout is mandatory:** `curl --max-time` (config `timeout_seconds`) so a slow provider never
+  blocks `/vibe-plan` indefinitely.
