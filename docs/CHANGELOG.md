@@ -55,6 +55,9 @@
 ### Notes
 - Varsayılan `enabled: false` — hiçbir plan bilinçli opt-in (config + key) olmadan dışarı gönderilmez.
 - Kaçış kapısı: `/vibe-plan <feature> --no-consult` → o çağrıda danışmayı atlar.
+- Yanıt ayrıştırma sağlamlaştırması: `content` boşsa `reasoning_content`/`text` alanlarına düşer
+  (reasoner modelleri); parse başarısızsa advisory'de gövdenin ilk 300 karakteri gösterilir;
+  `CONSULT_DEBUG=1` ham yanıtı stderr'e döker. HTTP 200 içinde gelen `error` objesi de yakalanır.
 
 ## [2026-07-02] — /vibe-update: upstream framework sync command
 

@@ -135,12 +135,31 @@ rc=$?
 http_code="${resp##*$'\n'}"
 body="${resp%$'\n'*}"
 
-if [[ "$http_code" != "200" ]]; then
-  err="$(printf '%s' "$body" | jq -r '.error.message // empty' 2>/dev/null)"
-  fail "provider returned HTTP $http_code${err:+ — $err}"
+# CONSULT_DEBUG=1 dumps the raw response (status + body) to stderr for diagnosis.
+# The body is the provider's reply (critique / error JSON) — it carries no API key.
+if [[ "${CONSULT_DEBUG:-}" == "1" ]]; then
+  echo "consult[debug] http_code=$http_code" >&2
+  echo "consult[debug] raw body >>>" >&2
+  printf '%s\n' "$body" >&2
+  echo "consult[debug] <<< end body" >&2
 fi
 
-content="$(printf '%s' "$body" | jq -r '.choices[0].message.content // empty' 2>/dev/null)"
-[[ -n "$content" ]] || fail "could not parse provider response (no choices[0].message.content)"
+# Some providers return an error object even with HTTP 200 — check it first.
+err="$(printf '%s' "$body" | jq -r '.error.message // empty' 2>/dev/null)"
+[[ -z "$err" ]] || fail "provider error: $err"
+
+[[ "$http_code" == "200" ]] || fail "provider returned HTTP $http_code"
+
+# Prefer message.content; fall back to reasoner-style reasoning_content and the
+# legacy .text field so a slightly different shape still yields usable text.
+content="$(printf '%s' "$body" \
+  | jq -r '.choices[0].message.content // .choices[0].message.reasoning_content // .choices[0].text // empty' 2>/dev/null)"
+
+if [[ -z "$content" ]]; then
+  # Non-secret snippet so the caller can see WHAT came back (proxy HTML page,
+  # empty choices, null content from a length cutoff, unexpected shape, …).
+  snippet="$(printf '%s' "$body" | tr '\n\r\t' '   ' | cut -c1-300)"
+  fail "empty/unparseable provider response (HTTP $http_code). body[0:300]: ${snippet:-<empty>}"
+fi
 
 printf '%s\n' "$content"
