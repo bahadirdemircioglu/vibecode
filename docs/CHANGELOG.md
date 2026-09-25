@@ -5,6 +5,14 @@
 
 ---
 
+## [2026-09-25] — README güncellendi
+
+### Changes
+- **What:** README'deki eskimiş yerler düzeltildi: uygulanmamış "Error Memory" satırı kaldırıldı; Hızlı Başlangıç'ta
+  yeni-klon kurulumu doğru anlatıldı (yalnızca marker koşulunda, geçmiş sıfırlama, açık yol listesiyle commit, otomatik
+  kurulum yok); `session-start.sh` ve `pre-tool-use.js` açıklamaları yeni davranışa göre; `templates/` açıklaması.
+- **Why:** Denetim ve ADR-010 sonrası README bazı kaldırılmış/değişmiş davranışları anlatıyordu.
+
 ## [2026-09-25] — vibeplan akışı taşındı: keşif + Understanding Lock, madde bazlı DeepSeek tartışması (ADR-010)
 
 ### Changes

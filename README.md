@@ -16,7 +16,6 @@ Vibecode, Claude Code ile yazılım geliştirirken karşılaşılan temel sorunl
 | Uzun SDD çalışmalarında context compaction = ilerleme kaybı | **`.vibecode/sdd/progress-<feature>.md`** ledger — kaldığın yerden devam |
 | Subagent prompt'ları görev metniyle şişiyor | **File handoff scripts** — görev ve diff dosyaya yazılır, path geçilir |
 | Hangi skill'i yüklemem gerektiği belirsiz | **Otomatik stack detection** — config dosyalarından skill tespiti |
-| Aynı hatalar tekrar ediyor | **Error Memory** — yapılandırılmış hata hafızası |
 | Doğru standart yüklenemiyor | **pre-tool-use hook** — dosya path'ine göre uyarı |
 | Opus'ta rutin iş = pahalı | **Sonnet-first routing** — hook Opus tespit ederse `/model sonnet` önerir |
 | Plan discovery için `ls` token yiyor | **`docs/architecture/INDEX.md`** — tek otorite, targeted Read |
@@ -43,12 +42,16 @@ rm -rf .git README.md
 claude
 ```
 
-Session-start hook otomatik olarak:
-- `git init` + ilk commit yapar
-- `docs/architecture/` template planlarını siler, INDEX'i boş başlatır
+Session-start hook, **yalnızca gerçekten yeni bir klonda** (`.git` yok, `.vibecode/VERSION` yok ve
+`.vibecode/templates/fresh-clone.marker`'daki vibecode'a özgü planlar mevcut) bir kez:
+- vibecode'un kendi geçmişini sıfırlar: `docs/architecture/` planlarını siler, INDEX'i boş başlatır;
+  `docs/decisions.md`, `CHANGELOG.md`, `progress.md`, `CHANGELOG_INTERNAL.md` şablondan yeniden oluşur,
+  `HANDOFF.md` silinir
+- `git init` + açık bir yol listesiyle ilk commit (`git add -A` yok — `.env` ve yerel ayarlar girmez)
 - `.serena/project.yml` proje ismini dizin adından günceller
-- MCP server'lar (Serena + Context7) hemen kullanılabilir
-- Aktif model Opus ise `/model sonnet` önerisi verir (auto-switch yok)
+
+Her oturumda: MCP server'lar (Serena + Context7) kontrol edilir; eksik araç (uv, node…) **kurulmaz**,
+kurulum komutuyla bir `MISSING` satırı basılır. Aktif model Opus ise `/model sonnet` önerilir (auto-switch yok).
 
 ### 3. Çalışmaya Başla
 
@@ -387,17 +390,19 @@ description: "Bu skill'in ne zaman aktif olacağını açıklayan kısa açıkla
 ### session-start.sh — Session Durumu + Stack Detection
 
 Her session başında çalışır:
-- HANDOFF.md durumunu kontrol eder
-- Test/source oranını kontrol eder
-- CHANGELOG güncelliğini kontrol eder
+- HANDOFF.md durumunu ve ilk açık adımı gösterir
+- Test/source oranını ve CHANGELOG güncelliğini kontrol eder
 - **Config dosyalarından ilgili skill'leri tespit eder** (otomatik)
+- Eksik araçlar için kurulum komutuyla `MISSING` satırı basar — hiçbir şeyi kendisi kurmaz
+  (`curl | sh`, `sudo`, `npm -g` yok)
+- Yeni klonda tek seferlik kurulumu yapar (bkz. Hızlı Başlangıç)
 
 ### pre-tool-use.js — Standart + Skill Uyarısı
 
-Write/Edit öncesinde çalışır (advisory — bloklamaz):
-- Dosya path'ine göre ilgili standardı hatırlatır
-- İlgili skill'leri önerir
-- Doküman güncelleme hatırlatması yapar
+Write / Edit / NotebookEdit / WebFetch öncesinde **tek node süreci** olarak çalışır:
+- Dosya path'ine göre ilgili skill'i önerir — her dosya için oturumda **bir kez**
+  (`.vibecode/state/`'te tutulur); tekrar eden düzenlemede context'e hiçbir şey eklenmez
+- `net-fs-guard.js`'i modül olarak çalıştırır (aşağıda) — bloklayan tek kısım bu
 
 ### permission-policy.js — Güvenlik Kapısı
 
@@ -466,7 +471,7 @@ vibecode/
 │   ├── prompts/                 ← Subagent prompt şablonları
 │   │   ├── sdd-implementer.md   ← Implementer subagent sözleşmesi
 │   │   └── sdd-reviewer.md      ← Reviewer subagent kriterleri
-│   └── templates/               ← Scaffold şablonları
+│   └── templates/               ← docker-compose, Makefile, Dockerfile'lar, HANDOFF, yeni-klon doc şablonları
 ├── .claude/
 │   ├── commands/                ← Slash komutları (vibe-go, vibe-done, vibe-sdd, vibe-fleet, ...)
 │   ├── hooks/                   ← session-start.sh, pre-tool-use.js, permission-policy.js, net-fs-guard.js, notification.js
