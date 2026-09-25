@@ -21,8 +21,9 @@ Spawn the `bug-hunter` agent with the bug description + file set. It returns ran
 
 ### 3. Stage B — RefactorPlanner (subagent: `refactor-planner`)
 Pass the BugHunter's findings to the `refactor-planner` agent. It returns a minimal root-cause fix
-per defect as a micro-spec (file · change type · pseudo-code · pattern reference), plus blast-radius
-and tests to add. Read-only.
+per defect as a contract spec (file · change type · contract (signature / types / error behaviour) ·
+acceptance cases table incl. the reproduction case · pattern reference), plus blast-radius and tests to add. No
+pseudo-code — see `.vibecode/standards/delegation.md`. Read-only.
 
 ### 4. Stage C — Critic (subagent: `critic`)
 Pass BOTH the defects and the fix plan to the `critic` agent. It returns REFUTED / CONFIRMED /
@@ -33,13 +34,13 @@ Present a consolidated report:
 ```
 COLLAB-DEBUG REPORT
 Root cause:      <one line, Critic-confirmed>
-Confirmed fixes: <micro-spec list, ready to implement>
+Confirmed fixes: <contract-spec list, ready to implement>
 Dropped/uncertain: <what the Critic refuted or flagged>
 Tests to add:    <list>
 ```
 
 ### 6. Implement (only after confirmation)
-On user OK, hand the confirmed micro-specs to the `engineer` agent (and `tester` for the
+On user OK, hand the confirmed contract specs to the `engineer` agent (and `tester` for the
 reproduction test), then `make verify`. For a single small fix, Opus may apply it directly.
 
 ### YAPMA

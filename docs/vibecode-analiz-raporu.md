@@ -22,7 +22,7 @@ Sistemin en güçlü yanlarından biri "Token Economy" yaklaşımıdır.
 Raporun ilk versiyonundaki üç öneri bu tarihten sonra **uygulandı**:
 - ✅ **Skill Otomasyonu** → `.claude/hooks/pre-tool-use.js` dosya path'ine göre ilgili skill'leri önerir; `session-start.sh` stack detection ile config dosyalarından skill tespiti yapar.
 - ✅ **Doc-Sync** → `/vibe-doc-sync` komutu + `continuous-doc-maintainer` skill'i (shadow/live modları).
-- ✅ **Hata Analiz Hafızası** → `.vibecode/memories/errors/` altında yapılandırılmış hata geçmişi.
+- ⏸ **Hata Analiz Hafızası** → `.vibecode/memories/errors/` — planlandı, uygulanmadı (ADR-001 Proposed).
 
 Açık kalan / sıradaki fikirler:
 - **Hook çıktı şeması sürüm testi:** Hook'ların `hookSpecificOutput.additionalContext` şemasını CI'da doğrulayan küçük bir test (Claude Code şema değişikliklerine karşı regresyon koruması).

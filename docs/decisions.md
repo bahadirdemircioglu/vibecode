@@ -7,7 +7,7 @@
 ---
 
 ## ADR-001: Error Memory — Yapılandırılmış Hata Analiz Hafızası
-**Date:** 2026-03-26 | **Status:** Accepted
+**Date:** 2026-03-26 | **Status:** Proposed — not implemented
 
 ### Context
 
@@ -108,7 +108,7 @@ tags: [ilgili-anahtar-kelimeler]
 ---
 
 ## ADR-002: Skill Orchestrator — Otomatik Skill Öneri Sistemi
-**Date:** 2026-03-26 | **Status:** Proposed
+**Date:** 2026-03-26 | **Status:** Accepted
 
 ### Context
 
@@ -355,7 +355,7 @@ entry replaced by Continuous Doc Maintainer entry. Architecture plan file:
 ---
 
 ## ADR-006: WrongStack Pattern Adoption — Fleet + Hardening (Claude-only)
-**Date:** 2026-06-04 | **Status:** Accepted
+**Date:** 2026-06-04 | **Status:** Accepted — amended by ADR-009 (/vibe-goal → HANDOFF `## Goal`)
 
 ### Context
 
@@ -442,7 +442,7 @@ Additive — mevcut hiçbir şey kırılmadı. Plan: `docs/architecture/wrongsta
 ---
 
 ## ADR-007: Multi-AI Plan Consultation — DeepSeek Danışma Turu
-**Date:** 2026-07-25 | **Status:** Accepted
+**Date:** 2026-07-25 | **Status:** Accepted — amended by ADR-009 (planlama Opus, max 1 round)
 
 ### Context
 
@@ -573,3 +573,64 @@ uygulayıcı yapmak — mantık hatalarında yeniden deneme maliyeti kazancı si
   `sdd-implementer` prompt'u. Kardeş repo `vibeplan`: `/vibe-breakdown` görevleri aynı "uygulayıcı
   sözleşmesi" alanlarını üretir.
 
+
+---
+
+## ADR-009: Kural Tutarlılığı + Maliyet Temizliği — Opus Planlama, Tek Delegasyon Standardı, Komut Birleştirme
+**Date:** 2026-09-25 | **Status:** Accepted
+
+### Context
+
+Bir denetim, aynı kuralların birden çok yerde farklı ifade edildiğini ve bazı komutların her
+çalışmada gereksiz token harcadığını gösterdi:
+- Planlama modeli çelişkiliydi: `/vibe-plan` bir "Fable" subagent'ına (`subagent_type: "claude"` —
+  bu tip yalnızca yazarın makinesinde var, repo'da tanımlı değil) dispatch ediyordu; CLAUDE.md,
+  `architecture.md`, `architect` ajanı ve `/vibe-sdd` ise Opus diyordu.
+- Model routing + delegasyon protokolü CLAUDE.md #9-10, `architecture.md §4` ve `/vibe-go §6`'da üç
+  kopya halindeydi; 2 deneme kuralı çelişiyordu ("Opus devralır / kendi yazar" vs "Opus talimat
+  döndürür → Sonnet uygular").
+- `/vibe-goal` ayrı bir `GOAL.md` tutuyordu; HANDOFF.md ile iki ayrı durum dosyası.
+  `/vibe-sdd` `/vibe-plan`'dan bağımsız ayrı bir spec dosyası yazıyordu.
+- DeepSeek danışma döngüsü default 3 round'du ve her round'da ham eleştiri ana context'e akıyordu.
+- `/vibe-done` her çalışmada security-review SKILL'ini (~10 KB), `documentation.md`'yi ve doc-sync
+  skill'ini yüklüyor, CHANGELOG'u iki kez güncelliyordu (~6.5k token/çalışma).
+
+### Decision
+
+1. **Planlama = Opus.** `/vibe-plan` plan yazımını `Agent(subagent_type: "general-purpose", model: "opus")`
+   ile yapar (Write gerekir; `architect` read-only kalır, `/vibe-fleet` için plan metni döndürür).
+   Tüm "Fable" planlama referansları kaldırıldı.
+2. **`.vibecode/standards/delegation.md` tek otorite:** model routing, sözleşme-spec protokolü
+   (ADR-008 içeriği), 2 deneme kuralı, eskalasyon, `BELIRSIZ:` vs `BLOCKER`. CLAUDE.md, `/vibe-go`,
+   README, ajanlar ve `agent-dispatch` yalnızca işaret eder. `architecture.md` sadece planlama
+   rehberi + tek plan şablonu (§1.1) tutar.
+3. **2 deneme kuralı tek ifade:** 2. başarısız Sonnet denemesinden sonra bir Opus subagent fix'i
+   kendisi yazar; 3. Sonnet denemesi yok.
+4. **`/vibe-goal` → HANDOFF.md `## Goal`.** Komut ve `GOAL.md` kaldırıldı; `/vibe-go` okur,
+   `/vibe-done` günlüğe satır ekler. Otonom değil (ADR-006 kararı korunur). `/vibe-done` ve
+   `/vibe-compact` HANDOFF'u yalnızca `.vibecode/templates/HANDOFF.md` şablonuyla yazar.
+5. **`/vibe-sdd` onaylı `/vibe-plan` dosyasından başlar:** Requirements + Acceptance Cases + Tasks aynı
+   plan dosyasına eklenir; görevler `### Task N:` başlığı taşır (`task-brief` bunlarla ayrıştırır);
+   INDEX.md güncellenir. Ayrı `-spec.md` dosyası yok.
+6. **DeepSeek danışma: max 1 round** (config default), ana context'e yalnızca entegrasyon özeti.
+   API key için vibecode + vibeplan ortak dosyası: `~/.config/vibe/providers.env`.
+7. **`/vibe-done` ağır adımları opt-in / delege:** güvenlik taraması `reviewer` subagent'ına
+   devredilir (yalnızca bulgular döner, kaynak değişikliği yoksa atlanır); doc-sync yalnızca
+   `/vibe-done --full` ile; `documentation.md` okunmaz (satır içi checklist); CHANGELOG tek adım.
+   Skill frontmatter şeması `docs/guides/skill-authoring.md`'ye taşındı.
+
+**Alternatifler:** (a) Fable'da kalmak — model repo'da tanımlı olmayan bir ajan tipine bağlıydı,
+taşınabilir değil. (b) Planlamayı repo-tanımlı `architect`'e Write vererek yapmak — `architect`'in
+read-only garantisini bozar; reddedildi. (c) `/vibe-goal`'ı tutmak — ikinci durum dosyası ve ek
+komut yüzeyi, kazancı yok.
+
+### Consequences
+
+- Bir kural değişikliği tek dosyada yapılır; CLAUDE.md küçüldü (her oturumda yüklenen token azaldı).
+- `/vibe-done` standart çalışması ana context'e skill/standart yüklemez; tam kapsam için `--full`.
+- Planlama maliyeti Opus fiyatında; danışma turu tek round ile sınırlı.
+- `/vibe-goal` kullananlar HANDOFF `## Goal`'a geçer; `GOAL.md` artık okunmaz.
+- Etkilenen: `CLAUDE.md`, `README.md`, `.claude/commands/{vibe-plan,vibe-go,vibe-sdd,vibe-done,vibe-compact,vibe-status,vibe-collab-debug,vibe-fleet}.md`,
+  `.claude/agents/{architect,engineer,refactor-planner}.md`, `.vibecode/standards/{architecture,delegation,documentation}.md`,
+  `.vibecode/prompts/sdd-implementer.md`, `agent-dispatch` + `handoff-protocol` skill'leri,
+  `.vibecode/templates/HANDOFF.md`, `docs/architecture/INDEX.md`, `docs/guides/`.

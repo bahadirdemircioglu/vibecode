@@ -21,6 +21,11 @@
  *   3. Write / Edit → Symlink escape: refuse writing THROUGH a symlink whose
  *      real target lands outside both the project root and the home dir.
  *
+ * Wiring: NOT registered in settings.json on its own. `.claude/hooks/pre-tool-use.js`
+ * require()s this module and calls checkWrite()/checkWebFetch() in the SAME node
+ * process (one process per Write/Edit instead of three). It still runs standalone
+ * for piped-JSON testing:  echo '{"tool_name":"Write",...}' | node net-fs-guard.js
+ *
  * Input:  JSON on stdin (Claude Code hook protocol)
  * Output: exit 2 + stderr to BLOCK, or exit 0 to ALLOW
  */
@@ -37,10 +42,8 @@ async function readStdin() {
   return Buffer.concat(chunks).toString('utf-8');
 }
 
-function block(msg) {
-  process.stderr.write(`⛔ [net-fs-guard] BLOCKED — ${msg}\n`);
-  process.exit(2);
-}
+// check*() functions RETURN a block reason (string) or null — they never exit,
+// so a caller can combine them with other checks in one process.
 
 // ---- SSRF: private/loopback/link-local IP detection ----
 function ipv4IsPrivate(ip) {
@@ -86,53 +89,53 @@ function resolveAll(host) {
   });
 }
 
-async function guardWebFetch(input) {
-  if (process.env.VIBE_ALLOW_PRIVATE_FETCH === '1') process.exit(0);
-  const raw = String(input.url || '');
+async function checkWebFetch(input) {
+  if (process.env.VIBE_ALLOW_PRIVATE_FETCH === '1') return null;
+  const raw = String((input && input.url) || '');
   let url;
   try {
     url = new URL(raw);
   } catch {
-    process.exit(0); // not a parseable URL — let normal flow handle it
+    return null; // not a parseable URL — let normal flow handle it
   }
   if (url.protocol !== 'http:' && url.protocol !== 'https:') {
-    block(`disallowed URL scheme "${url.protocol}" (only http/https). URL: ${raw}`);
+    return `disallowed URL scheme "${url.protocol}" (only http/https). URL: ${raw}`;
   }
   const host = url.hostname;
   if (hostnameLooksInternal(host)) {
-    block(`internal hostname "${host}". Set VIBE_ALLOW_PRIVATE_FETCH=1 to allow local targets.`);
+    return `internal hostname "${host}". Set VIBE_ALLOW_PRIVATE_FETCH=1 to allow local targets.`;
   }
   // Direct IP literal
-  if (net.isIP(host) === 4 && ipv4IsPrivate(host)) block(`private/loopback IPv4 ${host}.`);
-  if (net.isIP(host) === 6 && ipv6IsPrivate(host)) block(`private/loopback IPv6 ${host}.`);
+  if (net.isIP(host) === 4 && ipv4IsPrivate(host)) return `private/loopback IPv4 ${host}.`;
+  if (net.isIP(host) === 6 && ipv6IsPrivate(host)) return `private/loopback IPv6 ${host}.`;
   // DNS resolution (best-effort anti-rebinding)
   if (net.isIP(host) === 0) {
     const addrs = await resolveAll(host);
     for (const ip of addrs) {
-      if (net.isIP(ip) === 4 && ipv4IsPrivate(ip)) block(`"${host}" resolves to private IPv4 ${ip}.`);
-      if (net.isIP(ip) === 6 && ipv6IsPrivate(ip)) block(`"${host}" resolves to private IPv6 ${ip}.`);
+      if (net.isIP(ip) === 4 && ipv4IsPrivate(ip)) return `"${host}" resolves to private IPv4 ${ip}.`;
+      if (net.isIP(ip) === 6 && ipv6IsPrivate(ip)) return `"${host}" resolves to private IPv6 ${ip}.`;
     }
   }
-  process.exit(0);
+  return null;
 }
 
 // ---- FS containment ----
 const PROTECTED_DIRS = ['/etc', '/usr', '/bin', '/sbin', '/boot', '/sys', '/proc', '/dev', '/lib', '/lib64', '/var/lib', '/root/.ssh'];
 
-function guardWrite(input) {
-  const fp = String(input.file_path || input.path || '');
-  if (!fp) process.exit(0);
+function checkWrite(input) {
+  const fp = String((input && (input.file_path || input.notebook_path || input.path)) || '');
+  if (!fp) return null;
   const abs = path.resolve(fp);
 
   for (const d of PROTECTED_DIRS) {
     if (abs === d || abs.startsWith(d + path.sep)) {
-      block(`write into protected system path: ${abs}`);
+      return `write into protected system path: ${abs}`;
     }
   }
 
   // Symlink escape: if the target (or an existing ancestor) is a symlink whose
   // real path leaves both the project root and the home dir, refuse.
-  const projectRoot = process.cwd();
+  const projectRoot = process.env.CLAUDE_PROJECT_DIR || process.cwd();
   const home = os.homedir();
   try {
     let probe = abs;
@@ -144,13 +147,20 @@ function guardWrite(input) {
       const lst = fs.lstatSync(probe);
       const escapes = !real.startsWith(projectRoot) && !real.startsWith(home) && !real.startsWith('/tmp');
       if (lst.isSymbolicLink() && escapes) {
-        block(`write through a symlink that escapes the workspace: ${probe} → ${real}`);
+        return `write through a symlink that escapes the workspace: ${probe} → ${real}`;
       }
     }
   } catch {
     // stat/realpath failure — do not block on uncertainty
   }
-  process.exit(0);
+  return null;
+}
+
+// Single entry point used by pre-tool-use.js and the standalone CLI.
+async function checkTool(toolName, toolInput) {
+  if (toolName === 'WebFetch') return checkWebFetch(toolInput || {});
+  if (toolName === 'Write' || toolName === 'Edit' || toolName === 'NotebookEdit') return checkWrite(toolInput || {});
+  return null;
 }
 
 async function main() {
@@ -160,11 +170,14 @@ async function main() {
   } catch {
     process.exit(0);
   }
-  const tool = input.tool_name || '';
-  const ti = input.tool_input || {};
-  if (tool === 'WebFetch') return guardWebFetch(ti);
-  if (tool === 'Write' || tool === 'Edit' || tool === 'NotebookEdit') return guardWrite(ti);
+  const reason = await checkTool(input.tool_name || '', input.tool_input);
+  if (reason) {
+    process.stderr.write(`⛔ [net-fs-guard] BLOCKED — ${reason}\n`);
+    process.exit(2);
+  }
   process.exit(0);
 }
 
-main();
+module.exports = { checkTool, checkWrite, checkWebFetch };
+
+if (require.main === module) main();

@@ -131,7 +131,7 @@ python -m pstats output.prof
 ### Pattern 2: line_profiler - Line-by-Line Profiling
 
 ```python
-# Install: pip install line-profiler
+# Install: docker compose exec backend uv add --dev line-profiler
 
 # Add @profile decorator (line_profiler provides this)
 @profile
@@ -175,7 +175,7 @@ if __name__ == "__main__":
 ### Pattern 3: memory_profiler - Memory Usage
 
 ```python
-# Install: pip install memory-profiler
+# Install: docker compose exec backend uv add --dev memory-profiler
 
 from memory_profiler import profile
 
@@ -203,19 +203,19 @@ if __name__ == "__main__":
 ### Pattern 4: py-spy - Production Profiling
 
 ```bash
-# Install: pip install py-spy
+# Install: docker compose exec backend uv add --dev py-spy
 
-# Profile a running Python process
-py-spy top --pid 12345
+# Profile a running Python process (run inside the backend container)
+docker compose exec backend py-spy top --pid 12345
 
 # Generate flamegraph
-py-spy record -o profile.svg --pid 12345
+docker compose exec backend py-spy record -o profile.svg --pid 12345
 
 # Profile a script
-py-spy record -o profile.svg -- python script.py
+docker compose exec backend py-spy record -o profile.svg -- python script.py
 
 # Dump current call stack
-py-spy dump --pid 12345
+docker compose exec backend py-spy dump --pid 12345
 ```
 
 ## Optimization Patterns
@@ -811,7 +811,7 @@ result = slow_function()
 ### Performance Testing with pytest-benchmark
 
 ```python
-# Install: pip install pytest-benchmark
+# Install: docker compose exec backend uv add --dev pytest-benchmark
 
 def test_list_comprehension(benchmark):
     """Benchmark list comprehension."""

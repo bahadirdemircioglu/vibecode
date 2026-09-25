@@ -430,7 +430,7 @@ This is great because [explain why]
 - `@requesting-code-review` - Prepare code for review
 - `@receiving-code-review` - Handle review feedback
 - `@systematic-debugging` - Debug issues found in review
-- `@test-driven-development` - Ensure code has tests
+- `@tdd-workflows-tdd-cycle` - Ensure code has tests
 
 ## Additional Resources
 

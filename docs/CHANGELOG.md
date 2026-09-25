@@ -5,6 +5,18 @@
 
 ---
 
+## [2026-09-25] — Denetim temizliği (ADR-009)
+
+### Changes
+- **What:** Repo çapında denetim sonrası temizlik.
+  - **Güvenlik:** `session-start.sh` artık git'siz projelerde dosya silip `git add -A` ile commit atmıyor (yalnızca `.vibecode/templates/fresh-clone.marker` koşulunda, açık yol listesiyle); oturum başında `curl|sh` / `sudo` / `npm -g` otomatik kurulumları kaldırıldı (MISSING satırı basılır); `.gitignore` + şablonu `.env*`, `backups/` dışlıyor; `permission-policy.js` yalnızca Bash'te, `rm -r -f` varyantlarını yakalıyor; `consult-provider.sh` API anahtarını argv yerine stdin'den veriyor.
+  - **Bozuk araçlar:** `scaffold.sh` silindi (her çalıştırmada kırılıyordu); `task-brief` "Task 1" isteğinde Task 10'u almıyor; `sdd-workspace` özellik başına `progress-<feature>.md`; `vibe-update` config'i belirsiz yol sayıyor; compose şablonu çalışan healthcheck'ler, 127.0.0.1 port bağlama, postgres portu yalnızca override'da; Makefile'a `typecheck`.
+  - **Kural çelişkileri:** Planlama modeli her yerde **Opus** (`/vibe-plan` → `general-purpose` + `model: opus`); model yönlendirme + delegasyon + 2 deneme kuralı tek kaynakta: `.vibecode/standards/delegation.md`; `BELIRSIZ` / `BLOCKER` ayrımı; HANDOFF tek şablon; `/vibe-goal` → HANDOFF `## Goal`; `/vibe-sdd` onaylı `/vibe-plan` dosyasından başlar.
+  - **Maliyet:** `/vibe-done` güvenlik incelemesi `reviewer` subagent'ında, doc-sync `--full` ile; DeepSeek danışması 1 tur, 300 sn, ortak anahtar dosyası `~/.config/vibe/providers.env`; Write/Edit başına 3 → 1 node süreci, tekrar eden 525 B → 0 B; `docker.md`, `security.md` §7-8, `documentation.md` §7, `architecture.md` §4 ayrıştırıldı/kısaldı; yeni projeler framework geçmişini (ADR'ler, CHANGELOG) devralmıyor.
+  - **Skill'ler:** stack dışı / kopya 6 skill silindi, 7 TDD skill'i `tdd-workflows-tdd-cycle`'da birleşti (~67 KB).
+- **Why:** Denetimde gerçek hatalar (veri kaybı / sır sızıntısı riski, hiç çalışmayan script'ler), birbirini tutmayan kurallar ve her oturum/komutta gereksiz token tüketimi bulundu.
+- **Source:** Kullanıcı isteği ("mantıksız, kural hatası ya da pahalı olan yerleri çıkar"); kararlar: Opus planlama, hafif komut birleştirme, iki DeepSeek motoru ortak anahtarla.
+
 ## [2026-09-25] — Sözleşme-spec + kabul vakaları; Haiku `mechanic` rolü
 
 ### Changes

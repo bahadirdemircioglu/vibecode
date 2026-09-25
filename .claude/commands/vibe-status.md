@@ -29,8 +29,8 @@ Run a full status check and report. Read-only — do not modify any files.
 ### 6. Recommendation
 Based on context assessment:
 - **Low usage:** "Continue — plenty of context remaining"
-- **Moderate usage:** "Consider `/compact` soon to preserve context"
-- **High usage:** "Recommend `/compact` now or start a fresh session"
+- **Moderate usage:** "Consider `/vibe-compact` soon to preserve context"
+- **High usage:** "Recommend `/vibe-compact` now or start a fresh session"
 
 ### Report Format
 ```

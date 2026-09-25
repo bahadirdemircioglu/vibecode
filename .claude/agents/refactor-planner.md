@@ -22,6 +22,6 @@ For each bug: **`file:line`** · root-cause fix as a contract spec (file + chang
 Then an optional **cleanup** section, clearly marked as non-blocking.
 
 ## YAPMA (do NOT)
-- ❌ Edit code. You plan; the Engineer executes the micro-specs.
+- ❌ Edit code. You plan; the Engineer executes the contract specs.
 - ❌ Gold-plate. Bundle a rewrite when a 2-line fix is correct.
 - ❌ Fix the symptom instead of the root cause.

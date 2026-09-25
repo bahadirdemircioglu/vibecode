@@ -1,12 +1,17 @@
 #!/usr/bin/env bash
 # sdd-workspace [FEATURE_NAME]
-# Initializes or resumes a .vibecode/sdd/ workspace with a progress ledger.
+# Initializes or resumes a .vibecode/sdd/ workspace with a PER-FEATURE progress
+# ledger: .vibecode/sdd/progress-<feature-slug>.md (so parallel/successive
+# features never share or clobber one ledger).
 set -euo pipefail
 
 FEATURE="${1:-unknown-feature}"
 REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
 SDD_DIR="$REPO_ROOT/.vibecode/sdd"
-PROGRESS="$SDD_DIR/progress.md"
+# Slug: lowercase, [a-z0-9-] only, collapsed/trimmed dashes.
+SLUG="$(printf '%s' "$FEATURE" | tr '[:upper:]' '[:lower:]' | sed -E 's/[^a-z0-9]+/-/g; s/^-+//; s/-+$//')"
+SLUG="${SLUG:-unknown-feature}"
+PROGRESS="$SDD_DIR/progress-${SLUG}.md"
 
 mkdir -p "$SDD_DIR"
 

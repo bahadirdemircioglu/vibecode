@@ -2,10 +2,11 @@
 
 > **Bu kılavuz kime?** Hiç bilmeyen birine. Aşağıdaki her özelliği "ne işe yarar, neden
 > kullanılır, nasıl kullanılır, hangi senaryoda" başlıklarıyla anlatır. WrongStack projesinden
-> ilham alıp vibecode (Claude Code) framework'üne eklediğimiz **4 yeni komut, 8 rol, 2 skill ve
+> ilham alıp vibecode (Claude Code) framework'üne eklediğimiz **3 komut (+ HANDOFF `## Goal`), 9 rol, 2 skill ve
 > 2 güvenlik hook'unun** tam kullanım rehberidir.
 >
-> İlgili mimari karar: `docs/architecture/wrongstack-pattern-adoption-plan.md` ve `docs/decisions.md` ADR-006.
+> İlgili mimari karar: `docs/architecture/wrongstack-pattern-adoption-plan.md` ve `docs/decisions.md` ADR-006
+> (güncellemeler: ADR-008 sözleşme-spec, ADR-009 `/vibe-goal` → HANDOFF `## Goal`, `/vibe-sdd` plan üzerinden).
 
 ---
 
@@ -14,9 +15,9 @@
 | Ne istiyorsun? | Komut | Bölüm |
 |----------------|-------|-------|
 | Bir görevi birden çok uzman alt-agent'a paralel böldürmek | `/vibe-fleet [görev]` | §3 |
-| Büyük bir özelliği soru-cevap → spec → görev listesi ile yürütmek | `/vibe-sdd [özellik]` | §4 |
+| Onaylı plan üzerinden soru-cevap → kabul vakaları → görev listesi ile yürütmek | `/vibe-sdd [özellik]` | §4 |
 | Zor bir bug'ı 3 uzmanla (avcı→planlayıcı→eleştirmen) çözmek | `/vibe-collab-debug [bug]` | §5 |
-| Çok-oturumlu bir hedefi kilitleyip günlük tutmak | `/vibe-goal set [hedef]` | §6 |
+| Çok-oturumlu bir hedefi kilitleyip günlük tutmak | HANDOFF.md `## Goal` | §6 |
 | Tehlikeli komutların (rm -rf, force push…) otomatik bloklanması | (otomatik — hook) | §7 |
 
 > Hiçbir şey kurmana gerek yok. Komutlar `/` ile çalışır, hook'lar arka planda otomatik devrede.
@@ -51,21 +52,22 @@ Her rol, `.claude/agents/` altında bir tanım dosyasıdır ve Claude Code'un **
 ayrı bir bağlamda (kendi penceresinde) çalışır. Ana sohbet sadece **sonucu** alır, ham dosya
 dökümünü değil — bağlam temiz kalır.
 
-### 8 rol
+### 9 rol
 
 | Rol | Faz | Model | Yazabilir mi? | Ne zaman |
 |-----|-----|-------|---------------|----------|
 | **explorer** | Keşif | sonnet | Hayır (salt-okunur) | "Bul / nerede / nasıl çalışıyor" — kod haritalama |
 | **architect** | Planlama | opus | Hayır | "Tasarla / planla / hangi yapı" — derin reasoning |
-| **engineer** | İnşa | sonnet | **Evet** | "Uygula / ekle / değiştir" — micro-spec'i koda çevirir |
+| **engineer** | İnşa | sonnet | **Evet** | "Uygula / ekle / değiştir" — sözleşme-spec'i (kabul vakaları önce test) koda çevirir |
+| **mechanic** | İnşa | haiku | **Evet** | "Rename / taşı / pattern'den boilerplate / doc" — mantık yok |
 | **tester** | Doğrulama | sonnet | **Evet** | "Test yaz / reprodüksiyon / suite çalıştır" |
 | **reviewer** | İnceleme | opus | Hayır | "Bu diff'i incele / standartlara uygun mu" |
 | **bug-hunter** | Debug | sonnet | Hayır | "Bug'ı bul / kök neden" |
 | **refactor-planner** | Debug | opus | Hayır | "Düzeltmeyi planla / nasıl refactor" |
 | **critic** | Debug/Meta | opus | Hayır | "Bu bulgu gerçek mi / çürüt / doğrula" |
 
-> **Model mantığı (CLAUDE.md kuralı):** planlama/mimari/eleştiri → **Opus**; kod yazma/test/keşif →
-> **Sonnet**. Salt-okunur roller asla dosya değiştiremez (güvenlik için araç listesi kısıtlı).
+> **Model mantığı (`.vibecode/standards/delegation.md`):** planlama/mimari/eleştiri → **Opus**; kod yazma/test/keşif →
+> **Sonnet**; mekanik iş → **Haiku**. Salt-okunur roller asla dosya değiştiremez (güvenlik için araç listesi kısıtlı).
 
 Bu rolleri **doğrudan** da çağırabilirsin (aşağıda §8), ama çoğu zaman onları senin yerine
 `/vibe-fleet` ve `/vibe-collab-debug` yönetir.
@@ -107,7 +109,7 @@ Open: -
 ```
 /vibe-fleet rate-limiting ekle: önce tasarla, sonra uygula, sonra test yaz
 ```
-Olan: `architect` (Opus) tasarımı + micro-spec üretir → `engineer` (Sonnet) kodu yazar →
+Olan: `architect` (Opus) tasarımı + sözleşme-spec'leri üretir → `engineer` (Sonnet) kodu yazar →
 `tester` testleri ekler. Çakışan dosyalar olduğu için bunlar **sıralı** çalışır.
 
 ### Ne beklemelisin (çıktı)
@@ -117,7 +119,7 @@ bir "Decision" satırı ve varsa açık sorular.
 ### YAPMA / sınırlar
 - Aynı dosyayı değiştiren işler paralel verilmez (otomatik sıralanır).
 - Uçsuz görev verme ("kodu iyileştir") — her alt-görevin net hedefi olmalı.
-- Bir alt-görev 2 kez başarısızsa otomatik Opus'a yükseltilir (3. deneme yok).
+- Bir alt-görev 2 kez başarısızsa bir Opus subagent düzeltmeyi kendisi yazar (3. Sonnet denemesi yok).
 
 ---
 
@@ -125,7 +127,8 @@ bir "Decision" satırı ve varsa açık sorular.
 
 ### Ne işe yarar
 Büyük bir özelliği **koda başlamadan önce** netleştiren disiplinli akış:
-soru sor → spec yaz → görevlere böl → onay → uygula. `/vibe-plan` ile `/vibe-go` arasına oturur.
+onaylı `/vibe-plan` dosyası → soru sor → gereksinim + kabul vakalarını plana ekle → görevlere böl → onay → uygula.
+`/vibe-plan`'ın devamıdır; ayrı spec dosyası yazmaz.
 
 ### Neden kullanmalısın
 - "Hadi başlayalım" demenin gereksinimleri kaçıracağı, orta-büyük özellikler için.
@@ -144,16 +147,16 @@ soru sor → spec yaz → görevlere böl → onay → uygula. `/vibe-plan` ile 
 Akış:
 1. **Soru fazı:** "Yorumlar iç içe mi olacak? Düzenleme/silme var mı? Moderasyon? Anonim?" gibi
    3-6 soru (`AskUserQuestion` ile).
-2. **Spec fazı:** Cevaplardan `docs/architecture/yorum-sistemi-spec.md` üretir (hedef, gereksinimler,
-   kabul kriterleri). Onayını ister.
-3. **Görev fazı:** Bağımlılık sıralı görev listesi (her biri ≤3 dosya, rol atanmış, kabul kontrolü).
+2. **Gereksinim fazı:** Cevaplardan `docs/architecture/yorum-sistemi-plan.md`'ye `## Requirements` +
+   `## Acceptance Cases` ekler. Onayını ister.
+3. **Görev fazı:** Plana `### Task N: …` başlıklı, bağımlılık sıralı görevler (her biri ≤3 dosya, rol atanmış, kabul vakaları).
 4. **Görev onayı:** Liste + kritik yol gösterilir. "OK" demeden kod yazılmaz.
 5. **Uygulama:** Görevler sırayla; bağımsız olanlar `/vibe-fleet` ile. Her görevden sonra `make verify`.
 6. **Bitiş:** Tüm kabul kriterleri geçince `/vibe-done`'a devreder.
 
 ### `/vibe-plan` ile farkı
 - `/vibe-plan` = tek atış **mimari plan** (yapı kararları).
-- `/vibe-sdd` = **soru-cevap + spec + görev kırılımı + yürütme** döngüsü. Daha operasyonel.
+- `/vibe-sdd` = aynı plan dosyası üzerinde **soru-cevap + kabul vakaları + görev kırılımı + yürütme**. Daha operasyonel.
 
 ---
 
@@ -181,12 +184,12 @@ onayladığı düzeltmeler uygulanır. WrongStack'in `CollabSession`'ı.
 Akış:
 1. **BugHunter:** "Olası kök neden: `profile.py:54`'te async session aynı anda iki istekte
    paylaşılıyor (race). Güven: olası."
-2. **RefactorPlanner:** "Düzeltme micro-spec'i: her istek için yeni session aç; `get_db()`
+2. **RefactorPlanner:** "Düzeltme sözleşme-spec'i (reprodüksiyon vakası dahil): her istek için yeni session aç; `get_db()`
    dependency'sini kullan. Blast radius: 3 endpoint. Test: eşzamanlı 50 istek."
 3. **Critic:** "CONFIRMED — `profile.py:54` gerçekten paylaşılan session; ama önerilen fix
    `service.py:20`'deki cache'i de güncellemeli yoksa stale kalır. UNCERTAIN: …"
 4. **Sentez:** Birleşik rapor — kök neden, onaylı düzeltmeler, eklenmesi gereken testler.
-5. **Uygulama (onaydan sonra):** Onaylı micro-spec'ler `engineer`'a verilir, `tester` reprodüksiyon
+5. **Uygulama (onaydan sonra):** Onaylı sözleşme-spec'ler `engineer`'a verilir, `tester` reprodüksiyon
    testini yazar, `make verify`.
 
 ### Çıktı
@@ -200,42 +203,33 @@ Tests to add:    eşzamanlı 50 istek reprodüksiyon testi
 
 ---
 
-## 6. `/vibe-goal` — Kilitli hedef + günlük (otonom DEĞİL)
+## 6. Çok-oturumlu hedef — HANDOFF.md `## Goal` (otonom DEĞİL)
+
+> **Değişiklik (ADR-009):** Eski `/vibe-goal` komutu ve `GOAL.md` kaldırıldı; hedef artık
+> `HANDOFF.md`'nin `## Goal` bölümünde yaşar (şablon: `.vibecode/templates/HANDOFF.md`).
 
 ### Ne işe yarar
-Oturumlar arası yaşayan bir **hedef** ve **günlük** tutar (`GOAL.md`). WrongStack'in goal-engine'inin
-*sınırlı, insan-denetimli* versiyonu — bilinçli olarak **otonom sonsuz döngü değil**.
-
-> **Neden otonom değil?** Bir config framework'te kontrolsüz token/komut harcayan bir "eternal loop"
-> riskli. Karar: hedef bir **pusula + defter** olsun, yürütücü değil. Adım adım ilerlemeyi sen
-> (ya da açık `/loop`) tetikler. (ADR-006)
+Oturumlar arası yaşayan bir **hedef**, kabul kriterleri ve kısa bir **günlük**. WrongStack'in
+goal-engine'inin *sınırlı, insan-denetimli* versiyonu — bilinçli olarak **otonom sonsuz döngü değil**
+(pusula + defter, yürütücü değil; ADR-006).
 
 ### Nasıl kullanılır
-```
-/vibe-goal set [hedef açıklaması]     # yeni hedef kilitle
-/vibe-goal status                     # hedef + son günlük + önerilen sonraki adım
-/vibe-goal journal [not]              # ilerleme kaydı ekle
-/vibe-goal clear                      # tamamlandı/iptal işaretle
-```
+- **Kur:** "Hedef: tüm backend'i async SQLAlchemy'e taşı" de → Claude `## Goal`'a hedef + kabul
+  kriterlerini yazar (belirsizse sorar), `Goal status: active`.
+- **Oturum başı:** `/vibe-go` aktif hedefi ve kabul kriterlerini gösterir.
+- **Oturum sonu:** `/vibe-done` günlüğe tarihli bir satır ekler; kriterler karşılandıysa `completed`
+  işaretlemeyi sorar.
+- İstersen denetimli tekrar: `/loop` ile süreli/sınırlı sar.
 
-### Senaryo — Çok günlük bir refactor
-```
-/vibe-goal set tüm backend'i sync SQLAlchemy'den async'e taşı
-```
-- Her oturum başında `/vibe-goal status` → nerede kaldığını ve sıradaki adımı söyler.
-- Bir modülü taşıdıktan sonra: `/vibe-goal journal users modülü async'e geçti, sırada orders`.
-- İstersen denetimli tekrar: `/loop 30m /vibe-goal status` (her tick `/loop` ile sınırlı).
-- Bitince: `/vibe-goal clear` (kabul kriterlerini kontrol eder).
-
-### `GOAL.md` neye benzer
+### `## Goal` neye benzer
 ```markdown
 ## Goal
-Tüm backend'i async SQLAlchemy'e taşı
-## Acceptance
-Tüm repository'ler async; `make test` yeşil; sync session importu kalmadı
-## Journal
-- 2026-06-04: users modülü async'e geçti, sırada orders
-Status: active
+- **Goal status:** active
+- **Goal:** Tüm backend'i async SQLAlchemy'e taşı
+- **Acceptance:**
+  - Tüm repository'ler async; `make test` yeşil; sync session importu kalmadı
+- **Journal** (newest last, max ~10 lines — trim oldest):
+  - 2026-06-04 — users modülü async'e geçti, sırada orders
 ```
 
 ---
@@ -261,6 +255,7 @@ Bloklandığında şuna benzer bir mesaj görürsün:
 `VIBE_YOLO=1` ortam değişkeni blokları uyarıya indirir. Üretimde/değerli repoda **kullanma**.
 
 ### 7.2 `net-fs-guard.js` — SSRF + dosya kaçışı
+`pre-tool-use.js` tarafından modül olarak yüklenir (tek node süreci); tek başına da çalışır.
 - **SSRF:** `WebFetch` ile private/loopback hedefler (cloud metadata `169.254.169.254`,
   `localhost`, `*.internal`) ve `http(s)` olmayan şemalar (`file://`…) bloklanır.
   **Kaçış kapısı:** yerel API test ederken `VIBE_ALLOW_PRIVATE_FETCH=1`.
@@ -277,14 +272,14 @@ printf '%s' '{"tool_name":"Bash","tool_input":{"command":"rm -rf x"}}' \
 ```
 > Not: bu projede `Bash(node *)` deny'li; hook'u `node x.js` yerine `./x.js` (shebang) ile çalıştır.
 
-Detaylı standart: `.vibecode/standards/security.md §7`.
+Detay: `docs/guides/framework-security.md §1`.
 
 ---
 
 ## 8. Skill'ler ve rolleri doğrudan kullanma (ileri seviye)
 
 ### İki yardımcı skill
-- **`agent-dispatch`** — serbest bir görevi 8 rolden birine yönlendiren sezgisel kural seti.
+- **`agent-dispatch`** — serbest bir görevi 9 rolden birine yönlendiren sezgisel kural seti.
   `/vibe-fleet` bunu otomatik kullanır; sen de "hangi rol?" diye düşünürken yükleyebilirsin.
 - **`subagent-budget-protocol`** — alt-agent çağırırken güvenli delegasyon kuralları (net hedef,
   YAPMA listesi, 2-deneme sınırı, roll-up). Fan-out yaparken bunu uygula.
@@ -308,7 +303,7 @@ için yanlışlıkla bir şey değiştiremez.
 | Net bir iş ama birden çok bağımsız parça | `/vibe-fleet` |
 | Tek, basit iş | normal `/vibe-go` |
 | Kafa karıştıran bug | `/vibe-collab-debug` |
-| Günler/oturumlar süren bir hedef | `/vibe-goal set` |
+| Günler/oturumlar süren bir hedef | HANDOFF.md `## Goal` |
 | Bir diff'i kalite/standart için incelet | `reviewer` rolü veya `/code-review` |
 
 ---
@@ -327,7 +322,7 @@ Hook'u zayıflatma.
 C: Hayır. Her rol ayrı bağlamda çalışır; ana sohbete sadece özet (roll-up) döner.
 
 **S: Otonom (kendi kendine sonsuz çalışan) bir mod var mı?**
-C: Hayır, bilinçli olarak yok. `/vibe-goal` sınırlı ve insan-denetimli. Tekrar istiyorsan
+C: Hayır, bilinçli olarak yok. HANDOFF `## Goal` sınırlı ve insan-denetimli. Tekrar istiyorsan
 `/loop` ile süreli/sınırlı sar.
 
 **S: Bu eklentiler Claude Code'un kendi davranışını mı değiştiriyor?**
@@ -339,19 +334,20 @@ değişmedi. İstersen dosyaları silerek geri alabilirsin.
 ## 11. Dosya haritası (ne nerede)
 
 ```
-.claude/agents/*.md            8 rol tanımı (explorer, architect, engineer, tester,
+.claude/agents/*.md            9 rol tanımı (explorer, architect, engineer, mechanic, tester,
                                reviewer, bug-hunter, refactor-planner, critic)
 .claude/commands/vibe-fleet.md         /vibe-fleet
 .claude/commands/vibe-sdd.md           /vibe-sdd
 .claude/commands/vibe-collab-debug.md  /vibe-collab-debug
-.claude/commands/vibe-goal.md          /vibe-goal
+.vibecode/templates/HANDOFF.md         ## Goal bölümü (eski /vibe-goal)
 .claude/hooks/permission-policy.js     risk-tier izin hook'u
 .claude/hooks/net-fs-guard.js          SSRF + dosya kaçışı hook'u
 .claude/settings.json                  hook kayıtları + genişletilmiş deny listesi
 .vibecode/skills/agent-dispatch/       rol yönlendirme skill'i
 .vibecode/skills/subagent-budget-protocol/  delegasyon disiplini skill'i
-.vibecode/standards/security.md §7     güvenlik standardı
-.vibecode/standards/documentation.md §7  skill manifest şeması
+docs/guides/framework-security.md §1   framework güvenlik rehberi
+.vibecode/standards/delegation.md      model routing + delegasyon
+docs/guides/skill-authoring.md         skill manifest şeması
 docs/architecture/wrongstack-pattern-adoption-plan.md  mimari plan
 docs/decisions.md ADR-006              karar kaydı
 ```

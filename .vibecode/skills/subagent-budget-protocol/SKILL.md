@@ -23,7 +23,7 @@ Give every subagent a written contract in its prompt:
 1. **Single objective** — one clear deliverable. If it needs two, spawn two.
 2. **Scope fence (YAPMA list)** — explicitly list what NOT to touch.
 3. **Inputs** — the exact files/specs it needs, so it doesn't go exploring the whole repo.
-4. **Output shape** — tell it the structure to return (findings list / micro-spec / diff summary).
+4. **Output shape** — tell it the structure to return (findings list / contract spec per `.vibecode/standards/delegation.md` §3 / diff summary).
 5. **Attempt cap** — "If you fail the same problem twice, stop and report; do not try a third time."
    ("Same problem" = same file path + similar error — substring match, per CLAUDE.md.)
 

@@ -13,7 +13,7 @@ Vibecode, Claude Code ile yazılım geliştirirken karşılaşılan temel sorunl
 |-------|-------|
 | Her projede aynı dosyaları tekrar yazıyorsun | **Clone workflow** + hazır **`.vibecode/templates/`** |
 | Session geçişlerinde bağlam kaybı | **HANDOFF.md** + **`/vibe-go`** ile otomatik yükleme |
-| Uzun SDD çalışmalarında context compaction = ilerleme kaybı | **`.vibecode/sdd/progress.md`** ledger — kaldığın yerden devam |
+| Uzun SDD çalışmalarında context compaction = ilerleme kaybı | **`.vibecode/sdd/progress-<feature>.md`** ledger — kaldığın yerden devam |
 | Subagent prompt'ları görev metniyle şişiyor | **File handoff scripts** — görev ve diff dosyaya yazılır, path geçilir |
 | Hangi skill'i yüklemem gerektiği belirsiz | **Otomatik stack detection** — config dosyalarından skill tespiti |
 | Aynı hatalar tekrar ediyor | **Error Memory** — yapılandırılmış hata hafızası |
@@ -21,7 +21,7 @@ Vibecode, Claude Code ile yazılım geliştirirken karşılaşılan temel sorunl
 | Opus'ta rutin iş = pahalı | **Sonnet-first routing** — hook Opus tespit ederse `/model sonnet` önerir |
 | Plan discovery için `ls` token yiyor | **`docs/architecture/INDEX.md`** — tek otorite, targeted Read |
 | vibecode gelişince türetilmiş projen eski sürümde kalıyor | **`/vibe-update`** — framework dosyalarını upstream'den hash-tabanlı güvenli merge ile senkronize eder |
-| Plan tek modelin bakış açısıyla sınırlı | **Multi-AI consultation** — `/vibe-plan` planı DeepSeek'e danışıp convergence'a kadar birlikte olgunlaştırır (opt-in, kapalı gelir) |
+| Plan tek modelin bakış açısıyla sınırlı | **Multi-AI consultation** — `/vibe-plan` planı DeepSeek'e danışıp tek turda eleştiri entegre eder (opt-in, kapalı gelir, max 1 round) |
 
 ---
 
@@ -66,19 +66,22 @@ Session-start hook otomatik olarak:
 /vibe-plan uygulama-adi
 ```
 
+Planlama bir **Opus** subagent'ında koşar (`Agent(subagent_type: "general-purpose", model: "opus")`);
+ana oturum yalnızca orkestrasyon yapar. Routing kuralları: `.vibecode/standards/delegation.md`.
+
 1. `docs/architecture/INDEX.md` okunur (tek otorite — `ls` çekilmez)
 2. İlgili eski planlar targeted Read edilir
-3. Yeni plan `docs/architecture/<slug>-plan.md` olarak yazılır
+3. Yeni plan `docs/architecture/<slug>-plan.md` olarak `architecture.md §1.1` şablonuyla yazılır
 4. INDEX'e bir satır özet eklenir
 5. (Opsiyonel) Harici AI danışma turu — bkz. aşağıdaki bölüm
-6. Onay beklenir
+6. Onay beklenir; onaydan sonra Serena düzenleme moduna geri alınır
 
 ### /vibe-plan — Harici AI Danışma (Multi-AI Consultation, DeepSeek)
 
 `/vibe-plan` taslak planı yazdıktan sonra, **isteğe bağlı olarak** ikinci bir AI sağlayıcısına
-(şu an **DeepSeek**) danışabilir: plan eleştiri için gönderilir, makul öneriler entegre edilir,
-DeepSeek yeni esaslı itiraz üretmeyene (`CONVERGED`) **veya** `max_rounds`'a ulaşana kadar tekrar
-edilir. **Son söz her zaman senin modelinde** kalır — DeepSeek yalnızca danışman. Varsayılan
+(şu an **DeepSeek**) danışabilir: plan eleştiri için gönderilir, makul öneriler entegre edilir.
+Varsayılan `max_rounds: 1` (tek tur; ADR-009) — ana context'e yalnızca kısa entegrasyon özeti gelir,
+ham eleştiri veya plan dosyası her turda aktarılmaz. **Son söz her zaman Opus planlama subagent'ında** kalır — DeepSeek yalnızca danışman. Varsayılan
 **kapalı**; açmadıkça `/vibe-plan` eskisi gibi tek modelle çalışır.
 
 **Nasıl açılır (opt-in — iki adım):**
@@ -88,7 +91,7 @@ edilir. **Son söz her zaman senin modelinde** kalır — DeepSeek yalnızca dan
    ```json
    {
      "active_provider": "deepseek",
-     "max_rounds": 3,
+     "max_rounds": 1,
      "providers": {
        "deepseek": {
          "enabled": true,              // ← false → true
@@ -113,9 +116,10 @@ edilir. **Son söz her zaman senin modelinde** kalır — DeepSeek yalnızca dan
 
    # (b) ÖNERİLEN — makine geneli dosya (bir kez ayarla, tüm projelerde çalışır,
    #     hiçbir repo'ya karışmaz):
-   mkdir -p ~/.config/vibecode
-   cp .vibecode/providers.env.example ~/.config/vibecode/providers.env
-   # → ~/.config/vibecode/providers.env dosyasını düzenle, DEEPSEEK_API_KEY gir
+   mkdir -p ~/.config/vibe
+   cp .vibecode/providers.env.example ~/.config/vibe/providers.env
+   # → ~/.config/vibe/providers.env dosyasını düzenle, DEEPSEEK_API_KEY gir
+   #   (vibecode + vibeplan ortak key dosyası — ADR-009)
 
    # (c) Proje-yerel override (gitignore'da) — yalnızca bu yolun host projede
    #     gitignore'landığından eminsen:
@@ -134,13 +138,13 @@ edilir. **Son söz her zaman senin modelinde** kalır — DeepSeek yalnızca dan
 
 **Nasıl çalışır:**
 - Her turda tek satır bildirim: *"Danışma turu round N: plan DeepSeek'e gönderildi, geri bildirim alındı."*
-- DeepSeek'in ham görüşü + hangi önerilerin alındığı/reddedildiği, plan dosyasının sonuna
+- DeepSeek eleştirisinin özeti + hangi önerilerin alındığı/reddedildiği, plan dosyasının sonuna
   `## Appendix: External Review (DeepSeek)` bölümü olarak tur-tur eklenir (şeffaflık).
 - Config yok / key yok / hata / timeout → **sessizce** normal tek-modelli akışa döner (fail-open —
   danışma bir kalite adımıdır, planı asla bloklamaz).
 
 **Gizlilik:** Plan içeriği DeepSeek API'sine gider. Hassas planlar için `enabled: false` bırak veya
-`--no-consult` kullan. API key asla loglanmaz/plana yazılmaz. Detay: `.vibecode/standards/security.md §8`.
+`--no-consult` kullan. API key asla loglanmaz/plana yazılmaz. Detay: `docs/guides/framework-security.md §2`.
 
 **Başka provider eklemek:** Config, OpenAI-uyumlu chat-completions şekline (`request_shape:
 "openai-compatible"`) uyan her sağlayıcıyı destekler — `providers`'a yeni bir giriş + `.env`'e key
@@ -152,22 +156,24 @@ eklemek yeter, kod değişmez. (OpenAI-uyumlu olmayan wire-format'lar ileride `c
 /vibe-go kullanici-profil-sayfasi-ekle
 ```
 
-1. HANDOFF.md varsa okunur
+1. HANDOFF.md varsa okunur (aktif `## Goal` varsa hedef + kabul kriterleri gösterilir)
 2. Config dosyalarından ilgili skill'ler tespit edilir (otomatik)
 3. "Ready: [task] | Skills: [list]" ile başlar
 
 ### /vibe-sdd — Spec-Driven Development
 
-Büyük özellikler için kullan: `/vibe-plan`'dan sonra, kod yazmadan önce.
+Büyük özellikler için kullan: onaylı `/vibe-plan` dosyası üzerinden, kod yazmadan önce.
 
 ```
 /vibe-sdd kullanici-yetkilendirme-sistemi
 ```
 
 **Akış:**
-1. **Soru Fazı** — 3-6 hedefli soru sorar (kapsam, kabul kriterleri, non-goal'lar)
-2. **Spec** — `docs/architecture/<feature>-spec.md` yazar, onay bekler
-3. **Görev Listesi** — dependency sıralı görevler + kritik yol, onay bekler
+0. **Plan** — `docs/architecture/<feature>-plan.md` bulunur (yoksa önce `/vibe-plan`)
+1. **Soru Fazı** — planın açık bıraktıkları için 3-6 hedefli soru (kapsam, kabul kriterleri, non-goal'lar)
+2. **Requirements + Acceptance Cases** — plan dosyasına eklenir, onay bekler (ayrı spec dosyası yok)
+3. **Görev Listesi** — plana `### Task N: …` başlıklarıyla dependency sıralı görevler + kritik yol, onay bekler
+   (INDEX.md'deki plan satırı güncellenir)
 4. **Execute** — her görevi sırayla çalıştırır; bağımsız görevler `/vibe-fleet` ile paralel
 
 > SDD çalışması sırasında dahili scriptler otomatik çalışır — bunları manuel
@@ -188,13 +194,15 @@ Roller: `explorer`, `architect`, `engineer`, `tester`, `reviewer`, `bug-hunter`,
 ### /vibe-done — Tamamla
 
 ```
-/vibe-done
+/vibe-done           # standart
+/vibe-done --full    # + doc-sync drift taraması
 ```
 
 1. `make verify` çalıştırır (lint + test + audit)
-2. CHANGELOG.md ve ilgili dokümanları günceller
-3. HANDOFF.md yazar
-4. Commit mesajı önerir
+2. Değişen kaynak dosyalar varsa güvenlik taramasını `reviewer` subagent'ına devreder (yalnızca bulgular döner)
+3. CHANGELOG.md (tek kez) ve ilgili dokümanları günceller
+4. HANDOFF.md'yi `.vibecode/templates/HANDOFF.md` şablonuyla yazar (aktif `## Goal` varsa günlüğe satır ekler)
+5. Commit mesajı önerir
 
 ### /vibe-compact — Context Temizle
 
@@ -202,7 +210,13 @@ Roller: `explorer`, `architect`, `engineer`, `tester`, `reviewer`, `bug-hunter`,
 /vibe-compact
 ```
 
-State'i HANDOFF.md'ye kaydeder, context'i sıkıştırır.
+State'i HANDOFF.md'ye (`.vibecode/templates/HANDOFF.md` şablonu) kaydeder, context'i sıkıştırır.
+
+### Çok-oturumlu hedef (HANDOFF `## Goal`)
+
+Eski `/vibe-goal` komutu kaldırıldı (ADR-009). Günler süren bir hedef için HANDOFF.md'nin `## Goal`
+bölümünü kullan: hedefi söyle → hedef + kabul kriterleri yazılır; `/vibe-go` gösterir, `/vibe-done`
+günlüğe satır ekler. Otonom döngü değil — pusula + defter.
 
 ---
 
@@ -212,21 +226,21 @@ State'i HANDOFF.md'ye kaydeder, context'i sıkıştırır.
 
 ### task-brief — Görev Özeti Çıkar
 
-Bir plan/spec dosyasındaki N. görevi okuyup ayrı bir dosyaya yazar.
+Bir plan dosyasındaki `### Task N` görevini okuyup ayrı bir dosyaya yazar.
 Subagent'a tüm plan yerine yalnızca o görevin dosya yolunu geçersin — prompt şişmez.
 
 ```bash
-.vibecode/scripts/task-brief docs/architecture/auth-spec.md 3
+.vibecode/scripts/task-brief docs/architecture/auth-plan.md 3
 # → .vibecode/sdd/task-3-brief.md (34 satır)
 
 # Çıktı dosyasını kendin belirtmek istersen:
-.vibecode/scripts/task-brief docs/architecture/auth-spec.md 3 /tmp/task3.md
+.vibecode/scripts/task-brief docs/architecture/auth-plan.md 3 /tmp/task3.md
 ```
 
 **Kullanım senaryosu:**
 ```bash
 # Görev 2'yi çıkar, engineer subagent'a gönder
-.vibecode/scripts/task-brief docs/architecture/payment-spec.md 2
+.vibecode/scripts/task-brief docs/architecture/payment-plan.md 2
 # Claude'da:
 # "Şu görevi uygula: $(cat .vibecode/sdd/task-2-brief.md)"
 ```
@@ -255,23 +269,23 @@ BASE=$(git rev-parse HEAD~1)
 
 ### sdd-workspace — SDD Çalışma Alanı Başlat
 
-`.vibecode/sdd/` klasörünü oluşturur ve `progress.md` ledger dosyasını açar.
+`.vibecode/sdd/` klasörünü oluşturur ve özelliğe özel `progress-<feature>.md` ledger dosyasını açar.
 Komut zaten `/vibe-sdd` başlangıcında otomatik çalışır; uzun çalışmalarda
 context compaction sonrası kaldığın yeri görmek için de kullanabilirsin.
 
 ```bash
 .vibecode/scripts/sdd-workspace payment-sistemi
-# → .vibecode/sdd/progress.md oluşturuldu
+# → .vibecode/sdd/progress-<feature>.md oluşturuldu
 
 # Mevcut session varsa özet gösterir:
 .vibecode/scripts/sdd-workspace payment-sistemi
-# sdd-workspace: resuming existing session at .vibecode/sdd/progress.md
+# sdd-workspace: resuming existing session at .vibecode/sdd/progress-<feature>.md
 # # SDD Progress: payment-sistemi
 # Started: 2026-06-20
 # ...
 ```
 
-**`progress.md` örneği:**
+**`progress-<feature>.md` örneği:**
 
 ```markdown
 # SDD Progress: payment-sistemi
@@ -333,11 +347,10 @@ Critical bulgu varsa fix subagent devreye girer; re-review sonrası merge edilir
 |-------|----------|
 | `/vibe-plan [feature]` | Mimari plan yazar, onay bekler |
 | `/vibe-go [task]` | State + skills yükler, başlar |
-| `/vibe-sdd [feature]` | Soru → spec → görev listesi → execute (non-trivial özellikler için) |
+| `/vibe-sdd [feature]` | Onaylı plan → soru → requirements/kabul vakaları → görev listesi → execute |
 | `/vibe-fleet [task]` | Director: görevi paralel subagent rollerine böler |
 | `/vibe-collab-debug [bug]` | BugHunter → RefactorPlanner → Critic üçlüsü → doğrulanmış fix planı |
-| `/vibe-goal [set\|status\|journal\|clear]` | Kilitli çok-session hedefi + günlük |
-| `/vibe-done` | Verify + docs + HANDOFF.md + commit önerisi |
+| `/vibe-done [--full]` | Verify + docs + HANDOFF.md + commit önerisi (`--full`: + doc-sync) |
 | `/vibe-compact` | State kaydeder, context temizler |
 | `/vibe-doc-sync [--live] [--tier full] [paths...]` | Dokümanları kodla senkronize eder |
 | `/vibe-security-review [file]` | OWASP Top 10 güvenlik taraması |
@@ -377,7 +390,7 @@ SKILLS: fastapi-pro, postgresql, pydantic-models-py, react-patterns, zustand-sto
 | **Database / SQL** | postgresql, postgres-best-practices, sql-optimization-patterns, database-migrations |
 | **Frontend (React)** | react-patterns, react-best-practices, react-state-management, zustand-store-ts |
 | **TypeScript / JS** | typescript-expert, javascript-pro, modern-javascript-patterns |
-| **Testing / TDD** | test-driven-development, tdd-workflow, python-testing-patterns, javascript-testing-patterns |
+| **Testing / TDD** | tdd-workflows-tdd-cycle, python-testing-patterns, javascript-testing-patterns |
 | **Code Quality** | clean-code, code-reviewer, find-bugs, legacy-modernizer |
 | **Documentation** | changelog-automation, readme, docs-architect, openapi-spec-generation |
 | **Architecture** | architecture-patterns, architecture-decision-records, api-design-principles |
@@ -385,6 +398,8 @@ SKILLS: fastapi-pro, postgresql, pydantic-models-py, react-patterns, zustand-sto
 | **Context Mgmt** | context-compression, context-optimization, context-window-management |
 
 ### Yeni Skill Ekleme
+
+Frontmatter şeması (`triggers` / `scope` / `model` alanları): `docs/guides/skill-authoring.md`.
 
 ```markdown
 # .vibecode/skills/my-skill/SKILL.md
@@ -424,12 +439,14 @@ Write/Edit öncesinde çalışır (advisory — bloklamaz):
 
 ### permission-policy.js — Güvenlik Kapısı
 
-Riskli komutları tier'a göre değerlendirir (hard-block veya uyarı):
+Yalnızca `Bash` çağrılarında çalışır. Riskli komutları tier'a göre değerlendirir (hard-block veya uyarı):
 - `rm -rf`, force push, `DROP TABLE` → hard-block
 - `curl | bash`, eval with external input → hard-block
 - Diğer riskli komutlar → uyarı + onay gerektirir
 
 ### net-fs-guard.js — Ağ + Dosya Sistemi Koruması
+
+`pre-tool-use.js` içinden modül olarak çalışır (düzenleme başına tek node süreci).
 
 - SSRF riskli URL'leri engeller
 - Sistem yollarına (`/etc/`, `/usr/`) yazma girişimlerini engeller
@@ -451,8 +468,7 @@ Mesaj sayısını izler, context büyüdüğünde `/vibe-compact` önerir.
 6. Kod arama için Serena'yı tercih et (varsa)
 7. Max 3 dosya/adım — büyük değişikliklerde subagent kullan
 8. Yeni özellik veya mimari değişiklik — plan yaz, onay bekle
-9. Sonnet subagent'lara sözleşme-spec + kabul vakaları ver (pseudo-code değil), testler geçene kadar Sonnet yazar; max 2 deneme — sonra Opus devralır. Mekanik iş → Haiku (`mechanic`)
-10. **Sonnet-first routing:** Default Sonnet. Opus sadece planlama / mimari karar / 2-fail eskalasyon / derin reasoning için. Sonnet kararsız kaldığında veya 2 kez başarısız olduğunda otomatik Opus'a eskale eder.
+9. **Sonnet-first routing + delegasyon:** default Sonnet, planlama Opus, mekanik iş Haiku (`mechanic`); sözleşme-spec + kabul vakaları (pseudo-code değil); 2. başarısız Sonnet denemesinden sonra Opus subagent fix'i kendisi yazar. Tek otorite: `.vibecode/standards/delegation.md`
 
 ---
 
@@ -475,16 +491,14 @@ Her ikisi de yoksa standart Grep/Read ve resmi dokümantasyon ile devam edilir.
 vibecode/
 ├── CLAUDE.md                    ← Ana yönetişim (~130 satır)
 ├── .vibecode/
-│   ├── standards/               ← Kodlama standartları (10 dosya, on-demand yüklenir)
+│   ├── standards/               ← Kodlama standartları (11 dosya, on-demand yüklenir; delegation.md = model routing)
 │   ├── skills/                  ← 110+ AI skill
-│   ├── memories/errors/         ← Hata hafızası
 │   ├── config/                  ← ai-providers.json (harici AI provider registry — /vibe-plan danışma)
 │   ├── scripts/                 ← Yardımcı shell scriptler
 │   │   ├── task-brief           ← SDD: plan'dan görev özeti çıkarır
 │   │   ├── review-package       ← SDD: diff paketi oluşturur
 │   │   ├── sdd-workspace        ← SDD: çalışma alanı + progress ledger başlatır
 │   │   ├── consult-provider.sh  ← /vibe-plan: harici AI danışma (DeepSeek)
-│   │   ├── scaffold.sh
 │   │   ├── db-backup.sh
 │   │   └── db-restore.sh
 │   ├── prompts/                 ← Subagent prompt şablonları
@@ -501,7 +515,7 @@ vibecode/
     ├── constraints/             ← Proje kısıtlamaları
     ├── CHANGELOG.md
     ├── decisions.md             ← ADR'ler
-    └── progress.md
+    └── progress.md              ← (framework geçmişi; yeni projede şablondan sıfırlanır)
 ```
 
 > `backend/`, `frontend/`, `Makefile`, `docker-compose.yml` — proje setup sırasında oluşturulur.
@@ -535,7 +549,7 @@ vibecode/
 | Context doldu | `/vibe-compact` |
 | Farklı task'a geçmem gerekiyor | `/vibe-compact` → `/vibe-go yeni-task` |
 | Session kapandı, nerede kalmıştım? | `/vibe-go devam-et` (HANDOFF.md okunur) |
-| SDD ortasında context sıkıştı | `/vibe-go` → `.vibecode/sdd/progress.md`'e bak, kaldığın görevden devam |
+| SDD ortasında context sıkıştı | `/vibe-go` → `.vibecode/sdd/progress-<feature>.md`'e bak, kaldığın görevden devam |
 | Yeni servis eklemem gerekiyor | `/vibe-plan redis-cache-ekleme` |
 | Hangi skill'i yüklemeliyim? | Otomatik — session başında tespit edilir |
 | Claude kuralları atladı | `pre-tool-use.js` hook uyarı verir |

@@ -15,39 +15,10 @@ and every session starts by reading it.
 
 ## HANDOFF.md Format
 
-The handoff file uses a fixed structure. Every field is mandatory. Use `N/A` for
-fields that do not apply, never omit a section.
-
-```markdown
-# Session Handoff
-
-## Date
-YYYY-MM-DD
-
-## Current State
-- **Branch:** `feature/xxx`
-- **Status:** in-progress | blocked | ready-for-review
-
-## Changes This Session
-- `path/to/file.py` — what changed and why
-- `path/to/other.ts` — what changed and why
-
-## Tests
-- **Added:** list of new test files
-- **Modified:** list of changed test files
-- **All passing:** yes / no (if no, explain)
-
-## Open Questions
-- Question that needs answering before proceeding
-
-## Next Steps
-- [ ] First priority task
-- [ ] Second priority task
-- [ ] Third priority task
-
-## Active Skills
-- skill-name-1, skill-name-2
-```
+**Single source:** `.vibecode/templates/HANDOFF.md` — copy it and fill every section (use `N/A`,
+never omit a section). Do not keep a copy of the format elsewhere. The template's parser contract
+(`- **Status:**` line, `- [ ]` Next Steps items) is read by the session-start hook; its `## Goal`
+section carries the optional multi-session goal.
 
 ---
 
@@ -87,11 +58,12 @@ YYYY-MM-DD
 ## How to Read
 
 1. Read "Current State" to understand where things stand
-2. Read "Open Questions" to identify blockers
-3. Read "Next Steps" to know what to do first
-4. Read "Changes This Session" for recent context
-5. Read "Active Skills" to reload the same skills
-6. Cross-reference with .serena/memories/ for deeper project context
+2. Read "Goal" — if active, keep the task pointed at it
+3. Read "Open Questions" to identify blockers
+4. Read "Next Steps" to know what to do first
+5. Read "Changes This Session" for recent context
+6. Read "Active Skills" to reload the same skills
+7. Cross-reference with .serena/memories/ for deeper project context
 
 ---
 

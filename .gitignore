@@ -15,8 +15,19 @@ Thumbs.db
 .vibecode/sdd/
 
 # Framework provider secrets (/vibe-plan consultation) — NOT the app's .env.
-# Recommended location is machine-global (~/.config/vibecode/providers.env, outside
-# any repo). This entry only covers the optional project-local override.
+# Recommended location is machine-global (~/.config/vibe/providers.env, shared with
+# vibeplan, outside any repo). This entry only covers the optional project-local override.
 # Only providers.env.example is tracked.
 .vibecode/providers.env
 ._*
+
+# Secrets — app env files (only the placeholder template is tracked)
+.env
+.env.*
+!.env.example
+
+# Local DB dumps (.vibecode/scripts/db-backup.sh)
+backups/
+
+# Claude Code per-user local settings
+.claude/settings.local.json

@@ -10,35 +10,9 @@ Save all session state before context compaction. Execute these steps in order.
 - If no changes to save: note "CHANGELOG already current"
 
 ### 2. Write HANDOFF.md
-Create or update `HANDOFF.md` in the project root with complete session state:
-
-```markdown
-# Session Handoff
-
-## Current Task
-[What was being worked on — include $ARGUMENTS if provided]
-
-## Status
-[In progress / Paused / Blocked — what's done, what's left]
-
-## Branch
-[Current git branch name]
-
-## Changes This Session
-- [List of all files changed and why]
-
-## Tests
-- [Tests added or modified]
-
-## Loaded Skills
-- [List of skill files that were active]
-
-## Open Questions
-- [Anything unresolved or needing user input]
-
-## Next Steps
-- [What to do when resuming]
-```
+Fill `.vibecode/templates/HANDOFF.md` (copy the template; every section, `N/A` where not applicable)
+into `HANDOFF.md` at the project root. Include `$ARGUMENTS` (if provided) in the task description and
+keep an existing `## Goal` section intact.
 
 ### 3. Confirm State Saved
 Report:

@@ -45,32 +45,22 @@
   "hooks": {
     "PreToolUse": [
       {
-        "matcher": "Write|Edit",
+        "matcher": "Write|Edit|NotebookEdit|WebFetch",
         "hooks": [
           {
             "type": "command",
             "command": ".claude/hooks/pre-tool-use.js",
-            "description": "Advisory: checks if relevant standard was loaded before writing code"
+            "description": "Single process per write/fetch: net-fs-guard (SSRF + system-path & symlink-escape containment, fail-closed; VIBE_ALLOW_PRIVATE_FETCH=1 allows local fetch) + advisory skill hint once per path per session"
           }
         ]
       },
       {
-        "matcher": "Bash|Write|Edit|Read|WebFetch",
+        "matcher": "Bash",
         "hooks": [
           {
             "type": "command",
             "command": ".claude/hooks/permission-policy.js",
-            "description": "Risk-tier permission gate: hard-blocks destructive actions (rm -rf, force push, curl|bash, fork bombs), warns on standard-risk ops. VIBE_YOLO=1 downgrades blocks."
-          }
-        ]
-      },
-      {
-        "matcher": "WebFetch|Write|Edit|NotebookEdit",
-        "hooks": [
-          {
-            "type": "command",
-            "command": ".claude/hooks/net-fs-guard.js",
-            "description": "SSRF guard (blocks private/loopback fetch targets) + system-path & symlink-escape containment for writes. VIBE_ALLOW_PRIVATE_FETCH=1 allows local fetch."
+            "description": "Risk-tier permission gate for Bash: hard-blocks destructive commands (rm -rf in any flag order, force push, curl|bash, fork bombs), warns on standard-risk ops. VIBE_YOLO=1 downgrades blocks."
           }
         ]
       }

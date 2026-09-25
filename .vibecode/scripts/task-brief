@@ -24,13 +24,21 @@ else
   OUTFILE="$REPO_ROOT/.vibecode/sdd/task-${TASK_N}-brief.md"
 fi
 
-# Extract the task block starting at heading "## Task N" or "### Task N" until next same-level heading
+if ! [[ "$TASK_N" =~ ^[0-9]+$ ]]; then
+  echo "Error: TASK_NUMBER must be a positive integer (got: $TASK_N)" >&2
+  exit 1
+fi
+
+# Extract the task block starting at heading "## Task N" or "### Task N" until the
+# next h1-h3 heading. The number must be followed by space, ':', '.', '—', '-' or
+# end of line, so "Task 1" never matches "Task 10"; bare "## 1. Goal" headings are
+# NOT task headings. (No {m,n} intervals — portable to mawk/BSD awk.)
 awk -v n="$TASK_N" '
-BEGIN { in_task=0; fence=0; heading_re="^#{1,3}[[:space:]]+(Task[[:space:]]+" n "|" n "\\.)[[:space:]]*" }
+BEGIN { in_task=0; fence=0; heading_re="^###?[[:space:]]+Task[[:space:]]+" n "([[:space:]:.—-]|$)" }
 {
   if ($0 ~ /^```/) fence = !fence
   if (!fence && $0 ~ heading_re) { in_task=1; print; next }
-  if (in_task && !fence && $0 ~ /^#{1,3}[[:space:]]/ && $0 !~ heading_re) { in_task=0 }
+  if (in_task && !fence && $0 ~ /^##?#?[[:space:]]/ && $0 !~ heading_re) { in_task=0 }
   if (in_task) print
 }
 ' "$PLAN_FILE" > "$OUTFILE"

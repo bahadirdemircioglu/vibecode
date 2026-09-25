@@ -11,7 +11,7 @@ Ensure MCP servers are configured and running before any work begins:
 
 1. **Check `.mcp.json`** — Should already exist (tracked in git). If missing for any reason, create it with Serena (`--project-from-cwd`) and Context7 servers, then WARN: "`.mcp.json` was missing and recreated — restart session for MCP servers." Then **STOP**.
 
-2. **Check `.serena/project.yml`** — Should already exist (tracked in git). If missing, auto-detect languages from project files and create it:
+2. **Check `.serena/project.yml`** — NOT tracked in git (it is in `.gitignore`); the session-start hook auto-creates it from `.vibecode/templates/serena-project.yml` on first run. If missing, auto-detect languages from project files and create it:
    - Language detection: `*.py`/`pyproject.toml` → python, `package.json`/`*.ts` → typescript, `go.mod` → go, `Cargo.toml` → rust, `Gemfile` → ruby, `pom.xml`/`build.gradle` → java, `*.csproj` → csharp, `composer.json` → php, `*.tf` → terraform, `*.sh` → bash, `*.cpp`/`CMakeLists.txt` → cpp, etc.
    - Use template from `.vibecode/templates/serena-project.yml` if available
    - Also create `.serena/.gitignore` with: `/cache`, `/project.local.yml`, `/memories`
@@ -49,28 +49,10 @@ If Serena is unavailable, WARN the user and ask if they want to continue without
 - `.serena/project.yml`'deki `languages` listesiyle karşılaştır
 - Eksik dil varsa → project.yml'e ekle + WARN: "Dil eklendi — restart gerekebilir"
 
-### 1.5 Permission Check
-
-Task'ın gerektirdiği yetkileri kontrol et. Projedeki dosya yapısına göre:
-
-**Backend projesi tespit edilirse** (`backend/`, `*.py`, `pyproject.toml`):
-- `pip install`, `python -m pytest`, `alembic`, `docker compose up/build/down/restart` gerekebilir
-
-**Frontend projesi tespit edilirse** (`frontend/`, `package.json`, `*.tsx`):
-- `npm install`, `npm run`, `npx`, `node` gerekebilir
-
-**Her iki durumda:**
-- `mkdir`, `cp`, `mv` dosya sistemi komutları gerekebilir
-
-Eksik yetki varsa kullanıcıya sor:
-```
-Bu task için şu ek yetkiler gerekli: [liste]
-settings.local.json'a ekleyeyim mi?
-```
-Kullanıcı onaylarsa → `.claude/settings.local.json`'a ilgili allow kurallarını ekle.
-
 ### 2. Load State
 - Read `HANDOFF.md` if it exists, summarize previous session
+- If its `## Goal` section has an active goal (`- **Goal status:** active`): show the goal + acceptance
+  criteria and keep this task pointed at it (goal set/update/clear: see `.vibecode/templates/HANDOFF.md`)
 - If not found: "Fresh session — no prior state"
 
 ### 3. Identify Skills (DO NOT READ YET)
@@ -89,33 +71,18 @@ Ready: $ARGUMENTS
   State: [fresh / resumed from HANDOFF.md]
   MCP: Serena [OK/UNAVAILABLE] | Context7 [OK/UNAVAILABLE]
   Serena: Onboarding [done/needed] | Memories [count] | Languages [list]
-  Permissions: [OK / eksik yetkiler listesi]
+  Goal: [active goal one-liner / none]
   Skills available: [list by name — NOT loaded yet]
   Constraints: [loaded list or "skipped — not relevant"]
   Model routing: Sonnet-first (default) → Opus (planning / 2-fail escalation)
 ```
 
-### 6. Context Rules & Model Routing
+### 6. Context Rules
 **Minimize context at all times:**
 - **Skills:** Load a skill ONLY when about to use it. Read it into the subagent that needs it, not the main context.
 - **Standards:** Load the relevant standard ONLY when about to write code in that area.
 - **Files:** Don't read files "just in case." Read only what the current step requires.
-
-**Model routing — Sonnet-first:**
-
-| Default | Eskalasyon (Sonnet → Opus) |
-|---------|----------------------------|
-| **Sonnet** (kod yazma, edit, dosya okuma, basit debug) | 1. `/vibe-plan` çağrısı (Opus zorunlu) |
-| | 2. Mimari / pattern kararı gerektiren durumlar |
-| | 3. **2 başarısız deneme** sonrası kod sorunları (otomatik `Agent(model:opus)`) |
-| | 4. Belirsizlik → "BELIRSIZ: [soru]" raporu (kod yazma, kullanıcıya sor) |
-
-**Geri dönüş:** Opus *talimat* döndürür → Sonnet uygular. İstisna: derin reasoning gerektiren kod (concurrency, kompleks algoritma, cryptography) → Opus subagent doğrudan yazar.
-
-**"Aynı sorun" tanımı (2-deneme kuralı için):** aynı dosya path + benzer hata mesajı. Kararsızsanız eskalasyona gidin.
-
-**Mikro-spec (Opus → Sonnet kod yazımı):** Sadece Opus main context'te ise gerekli. Sonnet main olduğunda kendi kendine kod yazar. Detay: `.vibecode/standards/architecture.md §4`.
-
-**Paralel:** Bağımsız dosyalar için Sonnet subagent'lar paralel çalışabilir.
+- **Model routing / delegation / 2 deneme kuralı:** `.vibecode/standards/delegation.md` (load when delegating or escalating).
+- **Tooling:** Docker-first — dependency install / test / migration komutları container içinde (`docker compose exec <service> uv …` / `npm …`, ya da `make` hedefleri); host'a `pip`/`npm install` yok.
 
 Begin work after confirmation.

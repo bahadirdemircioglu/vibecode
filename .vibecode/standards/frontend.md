@@ -166,7 +166,8 @@ describe("LoginForm", () => {
 - **ESLint:** `eslint-plugin-react-hooks` + `@typescript-eslint/eslint-plugin`
 - **Prettier:** Single config, runs on save
 - **Vite:** Use `vite-plugin-checker` for TypeScript errors in dev overlay
-- Run `npm run lint` + `npm run typecheck` before every commit (included in `make verify`)
+- Run `make lint` before every commit — it runs ESLint, Prettier check and the typecheck
+  (`make typecheck` = `docker compose exec frontend npx tsc --noEmit`); all included in `make verify`
 
 ---
 

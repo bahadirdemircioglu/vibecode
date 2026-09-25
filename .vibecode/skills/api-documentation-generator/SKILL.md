@@ -468,7 +468,7 @@ Export collection for easy testing:
 
 - `@doc-coauthoring` - For collaborative documentation writing
 - `@copywriting` - For clear, user-friendly descriptions
-- `@test-driven-development` - For ensuring API behavior matches docs
+- `@tdd-workflows-tdd-cycle` - For ensuring API behavior matches docs
 - `@systematic-debugging` - For troubleshooting API issues
 
 ## Additional Resources

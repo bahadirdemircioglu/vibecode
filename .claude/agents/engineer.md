@@ -30,4 +30,4 @@ behaviour) and *done* (acceptance cases); you decide *how*. Nothing more than sp
 - ❌ Guess an API — verify from Context7/official docs or report BELIRSIZ.
 - ❌ Edit, skip or weaken an acceptance case to get green.
 - ❌ Report success without having run the tests.
-- ❌ Continue past a second failed attempt on the same problem — report so Opus can take over (2-attempt rule).
+- ❌ Continue past a second failed attempt on the same problem — report; an Opus subagent then writes the fix itself (2-attempt rule, `.vibecode/standards/delegation.md` §4).

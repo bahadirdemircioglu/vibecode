@@ -1,6 +1,6 @@
 {
   "active_provider": "deepseek",
-  "max_rounds": 3,
+  "max_rounds": 1,
   "providers": {
     "deepseek": {
       "enabled": false,
@@ -9,8 +9,8 @@
       "chat_path": "/chat/completions",
       "model": "deepseek-v4-pro",
       "api_key_env": "DEEPSEEK_API_KEY",
-      "timeout_seconds": 120,
-      "max_tokens": 8192
+      "timeout_seconds": 300,
+      "max_tokens": 32000
     }
   }
 }

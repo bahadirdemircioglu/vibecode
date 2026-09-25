@@ -18,7 +18,7 @@
 - Yok (bağımsız olarak uygulanabilir)
 
 ### Open Tasks
-- [ ] `.vibecode/memories/errors/` dizin yapısını oluştur
+- [ ] `.vibecode/memories/errors/` dizin yapısını oluştur — *uygulanmadı (ADR-001 Proposed)*
 - [ ] Hata kaydı YAML şemasını doğrula (örnek dosya)
 - [ ] Auto-capture mantığını hook veya `/vibe-done` akışına entegre et
 - [ ] Pre-check mantığını `/vibe-go` akışına entegre et

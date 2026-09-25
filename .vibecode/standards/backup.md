@@ -8,13 +8,11 @@
 
 - Dev database persists in `./data/postgres/` via Docker volume
 - Developer is responsible for local backups
-- Provide a convenience script:
-
-```bash
-# .vibecode/scripts/db-backup.sh
-docker compose exec postgres pg_dump -U $POSTGRES_USER $POSTGRES_DB > \
-  backups/$(date +%Y%m%d_%H%M%S).sql
-```
+- Use the shipped scripts — don't hand-roll dumps:
+  - `.vibecode/scripts/db-backup.sh` — `pg_dump --format=custom` → `backups/<db>_<timestamp>.dump`
+    (keeps the last 10; `backups/` is gitignored)
+  - `.vibecode/scripts/db-restore.sh [file.dump]` — lists backups without an argument; restores
+    with `pg_restore --clean --if-exists` after confirmation
 
 ---
 

@@ -1,221 +1,181 @@
 ---
 name: tdd-workflows-tdd-cycle
-description: "Use when working with tdd workflows tdd cycle"
+description: Test-Driven Development RED-GREEN-REFACTOR cycle for this stack (pytest/FastAPI backend, Vitest/React Testing Library frontend). Use before writing any implementation code for a new feature, bug fix, or behavior change.
+allowed-tools: Read, Write, Edit, Glob, Grep, Bash
 ---
+
+# TDD Workflow: Red-Green-Refactor
+
+> Write the test first. Watch it fail. Write minimal code to pass. Refactor.
+
+**Core principle:** If you didn't watch the test fail, you don't know if it tests the right thing.
 
 ## Use this skill when
 
-- Working on tdd workflows tdd cycle tasks or workflows
-- Needing guidance, best practices, or checklists for tdd workflows tdd cycle
+- Implementing any new feature or bugfix, before writing implementation code
+- Working on FastAPI endpoints/services (pytest) or React components/hooks (Vitest + RTL)
+- Refactoring existing code that needs a safety net first
 
 ## Do not use this skill when
 
-- The task is unrelated to tdd workflows tdd cycle
-- You need a different domain or tool outside this scope
+- Throwaway prototypes/spikes (ask your human partner, then throw away and redo with TDD before merging)
+- Pure configuration files with no behavior
+- Auto-generated code (e.g. `api.generated.ts`)
 
-## Instructions
+## The Iron Law
 
-- Clarify goals, constraints, and required inputs.
-- Apply relevant best practices and validate outcomes.
-- Provide actionable steps and verification.
-- If detailed examples are required, open `resources/implementation-playbook.md`.
+```
+NO PRODUCTION CODE WITHOUT A FAILING TEST FIRST
+```
 
-Execute a comprehensive Test-Driven Development (TDD) workflow with strict red-green-refactor discipline:
+Wrote code before the test? Delete it. Don't keep it "as reference," don't adapt it — delete means delete. Implement fresh from tests.
 
-[Extended thinking: This workflow enforces test-first development through coordinated agent orchestration. Each phase of the TDD cycle is strictly enforced with fail-first verification, incremental implementation, and continuous refactoring. The workflow supports both single test and test suite approaches with configurable coverage thresholds.]
+## The Cycle
 
-## Configuration
+```
+RED → write a failing test → verify it fails for the right reason
+GREEN → write the minimum code to pass → verify it passes, nothing else breaks
+REFACTOR → clean up, keep tests green
+Repeat for the next behavior
+```
 
-### Coverage Thresholds
-- Minimum line coverage: 80%
-- Minimum branch coverage: 75%
-- Critical path coverage: 100%
+---
 
-### Refactoring Triggers
-- Cyclomatic complexity > 10
-- Method length > 20 lines
-- Class length > 200 lines
-- Duplicate code blocks > 3 lines
+## RED — Write a Failing Test
 
-## Phase 1: Test Specification and Design
+One behavior per test. Clear name describing the behavior. Real code, not mocked internals — mock only true external dependencies (DB, network, other services).
 
-### 1. Requirements Analysis
-- Use Task tool with subagent_type="comprehensive-review::architect-review"
-- Prompt: "Analyze requirements for: $ARGUMENTS. Define acceptance criteria, identify edge cases, and create test scenarios. Output a comprehensive test specification."
-- Output: Test specification, acceptance criteria, edge case matrix
-- Validation: Ensure all requirements have corresponding test scenarios
+**Backend (pytest / FastAPI):**
 
-### 2. Test Architecture Design
-- Use Task tool with subagent_type="unit-testing::test-automator"
-- Prompt: "Design test architecture for: $ARGUMENTS based on test specification. Define test structure, fixtures, mocks, and test data strategy. Ensure testability and maintainability."
-- Output: Test architecture, fixture design, mock strategy
-- Validation: Architecture supports isolated, fast, reliable tests
+```python
+def test_create_user_rejects_duplicate_email(client, db_session):
+    db_session.add(User(email="a@example.com"))
+    db_session.commit()
 
-## Phase 2: RED - Write Failing Tests
+    response = client.post("/users", json={"email": "a@example.com", "password": "x"})
 
-### 3. Write Unit Tests (Failing)
-- Use Task tool with subagent_type="unit-testing::test-automator"
-- Prompt: "Write FAILING unit tests for: $ARGUMENTS. Tests must fail initially. Include edge cases, error scenarios, and happy paths. DO NOT implement production code."
-- Output: Failing unit tests, test documentation
-- **CRITICAL**: Verify all tests fail with expected error messages
+    assert response.status_code == 409
+    assert response.json()["detail"] == "Email already registered"
+```
 
-### 4. Verify Test Failure
-- Use Task tool with subagent_type="tdd-workflows::code-reviewer"
-- Prompt: "Verify that all tests for: $ARGUMENTS are failing correctly. Ensure failures are for the right reasons (missing implementation, not test errors). Confirm no false positives."
-- Output: Test failure verification report
-- **GATE**: Do not proceed until all tests fail appropriately
+Use fixtures (`conftest.py`) for DB session / test client setup, `@pytest.mark.parametrize` for multiple cases, `pytest.raises` for expected exceptions. Test against a real test database (Docker `postgres-test`), not mocks, for integration-level tests; use plain pytest with no DB for pure logic/unit tests.
 
-## Phase 3: GREEN - Make Tests Pass
+**Frontend (Vitest + React Testing Library):**
 
-### 5. Minimal Implementation
-- Use Task tool with subagent_type="backend-development::backend-architect"
-- Prompt: "Implement MINIMAL code to make tests pass for: $ARGUMENTS. Focus only on making tests green. Do not add extra features or optimizations. Keep it simple."
-- Output: Minimal working implementation
-- Constraint: No code beyond what's needed to pass tests
+```typescript
+describe("LoginForm", () => {
+  it("shows validation error for empty email", async () => {
+    render(<LoginForm />);
+    await userEvent.click(screen.getByRole("button", { name: /log in/i }));
+    expect(screen.getByText(/email is required/i)).toBeInTheDocument();
+  });
+});
+```
 
-### 6. Verify Test Success
-- Use Task tool with subagent_type="unit-testing::test-automator"
-- Prompt: "Run all tests for: $ARGUMENTS and verify they pass. Check test coverage metrics. Ensure no tests were accidentally broken."
-- Output: Test execution report, coverage metrics
-- **GATE**: All tests must pass before proceeding
+Query by role/label/text, not test IDs or class names. Mock network calls with MSW, never mock `fetch` directly.
 
-## Phase 4: REFACTOR - Improve Code Quality
+**Verify RED — mandatory, never skip:**
 
-### 7. Code Refactoring
-- Use Task tool with subagent_type="tdd-workflows::code-reviewer"
-- Prompt: "Refactor implementation for: $ARGUMENTS while keeping tests green. Apply SOLID principles, remove duplication, improve naming, and optimize performance. Run tests after each refactoring."
-- Output: Refactored code, refactoring report
-- Constraint: Tests must remain green throughout
+```bash
+docker compose exec backend uv run pytest path/to/test_file.py -v
+docker compose exec frontend npm run test -- path/to/Component.test.tsx
+```
 
-### 8. Test Refactoring
-- Use Task tool with subagent_type="unit-testing::test-automator"
-- Prompt: "Refactor tests for: $ARGUMENTS. Remove test duplication, improve test names, extract common fixtures, and enhance test readability. Ensure tests still provide same coverage."
-- Output: Refactored tests, improved test structure
-- Validation: Coverage metrics unchanged or improved
+Confirm: the test fails (not errors), the failure message matches what's missing, and it fails because the behavior doesn't exist yet — not because of a typo or setup bug. If it passes immediately, it's testing existing behavior — fix the test.
 
-## Phase 5: Integration and System Tests
+---
 
-### 9. Write Integration Tests (Failing First)
-- Use Task tool with subagent_type="unit-testing::test-automator"
-- Prompt: "Write FAILING integration tests for: $ARGUMENTS. Test component interactions, API contracts, and data flow. Tests must fail initially."
-- Output: Failing integration tests
-- Validation: Tests fail due to missing integration logic
+## GREEN — Minimal Code to Pass
 
-### 10. Implement Integration
-- Use Task tool with subagent_type="backend-development::backend-architect"
-- Prompt: "Implement integration code for: $ARGUMENTS to make integration tests pass. Focus on component interaction and data flow."
-- Output: Integration implementation
-- Validation: All integration tests pass
+Write the simplest code that makes the test pass. No extra features, no premature optimization, no unrelated refactoring.
 
-## Phase 6: Continuous Improvement Cycle
+**Backend:**
 
-### 11. Performance and Edge Case Tests
-- Use Task tool with subagent_type="unit-testing::test-automator"
-- Prompt: "Add performance tests and additional edge case tests for: $ARGUMENTS. Include stress tests, boundary tests, and error recovery tests."
-- Output: Extended test suite
-- Metric: Increased test coverage and scenario coverage
+```python
+@router.post("/users", status_code=201)
+async def create_user(payload: UserCreate, db: AsyncSession = Depends(get_db)):
+    existing = await db.scalar(select(User).where(User.email == payload.email))
+    if existing:
+        raise HTTPException(status_code=409, detail="Email already registered")
+    user = User(email=payload.email, password_hash=hash_password(payload.password))
+    db.add(user)
+    await db.commit()
+    return user
+```
 
-### 12. Final Code Review
-- Use Task tool with subagent_type="comprehensive-review::architect-review"
-- Prompt: "Perform comprehensive review of: $ARGUMENTS. Verify TDD process was followed, check code quality, test quality, and coverage. Suggest improvements."
-- Output: Review report, improvement suggestions
-- Action: Implement critical suggestions while maintaining green tests
+**Frontend:**
 
-## Incremental Development Mode
+```typescript
+export function LoginForm(): JSX.Element {
+  const { register, handleSubmit, formState: { errors } } = useForm<LoginInput>({
+    resolver: zodResolver(loginSchema),
+  });
+  return (
+    <form onSubmit={handleSubmit(onSubmit)}>
+      <input {...register("email")} />
+      {errors.email && <span>{errors.email.message}</span>}
+      <button type="submit">Log in</button>
+    </form>
+  );
+}
+```
 
-For test-by-test development:
-1. Write ONE failing test
-2. Make ONLY that test pass
-3. Refactor if needed
-4. Repeat for next test
+**Verify GREEN — mandatory:**
 
-Use this approach by adding `--incremental` flag to focus on one test at a time.
+```bash
+docker compose exec backend uv run pytest -v
+docker compose exec frontend npm run test
+```
 
-## Test Suite Mode
+Confirm: the target test passes, the full suite still passes, output is clean (no warnings/errors). Test still fails? Fix the code, never the test (unless the test itself was wrong).
 
-For comprehensive test suite development:
-1. Write ALL tests for a feature/module (failing)
-2. Implement code to pass ALL tests
-3. Refactor entire module
-4. Add integration tests
+---
 
-Use this approach by adding `--suite` flag for batch test development.
+## REFACTOR — Clean Up, Stay Green
 
-## Validation Checkpoints
+Only after green. Remove duplication, improve names, extract helpers/hooks/services. No new behavior. Small steps, re-run tests after each change.
 
-### RED Phase Validation
-- [ ] All tests written before implementation
-- [ ] All tests fail with meaningful error messages
-- [ ] Test failures are due to missing implementation
-- [ ] No test passes accidentally
+Common moves in this stack:
+- Backend: inline handler → service function → repository layer as complexity grows
+- Frontend: inline logic → custom hook → extracted component
+- Extract Pydantic/Zod schemas once reused in more than one place
+- Replace magic values with named constants
 
-### GREEN Phase Validation
-- [ ] All tests pass
-- [ ] No extra code beyond test requirements
-- [ ] Coverage meets minimum thresholds
-- [ ] No test was modified to make it pass
+Run the full test suite (`make test` or `docker compose exec backend uv run pytest` / `docker compose exec frontend npm run test`) after every refactor step. If anything goes red, revert the last change and take a smaller step.
 
-### REFACTOR Phase Validation
-- [ ] All tests still pass after refactoring
-- [ ] Code complexity reduced
-- [ ] Duplication eliminated
-- [ ] Performance improved or maintained
-- [ ] Test readability improved
+---
 
-## Coverage Reports
+## AAA Pattern
 
-Generate coverage reports after each phase:
-- Line coverage
-- Branch coverage
-- Function coverage
-- Statement coverage
+Every test: **Arrange** (set up data/fixtures) → **Act** (call the function/render/submit) → **Assert** (check the outcome). Keep to one logical assertion group per test; split `test('validates email and rejects duplicates')` into two tests.
 
-## Failure Recovery
+## Rules
 
-If TDD discipline is broken:
-1. **STOP** immediately
-2. Identify which phase was violated
-3. Rollback to last valid state
-4. Resume from correct phase
-5. Document lesson learned
+1. Test first, always — no exceptions without your human partner's explicit sign-off
+2. Watch every test fail before making it pass
+3. Minimal code in GREEN — YAGNI, no gold-plating
+4. Tests stay green through REFACTOR — if not, revert and take smaller steps
+5. Bug fix = write a failing test reproducing the bug first, then fix
+6. Mock only true externals (network, third-party APIs) — never mock the thing under test
 
-## TDD Metrics Tracking
+## Anti-Patterns
 
-Track and report:
-- Time in each phase (Red/Green/Refactor)
-- Number of test-implementation cycles
-- Coverage progression
-- Refactoring frequency
-- Defect escape rate
+| Don't | Do instead |
+|-------|-----------|
+| Write implementation before the test | Write the test, watch it fail, then implement |
+| Test passes immediately on first run | Something's wrong — you're testing existing behavior |
+| Multiple unrelated assertions per test | One behavior per test |
+| Mock `fetch` directly in frontend tests | Use MSW |
+| Skip the refactor phase | Refactor is not optional — do it every cycle |
+| "I'll add tests after, same result" | Tests-after verify what you built; tests-first verify what's required |
+| Keep pre-TDD code "as reference" | Delete means delete — implement fresh from tests |
+| Query DOM by class name/test ID | Query by role, label, or text |
 
-## Anti-Patterns to Avoid
+## When Stuck
 
-- Writing implementation before tests
-- Writing tests that already pass
-- Skipping the refactor phase
-- Writing multiple features without tests
-- Modifying tests to make them pass
-- Ignoring failing tests
-- Writing tests after implementation
-
-## Success Criteria
-
-- 100% of code written test-first
-- All tests pass continuously
-- Coverage exceeds thresholds
-- Code complexity within limits
-- Zero defects in covered code
-- Clear test documentation
-- Fast test execution (< 5 seconds for unit tests)
-
-## Notes
-
-- Enforce strict RED-GREEN-REFACTOR discipline
-- Each phase must be completed before moving to next
-- Tests are the specification
-- If a test is hard to write, the design needs improvement
-- Refactoring is NOT optional
-- Keep test execution fast
-- Tests should be independent and isolated
-
-TDD implementation for: $ARGUMENTS
+| Problem | Likely cause / fix |
+|---------|--------------------|
+| Don't know how to test it | Write the API you wish existed, write the assertion first |
+| Test setup is huge | Extract fixtures/factories; if still huge, the design is too coupled |
+| Must mock almost everything | Too much coupling — use dependency injection (FastAPI `Depends`, prop injection) |
+| Can't explain why a test failed | Stop — you don't understand the requirement yet |

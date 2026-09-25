@@ -1,10 +1,11 @@
-# Environment
+# Environment (only the placeholder template is tracked)
 .env
-.env.local
-.env.*.local
+.env.*
+!.env.example
 
-# Data (Docker volumes)
+# Data (Docker volumes) + local DB dumps (.vibecode/scripts/db-backup.sh)
 data/
+backups/
 
 # Python
 __pycache__/
@@ -36,8 +37,14 @@ docker-compose.override.yml
 .DS_Store
 Thumbs.db
 
-# Vibecode (regenerated from template)
-.vibecode/
+# Vibecode — framework files ARE tracked (/vibe-update needs a clean tree);
+# only local runtime state and the optional provider secret are ignored
+.vibecode/state/
+.vibecode/sdd/
+.vibecode/providers.env
+
+# Claude Code per-user local settings
+.claude/settings.local.json
 
 # Generated
 frontend/src/types/api.generated.ts

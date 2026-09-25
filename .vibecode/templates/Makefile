@@ -1,8 +1,8 @@
-.PHONY: verify test lint format audit up down build logs
+.PHONY: verify test lint typecheck format audit up down build logs migrate generate-types test-backend test-frontend shell-backend shell-frontend
 
 # === Primary Commands ===
 
-verify: lint test audit  ## Run full verification: lint + test + security audit
+verify: lint test audit  ## Run full verification: lint (incl. typecheck) + test + security audit
 	@echo "All checks passed"
 
 up:                      ## Start all services
@@ -19,11 +19,14 @@ logs:                    ## Tail all service logs
 
 # === Backend ===
 
-lint:                    ## Run linting and formatting check
+lint: typecheck          ## Run linting, formatting check and frontend typecheck
 	docker compose exec backend ruff check src/
 	docker compose exec backend ruff format --check src/
 	docker compose exec frontend npx eslint src/
 	docker compose exec frontend npx prettier --check src/
+
+typecheck:               ## Frontend TypeScript typecheck (no emit)
+	docker compose exec frontend npx tsc --noEmit
 
 format:                  ## Auto-format all code
 	docker compose exec backend ruff format src/

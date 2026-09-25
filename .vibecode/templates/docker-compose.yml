@@ -1,3 +1,7 @@
+# Single source of truth for the base compose file (.vibecode/standards/docker.md
+# points here). Published ports bind to 127.0.0.1 only (.claude/rules/docker.md).
+# Healthchecks use tools that exist in the base images: python (python:3.12-slim
+# has no curl) and busybox wget (node:20-alpine has no curl).
 services:
   backend:
     build: ./backend
@@ -5,14 +9,14 @@ services:
     extra_hosts:
       - "host.docker.internal:host-gateway"    # MANDATORY on all services
     ports:
-      - "${BACKEND_PORT}:8000"
+      - "127.0.0.1:${BACKEND_PORT}:8000"
     volumes:
       - ./backend:/app              # Live reload in dev
     depends_on:
       postgres:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      test: ["CMD", "python", "-c", "import urllib.request,sys; urllib.request.urlopen('http://localhost:8000/health', timeout=5)"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -24,11 +28,11 @@ services:
     extra_hosts:
       - "host.docker.internal:host-gateway"    # MANDATORY on all services
     ports:
-      - "${FRONTEND_PORT}:3000"
+      - "127.0.0.1:${FRONTEND_PORT}:3000"   # Vite dev server runs with --port 3000
     volumes:
       - ./frontend:/app             # Live reload in dev
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000"]
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -38,8 +42,8 @@ services:
     env_file: .env
     extra_hosts:
       - "host.docker.internal:host-gateway"    # MANDATORY on all services
-    ports:
-      - "${POSTGRES_PORT}:5432"
+    # No published port in the base file — expose to the host (GUI tools) only via
+    # the gitignored docker-compose.override.yml.
     volumes:
       - ./data/postgres:/var/lib/postgresql/data   # Persisted on host
     healthcheck:
@@ -72,9 +76,10 @@ services:
     volumes:
       - ./docs:/docs:ro             # Read-only live mount
     ports:
-      - "${TOME_PORT}:4000"         # Port assigned from ports file
+      - "127.0.0.1:${TOME_PORT}:4000"   # Port assigned from ports file
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:4000"]
+      # Image contents are upstream-controlled: try busybox wget, fall back to curl.
+      test: ["CMD-SHELL", "wget -qO- http://localhost:4000 >/dev/null 2>&1 || curl -fsS http://localhost:4000 >/dev/null"]
       interval: 30s
       timeout: 10s
       retries: 3

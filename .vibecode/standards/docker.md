@@ -8,98 +8,23 @@
 
 ## 1. Standard Services Template
 
-```yaml
-services:
-  backend:
-    build: ./backend
-    env_file: .env
-    extra_hosts:
-      - "host.docker.internal:host-gateway"    # MANDATORY on all services
-    volumes:
-      - ./backend:/app              # Live reload in dev
-    depends_on:
-      postgres:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
+**Source of truth:** `.vibecode/templates/docker-compose.yml` — copy it to the project root.
+Do not duplicate or hand-write the base compose file; change the template instead.
 
-  frontend:
-    build: ./frontend
-    env_file: .env
-    extra_hosts:
-      - "host.docker.internal:host-gateway"    # MANDATORY on all services
-    volumes:
-      - ./frontend:/app             # Live reload in dev
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-
-  postgres:
-    image: postgres:16-alpine
-    env_file: .env
-    extra_hosts:
-      - "host.docker.internal:host-gateway"    # MANDATORY on all services
-    volumes:
-      - ./data/postgres:/var/lib/postgresql/data   # Persisted on host
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  postgres-test:
-    image: postgres:16-alpine
-    extra_hosts:
-      - "host.docker.internal:host-gateway"    # MANDATORY on all services
-    environment:
-      POSTGRES_DB: test_db
-      POSTGRES_USER: test_user
-      POSTGRES_PASSWORD: test_password
-    tmpfs:
-      - /var/lib/postgresql/data    # RAM-backed — no persistence, maximum speed
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U test_user -d test_db"]
-      interval: 5s
-      timeout: 3s
-      retries: 5
-    # Internal network only — not exposed to host
-
-  tome:
-    image: ghcr.io/vxcozy/tome:latest
-    extra_hosts:
-      - "host.docker.internal:host-gateway"    # MANDATORY on all services
-    volumes:
-      - ./docs:/docs:ro             # Read-only live mount
-    ports:
-      - "[TOME_PORT]:4000"          # Port assigned from ports file
-
-  # redis / elasticsearch / mongodb — add only after architecture plan approval
-
-  # === Mobile (React Native / Expo) — add when architecture plan includes mobile ===
-  # expo:
-  #   build: ./mobile
-  #   env_file: .env
-  #   extra_hosts:
-  #     - "host.docker.internal:host-gateway"
-  #   volumes:
-  #     - ./mobile:/app
-  #   ports:
-  #     - "[EXPO_PORT]:8081"             # Expo dev server
-  #   healthcheck:
-  #     test: ["CMD", "curl", "-f", "http://localhost:8081"]
-  #     interval: 30s
-  #     timeout: 10s
-  #     retries: 3
-```
-
-> **Scaffold integration:** Use `/scaffold` command to generate this template
-> with port placeholders automatically filled from your ports file.
+**Rules** (the template satisfies all of them — keep it that way):
+- Base services: `backend`, `frontend`, `postgres`, `postgres-test`, `tome`.
+  `redis` / `elasticsearch` / others only after architecture-plan approval.
+- `extra_hosts: "host.docker.internal:host-gateway"` on **every** service.
+- **Healthcheck on every service**, using a tool that exists in the image —
+  `python:3.12-slim` and `node:20-alpine` have **no `curl`**:
+  backend → `python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"`,
+  frontend → `wget -qO- http://localhost:3000` (busybox), postgres → `pg_isready`.
+- Published ports bind to **`127.0.0.1`** (`"127.0.0.1:${BACKEND_PORT}:8000"`), never `0.0.0.0`.
+- **`postgres` is not published** in the base file — host access (GUI tools) goes in the override (§2).
+  `postgres-test` is never published and uses `tmpfs`.
+- Frontend (Vite) listens on **3000** in the container (`--port 3000` in the frontend Dockerfile
+  template); mapping and healthcheck use 3000 too.
+- Port numbers come from the ports file via `.env` (`.vibecode/templates/.env.example`).
 
 ---
 
@@ -122,7 +47,7 @@ services:
       - DEBUG=true
       - LOG_LEVEL=debug
     ports:
-      - "5678:5678"                 # debugpy remote debugger
+      - "127.0.0.1:5678:5678"       # debugpy remote debugger
     command: >
       python -m debugpy --listen 0.0.0.0:5678
       -m uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload
@@ -134,14 +59,14 @@ services:
 
   postgres:
     ports:
-      - "54321:5432"                # Expose DB to host for GUI tools (DBeaver etc.)
+      - "127.0.0.1:54321:5432"      # Expose DB to host for GUI tools (DBeaver etc.)
 
   # Add dev-only services
   mailhog:
     image: mailhog/mailhog
     ports:
-      - "8025:8025"                 # Email testing UI
-      - "1025:1025"                 # SMTP
+      - "127.0.0.1:8025:8025"       # Email testing UI
+      - "127.0.0.1:1025:1025"       # SMTP
 ```
 
 **When to use override vs. main compose:**
@@ -260,67 +185,9 @@ RUN uv sync
 
 Every project MUST include a `Makefile` at the root.
 
-```makefile
-.PHONY: verify test lint format audit up down build logs
-
-# === Primary Commands ===
-
-verify: lint test audit  ## Run full verification: lint + test + security audit
-	@echo "✅ All checks passed"
-
-up:                      ## Start all services
-	docker compose up -d
-
-down:                    ## Stop all services
-	docker compose down
-
-build:                   ## Rebuild all containers
-	docker compose build
-
-logs:                    ## Tail all service logs
-	docker compose logs -f
-
-# === Backend ===
-
-lint:                    ## Run linting and formatting check
-	docker compose exec backend ruff check src/
-	docker compose exec backend ruff format --check src/
-	docker compose exec frontend npx eslint src/
-	docker compose exec frontend npx prettier --check src/
-
-format:                  ## Auto-format all code
-	docker compose exec backend ruff format src/
-	docker compose exec backend ruff check --fix src/
-	docker compose exec frontend npx prettier --write src/
-
-test:                    ## Run all tests
-	docker compose exec backend pytest tests/ -v --tb=short
-	docker compose exec frontend npm test -- --run
-
-audit:                   ## Run security audits
-	docker compose exec backend pip-audit
-	docker compose exec frontend npm audit
-
-migrate:                 ## Run database migrations
-	docker compose exec backend alembic upgrade head
-
-generate-types:          ## Generate frontend API types from OpenAPI schema
-	docker compose exec frontend npm run generate-types
-
-# === Shortcuts ===
-
-test-backend:            ## Run backend tests only
-	docker compose exec backend pytest tests/ -v --tb=short
-
-test-frontend:           ## Run frontend tests only
-	docker compose exec frontend npm test -- --run
-
-shell-backend:           ## Open a shell in backend container
-	docker compose exec backend bash
-
-shell-frontend:          ## Open a shell in frontend container
-	docker compose exec frontend sh
-```
+**Source of truth:** `.vibecode/templates/Makefile` — copy it to the project root. `make verify`
+= `lint` (ruff check + format check, eslint, prettier, `tsc --noEmit`) + `test` + `audit`.
+Every target runs through `docker compose exec` — never on the host.
 
 **Rules:**
 - Claude MUST run `make verify` after writing code, before reporting task completion
@@ -333,41 +200,9 @@ shell-frontend:          ## Open a shell in frontend container
 
 All Dockerfiles MUST run as a non-root user.
 
-**Backend Dockerfile pattern:**
-```dockerfile
-FROM python:3.12-slim
-
-COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
-
-WORKDIR /app
-
-COPY pyproject.toml uv.lock ./
-RUN uv sync --frozen --no-dev
-
-COPY . .
-
-RUN groupadd -r appuser && useradd -r -g appuser -d /app appuser \
-    && chown -R appuser:appuser /app
-USER appuser
-
-CMD ["uv", "run", "uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8000"]
-```
-
-**Frontend Dockerfile pattern:**
-```dockerfile
-FROM node:20-alpine
-
-WORKDIR /app
-
-COPY package.json package-lock.json ./
-RUN npm ci
-
-COPY . .
-
-USER node
-
-CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0"]
-```
+**Templates (source of truth):** `.vibecode/templates/backend.Dockerfile` → `backend/Dockerfile`,
+`.vibecode/templates/frontend.Dockerfile` → `frontend/Dockerfile`. Both copy the lock file before
+installing (§6), end with a non-root `USER`, and the frontend runs Vite with `--port 3000`.
 
 **Rules:**
 - Never use `USER root` in final stage

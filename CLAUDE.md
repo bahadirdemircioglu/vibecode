@@ -16,6 +16,7 @@ Read the relevant standard before writing code in that area.
 | Tests                      | `.vibecode/standards/testing.md`              |
 | Docker / infra             | `.vibecode/standards/docker.md`               |
 | Architecture / new feature | `.vibecode/standards/architecture.md`         |
+| Model routing / delegation | `.vibecode/standards/delegation.md`           |
 | Git commits / branching    | `.vibecode/standards/git.md`                  |
 | Documentation              | `.vibecode/standards/documentation.md`        |
 | Port assignments           | `.vibecode/standards/ports.md`                |
@@ -70,9 +71,8 @@ project-root/
 ├── backend/                  # FastAPI — src/{api,services,models,schemas,core}
 ├── frontend/                 # React+TS — src/{components,pages,hooks,store,api}
 ├── .vibecode/
-│   ├── standards/            # Coding standards (10 files)
-│   ├── skills/               # AI skills
-│   └── memories/errors/      # Error history
+│   ├── standards/            # Coding standards (11 files)
+│   └── skills/               # AI skills
 ├── .claude/
 │   ├── commands/             # Slash commands
 │   ├── hooks/                # Lifecycle hooks
@@ -82,7 +82,7 @@ project-root/
 │   ├── CHANGELOG.md
 │   ├── decisions.md          # ADRs
 │   └── progress.md
-├── HANDOFF.md                # Session state (written by /done, read by /go)
+├── HANDOFF.md                # Session state + optional ## Goal (written by /vibe-done, read by /vibe-go)
 ├── Makefile                  # Dev commands entry point
 └── docker-compose.yml
 ```
@@ -107,12 +107,11 @@ If a skill defines an anti-pattern, avoid it.
 | Command | Action |
 |---------|--------|
 | `/vibe-go [task]` | Load state + skills + begin task |
-| `/vibe-done` | Verify + update docs + write HANDOFF.md + propose commit |
+| `/vibe-done [--full]` | Verify + update docs + write HANDOFF.md + propose commit (`--full` adds doc-sync) |
 | `/vibe-plan [feature]` | Architecture plan, wait for approval |
-| `/vibe-sdd [feature]` | Spec-Driven Development: question → spec → tasks → execute (between plan and go) |
+| `/vibe-sdd [feature]` | Spec-Driven Development on the approved `/vibe-plan` file: questions → requirements → tasks → execute |
 | `/vibe-fleet [task]` | Director: dispatch task across parallel role subagents, roll up results |
 | `/vibe-collab-debug [bug/paths]` | BugHunter → RefactorPlanner → Critic trio → verified fix plan |
-| `/vibe-goal [set\|status\|journal\|clear]` | Track a locked multi-session goal + journal (bounded, not autonomous) |
 | `/vibe-compact` | Save state to HANDOFF.md, then compact context |
 | `/vibe-security-review [file]` | OWASP Top 10 security review with patched code |
 | `/vibe-doc-sync [--live] [--tier full] [paths...]` | Continuous doc maintainer — sync docs with code (shadow default) |
@@ -142,22 +141,9 @@ If a skill defines an anti-pattern, avoid it.
    Serena memory = proje bilgisi (yapı, standartlar, komutlar). Claude auto-memory = kullanıcı tercihleri.
 7. Max 3 files per step — use subagents for larger changes
 8. New feature or architecture change — write plan, wait for approval
-9. Sonnet subagent'lara sözleşme-spec ver — yüksek seviye talimat da, pseudo-code da verme.
-   Spec: dosya yolu + değişiklik türü + sözleşme (imza/tip/hata davranışı) + **kabul vakaları tablosu** + pattern referansı + YAPMA listesi.
-   Opus "ne" ve "bitti"yi tanımlar; Sonnet önce vakaları test yazar, kodu testler geçene kadar yazar.
-   1-2 satır değişiklik → Opus direkt yazsın. Mekanik iş (rename, boilerplate, doc) → `mechanic` (Haiku).
-   Review'da ana kapı test çıktısıdır; sonra diff okunur. Max 2 Sonnet denemesi — 2. başarısızlıkta Opus devralır.
-   Detay: `.vibecode/standards/architecture.md` → Sonnet Subagent Delegasyon Protokolü.
-10. **Model routing — Sonnet-first politikası:**
-    - Default model: **Sonnet**. Opus mimari karar ve derin reasoning için. `/vibe-plan` planlaması **Fable subagent'ında** koşar (bkz. `.claude/commands/vibe-plan.md`) — Opus'a gitmez.
-    - Session start hook'u Opus tespit ederse uyarı verir; kullanıcı `/model sonnet` ile geçer (auto-switch YOK).
-    - **Sonnet eskalasyon kuralları:**
-      - **Planlama / mimari karar** → Sonnet doğrudan `Agent(model:opus)` çağırır
-      - **Belirsizlik (kod kararı)** → Sonnet "BELIRSIZ: [soru]" raporlar, tahmin yapmaz
-      - **2 deneme kuralı** → Aynı kod sorununda 2 başarısız denemeden sonra otomatik `Agent(model:opus)` (3. deneme YOK).
-        "Aynı sorun" = aynı dosya path + benzer hata mesajı (substring match).
-    - **Geri dönüş:** Opus *talimat* döndürür → Sonnet uygular.
-      İstisna: derin reasoning gereken kod (concurrency, kompleks algoritma, cryptography) → Opus subagent doğrudan yazar; Sonnet review eder.
+9. **Model routing — Sonnet-first:** default Sonnet; planlama **Opus** (`/vibe-plan` → Opus subagent); mekanik iş → `mechanic` (Haiku).
+   Kod delegasyonunda sözleşme-spec + kabul vakaları ver, pseudo-code verme. Belirsizlik → `BELIRSIZ: [soru]`.
+   İkinci başarısız Sonnet denemesinden sonra Opus subagent fix'i kendisi yazar (3. deneme yok). Tek otorite: `.vibecode/standards/delegation.md`.
 
 ---
 
@@ -174,5 +160,5 @@ Tests?                →  .vibecode/standards/testing.md
 Done with task?       →  /vibe-done
 Context bloating?     →  /vibe-compact
 Session state?        →  /vibe-status
-Error history?        →  .vibecode/memories/errors/
+Delegating?           →  .vibecode/standards/delegation.md
 ```

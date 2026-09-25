@@ -45,5 +45,5 @@ the user with open questions. If anything was written, remind to run `make verif
 ### YAPMA
 - ❌ Don't fan out subagents that edit the same file in parallel.
 - ❌ Don't spawn an open-ended subagent — every one gets an objective + scope fence.
-- ❌ Don't retry a failed sub-task a third time on Sonnet — escalate to `Agent(model:opus)`.
+- ❌ Don't retry a failed sub-task a third time on Sonnet — after the 2nd failure an Opus subagent writes the fix itself (`delegation.md` §4).
 - ❌ Don't let raw subagent transcripts flood the main context — keep conclusions only.

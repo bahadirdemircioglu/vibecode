@@ -46,32 +46,48 @@ function sanitizeForMatch(toolName, subject) {
 }
 
 // subjectKey: which field of tool_input is the "trust subject" to inspect.
+// Only Bash is gated here (settings.json matcher: "Bash"). File paths and URLs
+// are NOT matched against these command rules — a path merely containing
+// "sudo" or "rm" is data, not a command. Write/Edit/WebFetch reach is guarded
+// by net-fs-guard.js (via pre-tool-use.js).
 function extractSubject(toolName, input) {
-  if (!input) return '';
-  switch (toolName) {
-    case 'Bash':
-      return String(input.command || '');
-    case 'Write':
-    case 'Edit':
-    case 'Read':
-    case 'NotebookEdit':
-      return String(input.file_path || input.path || '');
-    case 'WebFetch':
-      return String(input.url || '');
-    default:
-      return '';
+  if (!input || toolName !== 'Bash') return '';
+  return String(input.command || '');
+}
+
+// rm with BOTH recursive and force, in any flag spelling/order:
+// -rf, -fr, -Rf, -r -f, -f -r, -rvf, --recursive --force, -r --force, ...
+function isRecursiveForceRm(cmd) {
+  const re = /(?:^|[\s;&|(`])(?:\S*\/)?rm(?=\s)/g;
+  let m;
+  while ((m = re.exec(cmd)) !== null) {
+    const rest = cmd.slice(m.index + m[0].length).split(/[;&|\n)`]/)[0];
+    let recursive = false, force = false;
+    for (const tok of rest.trim().split(/\s+/)) {
+      if (tok === '--') break;
+      if (tok === '--recursive') recursive = true;
+      else if (tok === '--force') force = true;
+      else if (/^-[a-zA-Z]+$/.test(tok)) {
+        if (/[rR]/.test(tok)) recursive = true;
+        if (/f/.test(tok)) force = true;
+      }
+    }
+    if (recursive && force) return true;
   }
+  return false;
 }
 
 // DESTRUCTIVE: irreversible / dangerous. Hard block unless VIBE_YOLO=1.
 const DESTRUCTIVE = [
-  { re: /\brm\s+(-[a-z]*\s+)*-[a-z]*r[a-z]*f|\brm\s+(-[a-z]*\s+)*-[a-z]*f[a-z]*r/i, why: 'recursive force delete (rm -rf)' },
+  { test: isRecursiveForceRm, why: 'recursive force delete (rm -rf)' },
   { re: /\brm\s+-[a-z]*\s*\/\s*($|\s)/i, why: 'delete of filesystem root' },
   { re: /\bgit\s+push\s+.*(--force\b|-f\b|--force-with-lease)/i, why: 'force push (rewrites remote history)' },
   { re: /\bgit\s+reset\s+--hard/i, why: 'hard reset (discards working tree)' },
   { re: /\bgit\s+clean\s+-[a-z]*f[a-z]*d|\bgit\s+clean\s+-[a-z]*d[a-z]*f/i, why: 'git clean -fd (deletes untracked files)' },
   { re: /\bchmod\s+(-[a-z]*\s+)*777\b/i, why: 'world-writable chmod 777' },
-  { re: /\bsudo\b/i, why: 'privilege escalation (sudo)' },
+  // sudo in COMMAND position only (start, after ; & | ( ` $( , or after xargs/env/nohup/exec/time) —
+  // not as a word inside a path or an echo argument.
+  { re: /(?:^|[;&|(`]|\$\()\s*(?:(?:xargs|env|nohup|exec|time)\s+(?:-\S+\s+)*)?sudo\b/i, why: 'privilege escalation (sudo)' },
   { re: /\bmkfs\b|\bdd\s+if=.*of=\/dev\/|\b>\s*\/dev\/sd[a-z]/i, why: 'raw disk / device write' },
   { re: /:\s*\(\s*\)\s*\{\s*:\s*\|\s*:\s*&\s*\}\s*;/, why: 'fork bomb' },
   { re: /\bcurl\b[^|]*\|\s*(sudo\s+)?(ba)?sh\b|\bwget\b[^|]*\|\s*(sudo\s+)?(ba)?sh\b/i, why: 'pipe remote script straight into a shell (curl|bash)' },
@@ -107,7 +123,8 @@ async function main() {
 
   // --- Destructive tier ---
   for (const rule of DESTRUCTIVE) {
-    if (rule.re.test(matchTarget)) {
+    const hit = rule.test ? rule.test(matchTarget) : rule.re.test(matchTarget);
+    if (hit) {
       if (yolo) {
         // Downgraded to advisory because VIBE_YOLO=1 — inject as context,
         // do not block. (PreToolUse: additionalContext, not decision/message.)

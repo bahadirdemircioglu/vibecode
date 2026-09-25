@@ -21,9 +21,9 @@
 # This script NEVER fails the /vibe-plan flow: the caller treats a non-zero exit
 # as "skip consultation, continue with the plan as-is" (fail-open — this is an
 # optional quality step, not a security gate; cf. the fail-CLOSED security hooks
-# in .claude/hooks/, security.md §7).
+# in .claude/hooks/, docs/guides/framework-security.md §1).
 #
-# API key handling (security.md §8):
+# API key handling (docs/guides/framework-security.md §2):
 #   The key is read from the env var named by the provider's `api_key_env`
 #   (default DEEPSEEK_API_KEY), or — if unset — from a dedicated framework secrets
 #   file (see resolution order below). The project's OWN .env is deliberately NOT
@@ -32,17 +32,23 @@
 #   committed with the app) would be wrong. Framework secrets live on their own.
 #   When a file is used, ONLY the matching key line is extracted — no `source`/
 #   `eval`, so the file is never executed. The key travels solely in the curl
-#   Authorization header and is NEVER written to stdout/stderr, so it never reaches
-#   the model (preserving the intent of the settings.json .env deny-list).
+#   Authorization header, which is fed to curl on STDIN (`-H @-`) — never in argv,
+#   so it cannot leak via `ps`/`/proc/<pid>/cmdline`. It is NEVER written to
+#   stdout/stderr, so it never reaches the model (preserving the intent of the
+#   settings.json .env deny-list). The request body goes via a 0600 temp file.
 #
 #   Key resolution order (first match wins):
 #     1. $<api_key_env> already in the environment (e.g. exported in your shell rc)
 #     2. $VIBECODE_ENV_FILE                         (explicit path override)
 #     3. .vibecode/providers.env                    (project-local, gitignored)
-#     4. ${XDG_CONFIG_HOME:-~/.config}/vibecode/providers.env
-#                                                   (machine-global — recommended)
+#     4. ${XDG_CONFIG_HOME:-~/.config}/vibe/providers.env
+#                                                   (machine-global, SHARED with
+#                                                    vibeplan — recommended)
+#     5. ${XDG_CONFIG_HOME:-~/.config}/vibecode/providers.env
+#                                                   (legacy machine-global path)
 #
-# Referenced by: .claude/commands/vibe-plan.md (Step 1.5), security.md §8.
+# Referenced by: .claude/commands/vibe-plan.md (Step 1.5),
+# docs/guides/framework-security.md §2.
 # Exit codes: 0 ok/skip · 1 advisory error.
 
 set -uo pipefail
@@ -81,8 +87,8 @@ base_url="$(jq -r --arg p "$active" '.providers[$p].base_url // empty' "$CONFIG"
 chat_path="$(jq -r --arg p "$active" '.providers[$p].chat_path // "/chat/completions"' "$CONFIG" 2>/dev/null)"
 model="$(jq -r --arg p "$active" '.providers[$p].model // empty' "$CONFIG" 2>/dev/null)"
 key_env="$(jq -r --arg p "$active" '.providers[$p].api_key_env // "DEEPSEEK_API_KEY"' "$CONFIG" 2>/dev/null)"
-timeout="$(jq -r --arg p "$active" '.providers[$p].timeout_seconds // 45' "$CONFIG" 2>/dev/null)"
-max_tokens="$(jq -r --arg p "$active" '.providers[$p].max_tokens // 2048' "$CONFIG" 2>/dev/null)"
+timeout="$(jq -r --arg p "$active" '.providers[$p].timeout_seconds // 300' "$CONFIG" 2>/dev/null)"
+max_tokens="$(jq -r --arg p "$active" '.providers[$p].max_tokens // 32000' "$CONFIG" 2>/dev/null)"
 [[ -n "$base_url" && -n "$model" ]] || fail "provider '$active' missing base_url/model in $CONFIG"
 
 # ---- resolve API key -------------------------------------------------------
@@ -99,7 +105,8 @@ read_key_from() { # <file> → prints value (empty if file absent / key not foun
 api_key="${!key_env:-}"
 [[ -n "$api_key" ]] || api_key="$(read_key_from "${VIBECODE_ENV_FILE:-}")"
 [[ -n "$api_key" ]] || api_key="$(read_key_from "$PROJECT_ROOT/.vibecode/providers.env")"
-[[ -n "$api_key" ]] || api_key="$(read_key_from "${XDG_CONFIG_HOME:-$HOME/.config}/vibecode/providers.env")"
+[[ -n "$api_key" ]] || api_key="$(read_key_from "${XDG_CONFIG_HOME:-$HOME/.config}/vibe/providers.env")"
+[[ -n "$api_key" ]] || api_key="$(read_key_from "${XDG_CONFIG_HOME:-$HOME/.config}/vibecode/providers.env")"  # legacy
 [[ -n "$api_key" ]] || skip                 # no key anywhere → opt-out, silent skip
 
 # ---- prepare plan body -----------------------------------------------------
@@ -123,12 +130,18 @@ payload="$(jq -n \
 # ---- call provider ---------------------------------------------------------
 # -sS: silent but show errors; --max-time: hard timeout so /vibe-plan never hangs.
 # Capture HTTP status separately so a non-200 becomes a clear advisory.
-resp="$(curl -sS --max-time "$timeout" \
+# Secrets stay out of argv: the Authorization header is piped on stdin via
+# `-H @-` (printf is a shell builtin → no child process carries the key), and the
+# payload (plan text, can exceed ARG_MAX) is read from a private temp file.
+payload_file="$(umask 077; mktemp)" || fail "cannot create temp file"
+trap 'rm -f "$payload_file"' EXIT
+printf '%s' "$payload" > "$payload_file"
+resp="$(printf 'Authorization: Bearer %s\n' "$api_key" | curl -sS --max-time "$timeout" \
   -w $'\n%{http_code}' \
   -H "Content-Type: application/json" \
-  -H "Authorization: Bearer ${api_key}" \
+  -H @- \
   -X POST "${base_url}${chat_path}" \
-  -d "$payload" 2>/dev/null)"
+  --data-binary "@${payload_file}" 2>/dev/null)"
 rc=$?
 [[ $rc -eq 0 ]] || fail "request failed (curl exit $rc — timeout/network/DNS)"
 
@@ -161,7 +174,7 @@ if [[ -z "$content" ]]; then
   # and the ANSWER in `content`. If max_tokens is exhausted by reasoning, `content`
   # comes back "" with finish_reason=length — the #1 cause of a "no content" reply.
   if [[ "$finish" == "length" ]]; then
-    fail "response truncated before the answer (finish_reason=length). Raise max_tokens in .vibecode/config/ai-providers.json — reasoning models (deepseek-v4-*) burn tokens on reasoning first; try 8192+."
+    fail "response truncated before the answer (finish_reason=length). Raise max_tokens in .vibecode/config/ai-providers.json — reasoning models (deepseek-v4-*) burn tokens on reasoning first; try 32000."
   fi
   # Finished but only reasoning present → surface that rather than nothing.
   reasoning="$(jqr '.choices[0].message.reasoning_content')"

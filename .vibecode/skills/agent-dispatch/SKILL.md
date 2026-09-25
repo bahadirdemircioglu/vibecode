@@ -43,15 +43,16 @@ Score each role by counting keyword/intent matches against the task:
 - **refactor-planner**: refactor, clean up, restructure, how to fix, fix plan
 - **critic**: verify claim, is this right, refute, double-check, adversarial
 
-Pick the highest-scoring role. **Model routing override (CLAUDE.md):** planning / architecture
-/ deep-reasoning code → opus; purely mechanical edits (no logic, every decision already made) → haiku (`mechanic`);
-everything else → sonnet. If a `mechanic` task turns out to need a logic decision, re-dispatch to `engineer`.
+Pick the highest-scoring role. **Model routing override** (single source: `.vibecode/standards/delegation.md`):
+planning / architecture / deep-reasoning code → opus; purely mechanical edits (no logic, every decision already made)
+→ haiku (`mechanic`); everything else → sonnet. If a `mechanic` task turns out to need a logic decision, re-dispatch
+to `engineer`. Writing a plan *file* (`/vibe-plan`) → `general-purpose` + `model: "opus"` (architect has no Write).
 
 ## Stage 2 — Judgment fallback (only on a tie or score 0)
 
 If two roles tie, or nothing matches, reason briefly about the *intent* and pick. If still
 genuinely ambiguous, do **not** guess — report `BELIRSIZ: [which of X/Y, and why it matters]`
-to the user (Sonnet-first rule).
+to the user (`delegation.md` §4).
 
 ## Output
 

@@ -15,6 +15,7 @@
 - **Layers:** `api/v1/` handles HTTP only → delegates to `services/` → uses `models/`
 - **Migrations:** Every model change requires an Alembic migration — no exceptions
 - **bcrypt:** Use bcrypt directly (not passlib) — passlib has bcrypt>=5.0 incompatibility
+- **Logging:** structlog, structured JSON — see `security.md` §4
 
 ---
 

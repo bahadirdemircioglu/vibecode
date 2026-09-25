@@ -6,22 +6,23 @@
 ## Aktif Planlar
 
 - [superpowers-adoption](superpowers-adoption-plan.md) — obra/superpowers'tan SDD scripts + prompt şablonları + progress ledger ekle (kurulum hariç)
-
 - [continuous-doc-maintainer](continuous-doc-maintainer-plan.md) — Auditable+idempotent doc skill: prune, schema-sync, security-lint, audit log.
-- [clone-workflow](clone-workflow-plan.md) — Clone tabanlı proje setup; Serena/Context7 restart-free ilk oturumda çalışsın.
-- [model-routing-sonnet-first](model-routing-sonnet-first-plan.md) — Default Sonnet, Opus eskalasyon (planlama / 2-fail / belirsizlik); session-start hook Opus uyarısı verir.
-- [opus-sonnet-delegation](opus-sonnet-delegation-plan.md) — Üç fazlı protokol: Opus mikro-spec → Sonnet write → Opus review.
 - [security-review-skill](security-review-skill-plan.md) — `/vibe-security-review` slash command + OWASP Top 10 skill entegrasyonu.
 - [serena-auto-activation](serena-auto-activation-plan.md) — `.mcp.json` `--project-from-cwd` + `.serena/project.yml` otomatik dil tespiti.
 - [serena-optimization](serena-optimization-plan.md) — Serena onboarding + symbol-level navigation + permission auto-grant.
-- [vibe-prefix-commands](vibe-prefix-commands-plan.md) — Custom slash command namespace çakışması için `vibe-` prefix kuralı.
-- [wrongstack-pattern-adoption](wrongstack-pattern-adoption-plan.md) — WrongStack'in permission/fleet/SDD desenlerini Claude-only vibecode'a uyarla (fork değil, provider katmanı hariç).
-- [vibe-manager-integration](vibe-manager-integration-plan.md) — buraksu42/vibe-manager skill'inin (tek dosya, 4270 satır) vibecode'a eklenebilirliği + entegrasyon değerlendirmesi.
-- [multi-ai-plan-consultation](multi-ai-plan-consultation-plan.md) — vibe-plan'e harici AI (ilk etap DeepSeek) danışma turu (convergence'a kadar çok-tur) + provider/apikey config
+- [multi-ai-plan-consultation](multi-ai-plan-consultation-plan.md) — vibe-plan'e harici AI (DeepSeek) danışma turu + provider/apikey config (ADR-009: max 1 round, planlama Opus'ta)
+
+## Uygulandı
+
+- [clone-workflow](clone-workflow-plan.md) — Clone tabanlı proje setup; Serena/Context7 restart-free ilk oturumda çalışsın. (CLAUDE.md "New Project Setup" + session-start `git init`)
+- [vibe-prefix-commands](vibe-prefix-commands-plan.md) — Custom slash command namespace çakışması için `vibe-` prefix kuralı. (tüm `.claude/commands/vibe-*.md`)
+- [wrongstack-pattern-adoption](wrongstack-pattern-adoption-plan.md) — WrongStack'in permission/fleet/SDD desenlerini Claude-only vibecode'a uyarla. (Implementation Status: DONE 2026-06-04; `/vibe-goal` sonradan HANDOFF `## Goal`'a katlandı — ADR-009)
 
 ## Superseded / Arşivlenmiş
 
-(Henüz yok — bir plan eski plan tarafından geçilirse buraya taşıyın ve "superseded by [slug]" notu ekleyin.)
+- [model-routing-sonnet-first](model-routing-sonnet-first-plan.md) — Default Sonnet, Opus eskalasyon. **superseded by** `.vibecode/standards/delegation.md` (ADR-008, ADR-009)
+- [opus-sonnet-delegation](opus-sonnet-delegation-plan.md) — Opus mikro-spec → Sonnet write → Opus review. **superseded by** `.vibecode/standards/delegation.md` (sözleşme-spec, ADR-008)
+- [vibe-manager-integration](vibe-manager-integration-plan.md) — vibe-manager skill + `/vibe-init` wrapper (hiç uygulanmadı). **superseded by** `/vibe-plan` → `/vibe-sdd` akışı (ADR-009)
 
 ---
 

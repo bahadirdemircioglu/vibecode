@@ -44,98 +44,39 @@ sedi() {
   fi
 }
 
-# Install a system package using detected package manager.
-# Usage: pkg_install <pkg_brew> <pkg_apt> <pkg_dnf> <pkg_apk> <pkg_pacman>
-# NOTE: sudo uses -n (non-interactive) so a missing sudo password fails fast
-# instead of hanging the session-start hook on a hidden password prompt.
-pkg_install() {
-  local name="$1" pkg_brew="${2:-$1}" pkg_apt="${3:-$1}" pkg_dnf="${4:-$1}" pkg_apk="${5:-$1}" pkg_pacman="${6:-$1}"
+# Build a platform-specific install hint for a system package.
+# Usage: pkg_hint <pkg_brew> <pkg_apt> <pkg_dnf> <pkg_apk> <pkg_pacman>
+# NOTE: this hook NEVER installs anything on the host (Docker-first rule; no
+# curl|sh, no sudo, no npm -g). It only prints a MISSING line with the command
+# the user can run themselves.
+pkg_hint() {
+  local pkg_brew="$1" pkg_apt="${2:-$1}" pkg_dnf="${3:-$1}" pkg_apk="${4:-$1}" pkg_pacman="${5:-$1}"
   case "$PKG_MGR" in
-    brew)   brew install "$pkg_brew" --quiet 2>/dev/null && return 0 ;;
-    apt)    sudo -n apt-get install -y -qq "$pkg_apt" 2>/dev/null && return 0 ;;
-    dnf)    sudo -n dnf install -y -q "$pkg_dnf" 2>/dev/null && return 0 ;;
-    yum)    sudo -n yum install -y -q "$pkg_dnf" 2>/dev/null && return 0 ;;
-    apk)    sudo -n apk add --quiet "$pkg_apk" 2>/dev/null && return 0 ;;
-    pacman) sudo -n pacman -S --noconfirm --quiet "$pkg_pacman" 2>/dev/null && return 0 ;;
+    brew)    echo "brew install $pkg_brew" ;;
+    apt)     echo "sudo apt-get install $pkg_apt" ;;
+    dnf|yum) echo "sudo $PKG_MGR install $pkg_dnf" ;;
+    apk)     echo "sudo apk add $pkg_apk" ;;
+    pacman)  echo "sudo pacman -S $pkg_pacman" ;;
+    *)       echo "install $pkg_apt with your OS package manager" ;;
   esac
-  return 1
 }
 
-# -0. MCP dependency check — ensure Serena and Context7 can run
+# -0. MCP dependency check — report (never install) what Serena / Context7 need
 # Serena requires: uv/uvx (Python 3.13+), language servers per language
-# Serena init: uvx -p 3.13 --from git+https://github.com/oraios/serena serena init
 # Context7 requires: node/npx
 
 if ! command -v uv &>/dev/null; then
-  # uv installs the same way on all platforms via official installer
-  if curl -LsSf https://astral.sh/uv/install.sh 2>/dev/null | sh 2>/dev/null; then
-    # Refresh PATH to pick up uv
-    export PATH="$HOME/.local/bin:$HOME/.cargo/bin:$PATH"
-    OUTPUT+="INSTALLED: uv (via official installer) — Serena dependency"$'\n'
-  else
-    OUTPUT+="MISSING: uv — Serena will not work. Install: curl -LsSf https://astral.sh/uv/install.sh | sh"$'\n'
-    INSTALL_NEEDED="true"
-  fi
+  OUTPUT+="MISSING: uv — Serena will not work. Install: curl -LsSf https://astral.sh/uv/install.sh | sh"$'\n'
+  INSTALL_NEEDED="true"
 fi
 
 if ! command -v node &>/dev/null; then
-  if [[ -n "$PKG_MGR" ]]; then
-    # Node.js package names differ across distros
-    if pkg_install "node" "node" "nodejs" "nodejs" "nodejs" "nodejs"; then
-      OUTPUT+="INSTALLED: node (via $PKG_MGR) — Context7 dependency"$'\n'
-    else
-      OUTPUT+="MISSING: node — Context7 will not work. Install nodejs for your platform"$'\n'
-      INSTALL_NEEDED="true"
-    fi
-  else
-    OUTPUT+="MISSING: node — no package manager found. Install: https://nodejs.org"$'\n'
-    INSTALL_NEEDED="true"
-  fi
-fi
-
-# npm may not come with node on some distros (e.g. Debian splits nodejs/npm)
-# On macOS/Arch/Alpine, npm ships with node — if it's still missing, brew/apk/pacman will reinstall node+npm.
-if command -v node &>/dev/null && ! command -v npm &>/dev/null; then
-  case "$PKG_MGR" in
-    apt)
-      if sudo -n apt-get install -y -qq npm 2>/dev/null; then
-        OUTPUT+="INSTALLED: npm (via apt) — required for Context7 and LSP packages"$'\n'
-      else
-        OUTPUT+="MISSING: npm — apt install failed. Try: sudo apt-get install npm"$'\n'
-      fi
-      ;;
-    dnf|yum)
-      if sudo -n "$PKG_MGR" install -y -q npm 2>/dev/null; then
-        OUTPUT+="INSTALLED: npm (via $PKG_MGR)"$'\n'
-      else
-        OUTPUT+="MISSING: npm — $PKG_MGR install failed. Try: sudo $PKG_MGR install npm"$'\n'
-      fi
-      ;;
-    brew)
-      if brew install node --quiet 2>/dev/null; then
-        OUTPUT+="INSTALLED: npm (via brew reinstall of node) — npm ships with node"$'\n'
-      else
-        OUTPUT+="MISSING: npm — expected to ship with node. Try: brew reinstall node"$'\n'
-      fi
-      ;;
-    apk)
-      if sudo -n apk add --quiet npm 2>/dev/null; then
-        OUTPUT+="INSTALLED: npm (via apk)"$'\n'
-      else
-        OUTPUT+="MISSING: npm — apk install failed. Try: sudo apk add npm"$'\n'
-      fi
-      ;;
-    pacman)
-      if sudo -n pacman -S --noconfirm --quiet npm 2>/dev/null; then
-        OUTPUT+="INSTALLED: npm (via pacman)"$'\n'
-      else
-        OUTPUT+="MISSING: npm — pacman install failed. Try: sudo pacman -S npm"$'\n'
-      fi
-      ;;
-    *)
-      OUTPUT+="MISSING: npm — no supported package manager. Install nodejs+npm: https://nodejs.org"$'\n'
-      ;;
-  esac
+  OUTPUT+="MISSING: node — Context7 will not work. Install: $(pkg_hint node nodejs nodejs nodejs nodejs) (or https://nodejs.org)"$'\n'
+  INSTALL_NEEDED="true"
+elif ! command -v npm &>/dev/null; then
+  # npm may not ship with node on some distros (e.g. Debian splits nodejs/npm)
+  OUTPUT+="MISSING: npm — required for Context7/npx. Install: $(pkg_hint node npm npm npm npm)"$'\n'
+  INSTALL_NEEDED="true"
 fi
 
 # Serena project init — if uv exists but .serena/project.yml does not,
@@ -145,7 +86,8 @@ if command -v uvx &>/dev/null && [[ ! -f "$PROJECT_ROOT/.serena/project.yml" ]];
     mkdir -p "$PROJECT_ROOT/.serena"
     cp "$PROJECT_ROOT/.vibecode/templates/serena-project.yml" "$PROJECT_ROOT/.serena/project.yml"
     DIR_NAME=$(basename "$PROJECT_ROOT")
-    sedi "s/project_name: \"vibecode\"/project_name: \"$DIR_NAME\"/" "$PROJECT_ROOT/.serena/project.yml"
+    DIR_NAME_SED=$(printf '%s' "$DIR_NAME" | sed 's/[&|\\]/\\&/g')
+    sedi "s|{{PROJECT_NAME}}|$DIR_NAME_SED|" "$PROJECT_ROOT/.serena/project.yml"
     printf '/cache\n/project.local.yml\n/memories\n' > "$PROJECT_ROOT/.serena/.gitignore"
     OUTPUT+="SERENA: initialized from vibecode template (project: $DIR_NAME)"$'\n'
   else
@@ -164,14 +106,8 @@ if [[ -f "$SERENA_YML_CHECK" ]]; then
   for LANG in $LANGS; do
     case "$LANG" in
       bash)
-        if command -v npm &>/dev/null && ! command -v bash-language-server &>/dev/null; then
-          if ( npm install -g bash-language-server --silent >/dev/null 2>&1 ) 2>/dev/null; then
-            OUTPUT+="INSTALLED: bash-language-server (via npm) — Serena bash LSP"$'\n'
-          else
-            OUTPUT+="MISSING: bash-language-server — npm install failed; try manually: npm install -g bash-language-server"$'\n'
-          fi
-        elif ! command -v npm &>/dev/null && ! command -v bash-language-server &>/dev/null; then
-          OUTPUT+="MISSING: bash-language-server — npm not available for install"$'\n'
+        if ! command -v bash-language-server &>/dev/null; then
+          OUTPUT+="MISSING: bash-language-server — Serena bash LSP. Install: npm install -g bash-language-server"$'\n'
         fi
         ;;
       python|python_jedi)
@@ -182,31 +118,17 @@ if [[ -f "$SERENA_YML_CHECK" ]]; then
         ;;
       go)
         if ! command -v gopls &>/dev/null; then
-          if command -v go &>/dev/null; then
-            go install golang.org/x/tools/gopls@latest 2>/dev/null
-            OUTPUT+="INSTALLED: gopls — Serena Go LSP"$'\n'
-          else
-            OUTPUT+="MISSING: gopls — install Go first, then: go install golang.org/x/tools/gopls@latest"$'\n'
-          fi
+          OUTPUT+="MISSING: gopls — Serena Go LSP. Install (needs Go): go install golang.org/x/tools/gopls@latest"$'\n'
         fi
         ;;
       rust)
         if ! command -v rust-analyzer &>/dev/null; then
-          if command -v rustup &>/dev/null; then
-            rustup component add rust-analyzer 2>/dev/null
-            OUTPUT+="INSTALLED: rust-analyzer (via rustup) — Serena Rust LSP"$'\n'
-          else
-            OUTPUT+="MISSING: rust-analyzer — install rustup first: curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh"$'\n'
-          fi
+          OUTPUT+="MISSING: rust-analyzer — Serena Rust LSP. Install (needs rustup): rustup component add rust-analyzer"$'\n'
         fi
         ;;
       cpp)
         if ! command -v clangd &>/dev/null; then
-          if pkg_install "clangd" "llvm" "clang-tools-extra" "clang-extra-tools" "clang" "clang"; then
-            OUTPUT+="INSTALLED: clangd (via $PKG_MGR) — Serena C/C++ LSP"$'\n'
-          else
-            OUTPUT+="MISSING: clangd — install clang/llvm for your platform"$'\n'
-          fi
+          OUTPUT+="MISSING: clangd — Serena C/C++ LSP. Install: $(pkg_hint llvm clangd clang-tools-extra clang-extra-tools clang)"$'\n'
         fi
         ;;
       java)
@@ -234,32 +156,70 @@ if [[ -n "$INSTALL_NEEDED" ]]; then
   OUTPUT+="ACTION: Install missing dependencies and restart session"$'\n'
 fi
 
-# 0. Auto git-init if no .git (fresh clone with deleted .git)
-if [[ ! -d "$PROJECT_ROOT/.git" ]]; then
-  # Fresh clone tespit edildi — vibecode template artifact'larını temizle
-  # docs/architecture/ vibecode'un kendi meta-planlarını içeriyor; yeni proje için temiz başlamalı
-  if [[ -d "$PROJECT_ROOT/docs/architecture" ]]; then
-    find "$PROJECT_ROOT/docs/architecture" -maxdepth 1 -name '*-plan.md' -type f -delete 2>/dev/null
-    if [[ -f "$PROJECT_ROOT/.vibecode/templates/architecture-INDEX.md" ]]; then
-      cp "$PROJECT_ROOT/.vibecode/templates/architecture-INDEX.md" "$PROJECT_ROOT/docs/architecture/INDEX.md"
-      OUTPUT+="ARCH: docs/architecture/ template planları silindi, INDEX boş başlatıldı"$'\n'
+# 0. Fresh-clone bootstrap (clone vibecode → rm -rf .git → first session).
+# Guarded by an explicit marker so it can NEVER fire in an arbitrary non-git
+# directory the framework was layered into. Conditions (all required) are
+# documented in .vibecode/templates/fresh-clone.marker:
+#   no .git + not inside a work tree + no .vibecode/VERSION + every identity
+#   path listed in the marker exists (vibecode's own meta-plans).
+is_fresh_clone() {
+  local marker="$PROJECT_ROOT/.vibecode/templates/fresh-clone.marker" line found=0
+  [[ -e "$PROJECT_ROOT/.git" ]] && return 1
+  git -C "$PROJECT_ROOT" rev-parse --is-inside-work-tree &>/dev/null && return 1
+  [[ -f "$PROJECT_ROOT/.vibecode/VERSION" ]] && return 1
+  [[ -f "$marker" ]] || return 1
+  while IFS= read -r line || [[ -n "$line" ]]; do
+    line="${line%%#*}"; line="${line//[[:space:]]/}"
+    [[ -z "$line" ]] && continue
+    [[ "$line" == /* || "$line" == *..* ]] && return 1   # relative, in-tree paths only
+    [[ -e "$PROJECT_ROOT/$line" ]] || return 1
+    found=1
+  done < "$marker"
+  [[ "$found" -eq 1 ]]
+}
+
+if is_fresh_clone; then
+  TPL="$PROJECT_ROOT/.vibecode/templates"
+  # docs/architecture/ holds vibecode's own meta-plans — a new project starts clean.
+  find "$PROJECT_ROOT/docs/architecture" -maxdepth 1 -name '*-plan.md' -type f -delete 2>/dev/null
+  [[ -f "$TPL/architecture-INDEX.md" ]] && cp "$TPL/architecture-INDEX.md" "$PROJECT_ROOT/docs/architecture/INDEX.md"
+  # Framework-history docs → reset from minimal templates (don't inherit vibecode's history).
+  for pair in "docs-decisions.md:docs/decisions.md" \
+              "docs-CHANGELOG.md:docs/CHANGELOG.md" \
+              "docs-progress.md:docs/progress.md" \
+              "docs-CHANGELOG_INTERNAL.md:docs/CHANGELOG_INTERNAL.md"; do
+    src="$TPL/${pair%%:*}"; dst="$PROJECT_ROOT/${pair#*:}"
+    [[ -f "$src" ]] && mkdir -p "$(dirname "$dst")" && cp "$src" "$dst"
+  done
+  # Pure vibecode artifacts with no project equivalent.
+  rm -f "$PROJECT_ROOT/docs/vibecode-analiz-raporu.md" "$PROJECT_ROOT/HANDOFF.md"
+  OUTPUT+="FRESH-CLONE: vibecode history docs reset from templates (architecture plans, decisions, CHANGELOG, progress, HANDOFF)"$'\n'
+
+  if git -C "$PROJECT_ROOT" init -q 2>/dev/null; then
+    # Record the vibecode framework baseline so /vibe-update can later detect which
+    # framework files the user has customized (hash-based 3-way merge). Written
+    # BEFORE the initial commit so .vibecode/VERSION ships in it.
+    if [[ -x "$PROJECT_ROOT/.vibecode/scripts/vibe-update" ]]; then
+      if bash "$PROJECT_ROOT/.vibecode/scripts/vibe-update" init >/dev/null 2>&1; then
+        OUTPUT+="VIBE-UPDATE: framework baseline recorded (.vibecode/VERSION)"$'\n'
+      fi
     fi
-  fi
-
-  git -C "$PROJECT_ROOT" init -q 2>/dev/null
-
-  # Record the vibecode framework baseline so /vibe-update can later detect which
-  # framework files the user has customized (hash-based 3-way merge). Written
-  # BEFORE the initial commit so .vibecode/VERSION ships in it.
-  if [[ -x "$PROJECT_ROOT/.vibecode/scripts/vibe-update" ]]; then
-    if bash "$PROJECT_ROOT/.vibecode/scripts/vibe-update" init >/dev/null 2>&1; then
-      OUTPUT+="VIBE-UPDATE: framework baseline recorded (.vibecode/VERSION)"$'\n'
+    # Stage an EXPLICIT framework path list — never `git add -A` (would sweep
+    # in whatever else happens to be in the directory).
+    STAGE=()
+    for p in .claude .vibecode docs CLAUDE.md .gitignore .mcp.json README.md; do
+      [[ -e "$PROJECT_ROOT/$p" ]] && STAGE+=("$p")
+    done
+    if [[ ${#STAGE[@]} -gt 0 ]] \
+       && git -C "$PROJECT_ROOT" add -- "${STAGE[@]}" 2>/dev/null \
+       && git -C "$PROJECT_ROOT" commit -q -m "Initial commit from vibecode template" 2>/dev/null; then
+      OUTPUT+="GIT: initialized + initial commit (${STAGE[*]})"$'\n'
+    else
+      OUTPUT+="GIT: initialized; initial commit NOT created (check git user.name/email, then commit manually)"$'\n'
     fi
+  else
+    OUTPUT+="GIT: git init failed — initialize the repository manually"$'\n'
   fi
-
-  git -C "$PROJECT_ROOT" add -A 2>/dev/null
-  git -C "$PROJECT_ROOT" commit -q -m "Initial commit from vibecode template" 2>/dev/null
-  OUTPUT+="GIT: auto-initialized and committed (fresh project)"$'\n'
 fi
 
 # 0b. Update .serena/project.yml project_name if still "vibecode"
@@ -267,8 +227,9 @@ SERENA_YML="$PROJECT_ROOT/.serena/project.yml"
 if [[ -f "$SERENA_YML" ]]; then
   DIR_NAME=$(basename "$PROJECT_ROOT")
   CURRENT_NAME=$(grep -m1 'project_name:' "$SERENA_YML" | sed 's/.*: *"\(.*\)"/\1/')
-  if [[ "$CURRENT_NAME" == "vibecode" && "$DIR_NAME" != "vibecode" ]]; then
-    sedi "s/project_name: \"vibecode\"/project_name: \"$DIR_NAME\"/" "$SERENA_YML"
+  if [[ ( "$CURRENT_NAME" == "vibecode" || "$CURRENT_NAME" == "{{PROJECT_NAME}}" ) && "$DIR_NAME" != "vibecode" ]]; then
+    DIR_NAME_SED=$(printf '%s' "$DIR_NAME" | sed 's/[&|\\]/\\&/g')
+    sedi "s|project_name: \"$CURRENT_NAME\"|project_name: \"$DIR_NAME_SED\"|" "$SERENA_YML"
     OUTPUT+="SERENA: project_name updated to \"$DIR_NAME\""$'\n'
   fi
 fi
@@ -324,8 +285,11 @@ fi
 
 # 1. Check HANDOFF.md
 if [[ -f "$PROJECT_ROOT/HANDOFF.md" ]]; then
-  STATUS=$(grep -m1 '^\- \*\*Status:\*\*' "$PROJECT_ROOT/HANDOFF.md" 2>/dev/null | sed 's/.*\*\*Status:\*\* *//' || echo "unknown")
-  NEXT=$(grep -m1 '^\- \[ \]' "$PROJECT_ROOT/HANDOFF.md" 2>/dev/null | sed 's/- \[ \] //' || echo "none listed")
+  # Markers follow .vibecode/templates/HANDOFF.md ("- **Status:** …" under
+  # "## Current State", first "- [ ] …" under "## Next Steps").
+  STATUS=$(grep -m1 -E '^[-*] \*\*Status:\*\*' "$PROJECT_ROOT/HANDOFF.md" 2>/dev/null | sed -E 's/.*\*\*Status:\*\*[[:space:]]*//')
+  NEXT=$(grep -m1 -E '^[[:space:]]*[-*] \[ \]' "$PROJECT_ROOT/HANDOFF.md" 2>/dev/null | sed -E 's/^[[:space:]]*[-*] \[ \][[:space:]]*//')
+  STATUS="${STATUS:-unknown}"; NEXT="${NEXT:-none listed}"
   OUTPUT+="HANDOFF: ${STATUS} | Next: ${NEXT}"$'\n'
 else
   OUTPUT+="HANDOFF: not found (fresh session)"$'\n'
@@ -389,6 +353,7 @@ skill_exists() {
 
 add_skill() {
   for s in "$@"; do
+    [[ ", $SKILLS, " == *", $s, "* ]] && continue   # dedupe
     if skill_exists "$s"; then
       [[ -n "$SKILLS" ]] && SKILLS+=", "
       SKILLS+="$s"
@@ -409,7 +374,7 @@ if [[ -n "$PY_DEPS" ]]; then
   grep -qi 'pydantic' "$PY_DEPS" 2>/dev/null && add_skill "pydantic-models-py"
   grep -qi 'alembic' "$PY_DEPS" 2>/dev/null && add_skill "database-migrations-sql-migrations"
   grep -qi 'celery' "$PY_DEPS" 2>/dev/null && add_skill "async-python-patterns"
-  grep -qi 'pytest' "$PY_DEPS" 2>/dev/null && add_skill "python-testing-patterns"
+  grep -qi 'pytest' "$PY_DEPS" 2>/dev/null && add_skill "python-testing-patterns" "tdd-workflows-tdd-cycle"
   grep -qi 'django' "$PY_DEPS" 2>/dev/null && add_skill "django-pro"
   grep -qi 'flask' "$PY_DEPS" 2>/dev/null && add_skill "python-pro"
 fi
@@ -426,11 +391,9 @@ if [[ -n "$PKG_JSON" ]]; then
   grep -qi '"zustand"' "$PKG_JSON" 2>/dev/null && add_skill "zustand-store-ts"
   grep -qi 'tanstack' "$PKG_JSON" 2>/dev/null && add_skill "react-state-management"
   grep -qi '"tailwindcss"' "$PKG_JSON" 2>/dev/null && add_skill "tailwind-patterns"
-  grep -qi '"vue"' "$PKG_JSON" 2>/dev/null && add_skill "vue-expert"
   grep -qi '"angular"' "$PKG_JSON" 2>/dev/null && add_skill "angular-best-practices"
   grep -qi '"prisma"' "$PKG_JSON" 2>/dev/null && add_skill "prisma-expert"
-  grep -qi '"jest"\|"vitest"' "$PKG_JSON" 2>/dev/null && add_skill "javascript-testing-patterns"
-  grep -qi '"express"' "$PKG_JSON" 2>/dev/null && add_skill "nodejs-backend-patterns"
+  grep -qi '"jest"\|"vitest"' "$PKG_JSON" 2>/dev/null && add_skill "javascript-testing-patterns" "tdd-workflows-tdd-cycle"
   grep -qi '"nestjs"\|"@nestjs"' "$PKG_JSON" 2>/dev/null && add_skill "nestjs-expert"
 fi
 

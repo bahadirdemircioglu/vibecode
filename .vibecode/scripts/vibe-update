@@ -32,12 +32,14 @@ DEFAULT_ORIGIN="bahadirdemircioglu/vibecode"
 # Framework paths: updated by /vibe-update. Everything else is the user's.
 FRAMEWORK_PATHS=(
   ".vibecode/standards" ".vibecode/skills" ".vibecode/scripts"
-  ".vibecode/prompts" ".vibecode/templates"
+  ".vibecode/prompts" ".vibecode/templates" ".vibecode/providers.env.example"
   ".claude/hooks" ".claude/commands" ".claude/agents" ".claude/rules"
   "CLAUDE.md"
 )
 # Ambiguous: user may customize → always treated as CONFLICT (never silent update).
-AMBIGUOUS_PATHS=(".claude/settings.json" ".gitignore")
+# Entries may be files or directories (a directory covers every file below it).
+# .vibecode/config holds per-project choices (provider enabled/model/limits).
+AMBIGUOUS_PATHS=(".claude/settings.json" ".gitignore" ".vibecode/config")
 
 # ---- helpers ----------------------------------------------------------------
 
@@ -58,7 +60,7 @@ manifest_hash() { # <relpath> → baseline hash (empty if not recorded)
   awk -F'\t' -v p="$1" 'f && $1==p{print $2; exit} /^--- files ---$/{f=1}' "$MANIFEST"
 }
 
-is_ambiguous() { local p="$1"; for a in "${AMBIGUOUS_PATHS[@]}"; do [[ "$p" == "$a" ]] && return 0; done; return 1; }
+is_ambiguous() { local p="$1" a; for a in "${AMBIGUOUS_PATHS[@]}"; do [[ "$p" == "$a" || "$p" == "$a/"* ]] && return 0; done; return 1; }
 
 # List files (relative paths) under a framework path within a given root.
 enum_files() { # <root> <relpath>
@@ -151,7 +153,7 @@ cmd_scan() {
     echo "# vibecode framework update — $origin@$ref"
     echo
     echo "- Upstream SHA: $(cat "$UPSTREAM_SHA_FILE")"
-    echo "- Baseline manifest: $([[ -f "$MANIFEST" ]] && echo present || echo "MISSING (first run — current state treated as baseline)")"
+    echo "- Baseline manifest: $([[ -f "$MANIFEST" ]] && echo present || echo "MISSING — no baseline, so user edits cannot be told apart from upstream changes: every file that differs from upstream is reported as CONFLICT (nothing is auto-applied). After resolving, run 'vibe-update write-manifest' to record a baseline.")"
     echo "- Generated: $(date '+%Y-%m-%d %H:%M')"
     echo
     echo "## Summary"
@@ -172,6 +174,7 @@ cmd_scan() {
     done
   } > "$REPORT"
 
+  [[ -f "$MANIFEST" ]] || echo "WARN: no baseline manifest (.vibecode/VERSION) — every differing file is classified CONFLICT; run 'write-manifest' after resolving."
   echo "SCAN OK — UPDATE=$n_update ADD=$n_add CONFLICT=$n_conflict USERONLY=$n_useronly USERADD=$n_useradd DELETED=$n_deleted"
   echo "REPORT: $REPORT"
   echo "PLAN:   $PLAN"

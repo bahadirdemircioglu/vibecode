@@ -7,6 +7,10 @@
 
 (Henüz plan yok — `/vibe-plan [feature]` ile ilk planı oluşturun.)
 
+## Uygulandı
+
+(Yok — `/vibe-sdd` tamamlanan planları buraya taşır.)
+
 ## Superseded / Arşivlenmiş
 
 (Yok)
