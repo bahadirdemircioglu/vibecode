@@ -26,7 +26,9 @@ Present it and ask the user to confirm or correct. Loop until approved.
 
 ### Phase 3 — Task breakdown
 Decompose the spec into a dependency-ordered task list. For each task:
-`id · title · files touched (≤3) · depends-on · role (per agent-dispatch) · acceptance check`.
+`id · title · files touched (≤3) · depends-on · role (per agent-dispatch: engineer / mechanic / opus) · contract · acceptance cases`.
+Acceptance cases are a table (`input / state → expected`, incl. edge + error cases) — the implementer
+turns them into tests first. No pseudo-code (see `.vibecode/standards/architecture.md` → delegation protocol).
 Identify the **critical path** (longest dependency chain). Tasks with no shared deps can run in
 parallel via `/vibe-fleet`.
 

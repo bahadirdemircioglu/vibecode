@@ -18,7 +18,7 @@ structural change needed to prevent recurrence.
 3. Separate "must fix now" from "optional cleanup" — keep them apart.
 
 ## Output (the fix plan)
-For each bug: **`file:line`** · root-cause fix as a micro-spec (file + change type + pseudo-code + pattern reference) · risk/blast-radius · tests to add/update.
+For each bug: **`file:line`** · root-cause fix as a contract spec (file + change type + contract + acceptance cases incl. the bug's repro case + pattern reference) · risk/blast-radius · tests to add/update.
 Then an optional **cleanup** section, clearly marked as non-blocking.
 
 ## YAPMA (do NOT)

@@ -183,7 +183,7 @@ Director olarak çalışır: görevi bağımsız parçalara böler, her parçay�
 role gönderir, sonuçları toplar. Bağımsız alt görevler aynı anda çalışır.
 
 Roller: `explorer`, `architect`, `engineer`, `tester`, `reviewer`, `bug-hunter`,
-`refactor-planner`, `critic`.
+`refactor-planner`, `critic`, `mechanic` (Haiku — sadece mekanik iş).
 
 ### /vibe-done — Tamamla
 
@@ -451,7 +451,7 @@ Mesaj sayısını izler, context büyüdüğünde `/vibe-compact` önerir.
 6. Kod arama için Serena'yı tercih et (varsa)
 7. Max 3 dosya/adım — büyük değişikliklerde subagent kullan
 8. Yeni özellik veya mimari değişiklik — plan yaz, onay bekle
-9. Sonnet subagent'lara mikro-spec ver, max 2 deneme — sonra Opus devralır
+9. Sonnet subagent'lara sözleşme-spec + kabul vakaları ver (pseudo-code değil), testler geçene kadar Sonnet yazar; max 2 deneme — sonra Opus devralır. Mekanik iş → Haiku (`mechanic`)
 10. **Sonnet-first routing:** Default Sonnet. Opus sadece planlama / mimari karar / 2-fail eskalasyon / derin reasoning için. Sonnet kararsız kaldığında veya 2 kez başarısız olduğunda otomatik Opus'a eskale eder.
 
 ---

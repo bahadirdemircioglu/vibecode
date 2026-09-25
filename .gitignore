@@ -19,3 +19,4 @@ Thumbs.db
 # any repo). This entry only covers the optional project-local override.
 # Only providers.env.example is tracked.
 .vibecode/providers.env
+._*

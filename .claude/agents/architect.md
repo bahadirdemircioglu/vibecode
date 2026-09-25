@@ -20,7 +20,8 @@ Convert a feature/goal into an actionable plan another agent (the Engineer) can 
 ## Output (plan, not code)
 - **Goal & constraints**
 - **Step-by-step plan** — each step ≤ 3 files, ordered so nothing breaks mid-way.
-- **Per-step micro-spec hint** — for each code step, note file path + change type + pattern reference + a YAPMA list (so an Engineer agent can execute it verbatim).
+- **Per-step contract spec** — for each code step: file path + change type + contract (signatures, types, error behaviour) + **acceptance cases table** (`input / state → expected`, incl. edge and error cases) + pattern reference + a YAPMA list. No pseudo-code — define *what* and *done*, the Engineer decides *how* (exception: concurrency / complex algorithms / cryptography).
+- **Executor per step** — `engineer` (Sonnet) by default; `mechanic` (Haiku) for mechanical steps; `opus` only for the deep-reasoning exception.
 - **Open questions** — decisions that need the user.
 
 ## YAPMA (do NOT)

@@ -529,3 +529,47 @@ Gerekçe: `security.md §8.1–8.2`.
 Additive — mevcut hiçbir şey kırılmadı; `enabled: false` ile `/vibe-plan` davranışı birebir aynı.
 Plan: `docs/architecture/multi-ai-plan-consultation-plan.md` (INDEX'te). Gelecek: 2. provider talebi
 gelince `request_shape` case dalı + config satırı (kod değişikliği minimal).
+
+---
+
+## ADR-008: Sözleşme-Spec + Kabul Vakaları — Pseudo-code'suz Sonnet Delegasyonu
+**Date:** 2026-09-25 | **Status:** Accepted
+
+### Context
+
+Sonnet-first politikasında Opus, Sonnet'e "mikro-spec" veriyordu: dosya + değişiklik türü +
+**pseudo-code** + pattern + YAPMA. Kullanıcı kodu üst modelle değil alt modelle yazdırmanın token /
+maliyet dengesini sordu. Analiz: pseudo-code seviyesinde spec yazan Opus kodu fiilen kendisi yazıyor —
+en pahalı token türüyle (Opus çıktısı) — ve Sonnet aynısını yeniden yazıyor: iki kez ödeme. Tasarruf
+kodlama *döngüsünden* (dosya okuma, test çalıştırma, hata düzeltme) gelir; spec'in görevi bu döngüyü
+ucuz modele devretmek ve "bitti"yi makine-doğrulanır kılmak. Ayrıca kabul kriterlerini uygulayıcı
+Sonnet'in kendisi test'e çeviriyordu; "bitti" tanımı ucuz modelde kalıyordu.
+
+### Decision
+
+1. **Mikro-spec → sözleşme-spec.** Opus "ne" (imza, tip, veri şekli, hata davranışı) ve "bitti"yi
+   (**kabul vakaları tablosu**: `girdi / durum → beklenen`, uç + hata yolları dahil) tanımlar;
+   **pseudo-code yazmaz**. İstisna aynen kalır: concurrency / kompleks algoritma / kriptografi → Opus yazar.
+2. **Sonnet önce vakaları test yazar (RED), testler geçene kadar kodlar (GREEN).** Vakaları değiştiremez /
+   zayıflatamaz; yanlış görünen vaka `BELIRSIZ` olarak raporlanır.
+3. **Review'da ana kapı test çıktısı** — geçmiyorsa kod okunmadan geri gönderilir; sonra vaka sadakati
+   ve yalnızca diff okunur (tüm dosya değil).
+4. **Haiku katmanı: `mechanic` rolü** (9. rol) — rename, pattern'den boilerplate, kod taşıma, doc /
+   CHANGELOG. Mantık yazması yasak; mantık gerekirse `engineer`'a yeniden yönlendirilir.
+5. 2 deneme kuralı değişmedi.
+
+**Alternatifler:** (a) Mevcut pseudo-code'lu mikro-spec — Opus çıktı token'ını en çok harcayan yol,
+reddedildi. (b) Opus kabul testlerini *kod olarak* yazsın — architect read-only ve test kodu yazmak da
+Opus çıktı token'ı; vaka tablosu aynı kesinliği çok daha az token'la veriyor. (c) Haiku'yu genel
+uygulayıcı yapmak — mantık hatalarında yeniden deneme maliyeti kazancı siler, reddedildi.
+
+### Consequences
+
+- Opus çıktı token'ı azalır (tarif yerine sözleşme + vaka tablosu); pahalı döngü Sonnet'te.
+- "Bitti" Opus'un tanımladığı, makinenin doğruladığı bir hedef olur; review daha kısa.
+- Belirsiz vakalar erken yüzeye çıkar (`BELIRSIZ`) — Opus'a dönüş sayısı başta artabilir.
+- Etkilenen: `.vibecode/standards/architecture.md`, `CLAUDE.md` #9, `engineer` / `architect` /
+  `refactor-planner` / yeni `mechanic` ajanları, `agent-dispatch`, `/vibe-fleet`, `/vibe-sdd`,
+  `sdd-implementer` prompt'u. Kardeş repo `vibeplan`: `/vibe-breakdown` görevleri aynı "uygulayıcı
+  sözleşmesi" alanlarını üretir.
+

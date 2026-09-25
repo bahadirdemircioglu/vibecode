@@ -5,6 +5,21 @@
 
 ---
 
+## [2026-09-25] — Sözleşme-spec + kabul vakaları; Haiku `mechanic` rolü
+
+### Changes
+- **What:** Sonnet'e verilen mikro-spec'ten **pseudo-code kaldırıldı**; yerine sözleşme (imza / tip /
+  hata davranışı) + **kabul vakaları tablosu** geldi. Sonnet vakaları önce test yazar, testler geçene
+  kadar kodlar; review'da ana kapı test çıktısı. Yeni **`mechanic`** rolü (Haiku) mekanik işler için.
+- **Why:** Pseudo-code yazan Opus kodu iki kez ödetiyordu (tarif + Sonnet'in yeniden yazması);
+  tasarruf kodlama döngüsünü ucuz modele devretmekten gelir ve "bitti" makine-doğrulanır olmalı.
+- **How:** `.vibecode/standards/architecture.md` delegasyon protokolü, `CLAUDE.md` #9, `engineer` /
+  `architect` / `refactor-planner` ajanları, `agent-dispatch` (9 rol), `/vibe-fleet`, `/vibe-sdd`,
+  `.vibecode/prompts/sdd-implementer.md`; yeni `.claude/agents/mechanic.md`. ADR-008.
+- **Also:** `.gitignore`'a macOS AppleDouble (`._*`) eklendi — `.git/objects/pack/._pack-*.idx`
+  dosyaları git'i bozuyordu ("index file ... is too small"); 2191 adet temizlendi.
+- **Source:** Kullanıcı isteği (vibeplan oturumunda tartışıldı).
+
 ## [2026-07-25] — /vibe-plan: multi-AI consultation round (DeepSeek)
 
 ### Changes

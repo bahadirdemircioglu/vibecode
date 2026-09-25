@@ -12,7 +12,7 @@ parallel where safe, then roll up. This is the vibecode adaptation of WrongStack
 
 ### 1. Load the protocol
 Load the `agent-dispatch` and `subagent-budget-protocol` skills (read their SKILL.md). They define
-the 8 roles, the routing heuristic, and the delegation contract.
+the 9 roles, the routing heuristic, and the delegation contract.
 
 ### 2. Decompose
 Break `$ARGUMENTS` into the smallest independent sub-tasks. For each, note:
@@ -30,8 +30,8 @@ includes the full delegation contract (objective · scope fence/YAPMA · inputs 
 run conflicting ones sequentially.
 
 - Read-only roles: explorer, architect, reviewer, bug-hunter, refactor-planner, critic.
-- Write roles: engineer, tester.
-- If any sub-task needs design/architecture, route to `architect` (opus) and feed its micro-specs to `engineer`.
+- Write roles: engineer, tester, mechanic (Haiku — mechanical edits only).
+- If any sub-task needs design/architecture, route to `architect` (opus) and feed its contract specs (contract + acceptance cases) to `engineer`.
 
 ### 4. Roll up
 When subagents return, write the **FLEET ROLL-UP** (per `subagent-budget-protocol`):

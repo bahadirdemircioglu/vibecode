@@ -142,11 +142,12 @@ If a skill defines an anti-pattern, avoid it.
    Serena memory = proje bilgisi (yapı, standartlar, komutlar). Claude auto-memory = kullanıcı tercihleri.
 7. Max 3 files per step — use subagents for larger changes
 8. New feature or architecture change — write plan, wait for approval
-9. Sonnet subagent'lara mikro-spec ver — yüksek seviye talimat verme.
-   Mikro-spec: dosya yolu + değişiklik türü + pseudo-code + pattern referansı + YAPMA listesi.
-   1-2 satır değişiklik → Opus direkt yazsın, mikro-spec gereksiz.
-   3+ satır → mikro-spec zorunlu. Sonnet döndükten sonra kodu oku ve review et.
-   Max 2 Sonnet denemesi — 2. başarısızlıkta Opus devralır.
+9. Sonnet subagent'lara sözleşme-spec ver — yüksek seviye talimat da, pseudo-code da verme.
+   Spec: dosya yolu + değişiklik türü + sözleşme (imza/tip/hata davranışı) + **kabul vakaları tablosu** + pattern referansı + YAPMA listesi.
+   Opus "ne" ve "bitti"yi tanımlar; Sonnet önce vakaları test yazar, kodu testler geçene kadar yazar.
+   1-2 satır değişiklik → Opus direkt yazsın. Mekanik iş (rename, boilerplate, doc) → `mechanic` (Haiku).
+   Review'da ana kapı test çıktısıdır; sonra diff okunur. Max 2 Sonnet denemesi — 2. başarısızlıkta Opus devralır.
+   Detay: `.vibecode/standards/architecture.md` → Sonnet Subagent Delegasyon Protokolü.
 10. **Model routing — Sonnet-first politikası:**
     - Default model: **Sonnet**. Opus mimari karar ve derin reasoning için. `/vibe-plan` planlaması **Fable subagent'ında** koşar (bkz. `.claude/commands/vibe-plan.md`) — Opus'a gitmez.
     - Session start hook'u Opus tespit ederse uyarı verir; kullanıcı `/model sonnet` ile geçer (auto-switch YOK).

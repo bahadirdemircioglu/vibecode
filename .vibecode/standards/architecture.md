@@ -93,42 +93,62 @@ When a task requires **multi-service debugging** (backend + frontend + DB):
 
 ### Sonnet Subagent Delegasyon Protokolü (Opus ↔ Sonnet)
 
-Sonnet subagent'a kod yazdırırken **üç fazlı protokol** uygulanır:
+Sonnet subagent'a kod yazdırırken **üç fazlı protokol** uygulanır.
 
-**Faz 1 — SPEC (Opus):** Her kod değişikliği için mikro-spec yaz:
+**İlke: Opus "ne"yi ve "bitti"yi tanımlar, "nasıl"ı Sonnet yazar.** Pseudo-code yazan Opus kodu
+iki kez ödetir — önce pahalı çıktı token'ıyla tarif eder, sonra Sonnet aynısını yeniden yazar.
+Sözleşme + kabul vakaları hem daha ucuz hem daha kesindir (makine doğrular).
+
+**Faz 1 — SPEC (Opus):** Her kod değişikliği için sözleşme-spec yaz:
 - **Dosya yolu** ve değişiklik türü (create / modify)
-- **Pseudo-code** seviyesinde logic (adım adım ne yapılacak)
+- **Sözleşme** — fonksiyon/endpoint imzaları, tipler, veri şekli, hata davranışı (hangi durumda hangi hata / HTTP kodu)
+- **Kabul vakaları** — tablo: `girdi / durum → beklenen sonuç`; happy path + uç durumlar + hata yolları. "Bitti" tanımı budur
 - **Pattern referansı** — mevcut codebase'den örnek dosya/fonksiyon göster
 - **YAPMA listesi** — scope dışı eklemeler, gereksiz abstraction'lar
-- **1-2 satır değişiklik** → mikro-spec atla, Opus direkt Edit ile yazsın
+- **Pseudo-code YAZMA** — istisna: derin reasoning gerektiren kod (concurrency, kompleks algoritma, cryptography) → Opus doğrudan yazar
+- **1-2 satır değişiklik** → spec atla, Opus direkt Edit ile yazsın
+- **Mekanik iş** (rename, mevcut pattern'den boilerplate, doc/CHANGELOG güncelleme, kod taşıma) → spec yerine kısa talimat, `mechanic` rolü (Haiku)
+
+Kabul vakası örneği:
+
+| # | Girdi / durum | Beklenen |
+|---|---------------|----------|
+| 1 | Geçerli e-posta + şifre | 200, `{access_token}` |
+| 2 | Yanlış şifre | 401, `invalid_credentials` — hangi alanın yanlış olduğu sızdırılmaz |
+| 3 | 5. başarısız deneme / 15 dk | 429 |
 
 **Faz 2 — WRITE (Sonnet subagent):**
-- Mikro-spec'i birebir koda çevir — ekleme/çıkarma yapma
+- Önce kabul vakalarını test olarak yaz (RED), sonra kodu yaz; testler geçene kadar düzelt (GREEN)
+- Kabul vakalarını değiştirme / zayıflatma — bir vaka yanlış görünüyorsa `BELIRSIZ: [vaka # + neden]` raporla
+- Sözleşmedeki imza/tip/hata davranışına birebir uy — ekleme/çıkarma yapma
 - Pattern referansı varsa o dosyayı oku, aynı stili kullan
 - Belirsizlik varsa **kod yazma**, `BELIRSIZ: [soru]` olarak raporla
 - Skill/standard içeriğini Opus prompt'a ekler — Sonnet aramaz
 
 Subagent prompt şablonu:
 ```
-Sen bir kod yazma asistanısın. Verilen mikro-spec'i birebir koda çevir.
+Sen bir kod yazma asistanısın. Verilen sözleşme-spec'i uygula.
 KURALLAR:
-1. Spec'te yazanı AYNEN uygula — ekleme/çıkarma yapma
-2. Pattern referansı varsa o dosyayı oku ve aynı stili kullan
-3. YAPMA listesindeki şeyleri YAPMA
-4. Belirsizlik varsa kod yazma — "BELIRSIZ: [soru]" olarak raporla
+1. Önce kabul vakalarını test olarak yaz, sonra kodu yaz; tüm testler geçene kadar düzelt
+2. Kabul vakalarını değiştirme veya zayıflatma — yanlış görünüyorsa "BELIRSIZ: [vaka # + neden]"
+3. Sözleşmedeki imza/tip/hata davranışına birebir uy — ekleme yapma
+4. Pattern referansı varsa o dosyayı oku ve aynı stili kullan
+5. YAPMA listesindeki şeyleri YAPMA
+6. Belirsizlik varsa kod yazma — "BELIRSIZ: [soru]" olarak raporla
+7. Test komutunun gerçek çıktı özetini raporla — çalıştırmadan "geçti" deme
 
-MIKRO-SPEC:
+SPEC:
 [spec içeriği buraya]
 ```
 
 **Faz 3 — REVIEW (Opus):** Sonnet döndükten sonra **zorunlu kontrol**:
-1. Yazılan kodu oku (Read tool)
-2. Spec'e uygunluk: tüm talimatlar uygulandı mı, YAPMA listesine uyuldu mu?
-3. Kalite: mevcut codebase pattern'leriyle tutarlı mı, security açığı var mı?
+1. **Test çıktısı** — tüm kabul vakaları geçiyor mu? Ana kapı budur; geçmiyorsa kodu okumadan geri gönder
+2. **Vaka sadakati** — testler kabul vakalarıyla birebir mi (atlanmış / zayıflatılmış vaka yok)?
+3. **Diff'i oku** (tüm dosyayı değil) — sözleşme + YAPMA listesine uygunluk, pattern tutarlılığı, security
 4. Karar:
-   - ✅ OK → sonraki mikro-spec'e geç
+   - ✅ OK → sonraki spec'e geç
    - 🔧 Küçük fix (1-5 satır) → Opus kendi düzeltir (Edit tool)
-   - ❌ Büyük sorun → yeni mikro-spec yaz, Sonnet'e tekrar gönder
+   - ❌ Büyük sorun → spec'i / vakaları netleştir, Sonnet'e tekrar gönder
    - **Max 2 Sonnet denemesi** — 2. denemede de başarısızsa Opus kendi yazar
 
 **Paralel delegasyon:** Bağımsız dosyalar için birden fazla Sonnet subagent paralel çalışabilir. Dosyalar arası bağımlılık varsa sıralı çalıştır.
