@@ -57,7 +57,8 @@ claude
 - `docs/` iskeleti (CHANGELOG, decisions, progress, `architecture/INDEX.md`, `constraints/`) ve `.vibecode/memory/`
 - `.gitignore`'a vibecode satırları
 - `.claude/settings.json`: vibecode izinleri (birleştirilir) + **plugin bildirimi** (`extraKnownMarketplaces` +
-  `enabledPlugins`) — repo başka bir makinede/sunucuda klonlanınca klasöre güven verildiği anda vibecode kendiliğinden gelir
+  `enabledPlugins`) — repo başka bir makinede/sunucuda klonlanınca klasöre güven verildiğinde vibecode marketplace'i
+  kendiliğinden eklenir; plugin'i etkinleştirmek için bir kez `/plugin install vibecode@vibecode` yeterli (aşağıya bak)
 - `.claude/settings.local.json`: hafıza konumu (`autoMemoryDirectory` → `.vibecode/memory`)
 - `.serena/project.yml` (yoksa)
 
@@ -568,7 +569,7 @@ projen/
 | Yanlışlıkla Opus ile açıldım | Hook `/model sonnet` öneriyor — komutu çalıştır |
 | Sonnet aynı bug'ı 2 kez çözemedi | Otomatik — Sonnet `Agent(model:opus)` çağırır |
 | Riskli komut bloklandı | `permission-policy.js` hard-block — komutu gözden geçir |
-| Sunucuyu sildim, repoyu yeni makineye çektim | `claude` aç, klasöre güven → plugin projedeki bildirimden gelir; sırlar (DeepSeek anahtarı) için `~/.config/vibe/providers.env`'i yeniden oluştur |
+| Sunucuyu sildim, repoyu yeni makineye çektim | `claude` aç, klasöre güven (marketplace projedeki bildirimden kendiliğinden eklenir) → `/plugin install vibecode@vibecode` → oturumu yeniden başlat. Hafıza, docs, HANDOFF repoyla gelir; sırlar (DeepSeek anahtarı) için `~/.config/vibe/providers.env`'i yeniden oluştur |
 | Plugin başka projemde karışıyor | Karışmaz — hook'lar yalnızca `/vibecode:init` edilmiş projelerde çalışır |
 | Büyük özellik, nereden başlayacağım? | `/vibe-plan` → `/vibe-sdd` → `/vibe-fleet` sırasıyla |
 

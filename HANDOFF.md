@@ -9,56 +9,49 @@
 2026-09-25
 
 ## Current State
-- **Branch:** `main` (tek dal — yerel ve GitHub)
-- **Status:** in-progress
+- **Branch:** `main` (tek dal — yerel ve GitHub, push edildi)
+- **Status:** ready-for-review
 
 ## Goal
-- **Goal status:** active
+- **Goal status:** completed
 - **Goal:** vibecode'u Claude Code **plugin**'i olarak paketlemek — GitHub linki verilince kurulsun, klonlama/`/vibe-update` gerekmesin
 - **Acceptance:**
-  - `.claude-plugin/marketplace.json` + plugin manifest; kurulum: `/plugin marketplace add bahadirdemircioglu/vibecode` + `/plugin install vibecode@vibecode` (tek adımlı `/plugin install vibecode --marketplace bahadirdemircioglu/vibecode` sürümde çalışıyorsa o da)
-  - Komutlar, ajanlar (model: frontmatter'ları ile), skill'ler, hook'lar, script'ler, standartlar/şablonlar, MCP (Serena, Context7) plugin'den gelir; proje verisi (`docs/architecture/`, `docs/constraints/`, `HANDOFF.md`, izinler) projede kalır
-  - Otomatik fresh-clone bootstrap yerine elle çağrılan `/vibecode:init` (proje iskeleti + izinler) — hook kendi kendine dosya silmez/commit atmaz
-  - Mevcut klon-tabanlı projeler için geçiş yolu yazılı
+  - ✅ `.claude-plugin/marketplace.json` + `plugin.json`; kurulum `/plugin marketplace add bahadirdemircioglu/vibecode` + `/plugin install vibecode@vibecode` — GitHub'dan (private repo, kısa yazım ve SSH) doğrulandı. Tek adımlı kurulum Claude Code'da yok.
+  - ✅ Komutlar, ajanlar (model frontmatter'ı korunarak), skill'ler, hook'lar, script'ler, standartlar/şablonlar, MCP (Serena, Context7) plugin'den; proje verisi projede
+  - ✅ Elle çağrılan `/vibecode:init` (hook hiçbir dosya silmez, commit atmaz)
+  - ✅ Klon-tabanlı eski projeler için geçiş: `/vibecode:init` → `LEGACY` listesi → `--migrate` (README + ADR-012)
 - **Journal** (newest last, max ~10 lines — trim oldest):
-  - 2026-09-25 — Denetim temizliği (ADR-009), sözleşme-spec + Haiku `mechanic` (ADR-008), vibeplan akışı taşındı: keşif + Understanding Lock + madde bazlı DeepSeek tartışması (ADR-010). README güncel. Tüm dallar silindi, yalnızca `main`.
-  - 2026-09-25 — Plugin fikri konuşuldu; dokümantasyon kontrol edildi (bulgular aşağıda). Deneme (spike) henüz başlamadı. Ek istek: hafıza proje içinde, git'te tutulsun.
-  - 2026-09-25 — Spike yapıldı (Claude Code 2.1.282, geçici `CLAUDE_CONFIG_DIR`, yerel dizin marketplace). Sonuçlar "Spike Results" bölümünde; açık soruların çoğu kapandı.
+  - 2026-09-25 — Denetim temizliği (ADR-009), sözleşme-spec + Haiku `mechanic` (ADR-008), vibeplan akışı taşındı (ADR-010), hafıza repoda (ADR-011).
+  - 2026-09-25 — Spike (2.1.282): plugin hook exit 2 engelliyor, `${CLAUDE_PLUGIN_ROOT}` her yerde genişliyor, öneksiz komut/ajan çalışıyor, SessionStart çıktısı bağlama giriyor, plugin MCP proje cwd'sinde.
+  - 2026-09-25 — Plugin paketlemesi uygulandı + push edildi (ADR-012, `df5bbfc`). Geliştirme makinesinde bu çalışma kopyası kullanıcı seviyesinde dizin marketplace'i olarak kurulu (yerinde yüklenir).
 
 ## Changes This Session
-- `.vibecode/scripts/deepseek-debate.js` + `tests/` — madde bazlı Claude ↔ DeepSeek tartışması (`consult-provider.sh` yerine), ADR-010
-- `.claude/commands/vibe-plan.md` — Step 0.7 keşif + Understanding Lock ("sadece fikir" → `Status: concept`), Step 1e DeepSeek tartışması (Opus planlayıcı yürütür)
-- `.vibecode/standards/delegation.md` (yeni) — model routing + sözleşme-spec + 2 deneme kuralı tek kaynak (ADR-008/009)
-- `.claude/agents/mechanic.md` (yeni, Haiku) — mekanik işler
-- `.claude/hooks/*` — güvenli fresh-clone (marker), otomatik kurulum yok, tek node süreci/düzenleme, `$CLAUDE_PROJECT_DIR` yolları
-- 12 skill silindi/birleşti, `scaffold.sh`/`statusline.sh`/`/vibe-goal` kaldırıldı; README, ADR'ler, CHANGELOG güncel
-- Ayrıntı: `docs/CHANGELOG.md` (2026-09-25 girdileri), `docs/decisions.md` ADR-008…010
+- `.claude-plugin/{plugin,marketplace}.json` (yeni) — manifest (ajan listesi, Serena + Context7), tek plugin'lik marketplace
+- `.claude/{commands,agents,hooks}` → `commands/`, `agents/`, `hooks/`; `.claude/rules` → `.vibecode/rules`; `.mcp.json`, `/vibe-update`, `fresh-clone.marker` silindi
+- `hooks/hooks.json`, `hooks/vibecode-project.js` (yeni) — hook kaydı; hook'lar yalnızca `.vibecode/` dizini olan projede çalışır
+- `hooks/pre-tool-use.js` — yol kuralı enjeksiyonu (`.vibecode/rules/*.md`, kural başına oturumda bir kez)
+- `hooks/session-start.sh` — `.vibecode/core-rules.md`'yi bağlama basar; fresh-clone bootstrap kaldırıldı; `LEGACY` uyarısı
+- `.vibecode/core-rules.md` (yeni) — CLAUDE.md'nin plugin karşılığı; `CLAUDE.md` bu reponun geliştirme notlarına indi
+- `.vibecode/scripts/vibe-init.js` + `commands/init.md` (yeni) — `/vibecode:init`; `.vibecode/templates/claude-settings.json` (izinler)
+- `.vibecode/scripts/deepseek-debate.js` — proje = cwd, config proje → plugin
+- Komut/ajan yolları `${CLAUDE_PLUGIN_ROOT}/.vibecode/...`; `/vibe-go`'nun `.serena/.gitignore`'a `/memories` yazması düzeltildi
+- README (kurulum/geçiş/hook'lar/dizin yapısı), ADR-012, plan `docs/architecture/plugin-packaging-plan.md`, CHANGELOG, guide'lar
+- Yerel `.serena/project.yml` — Serena'nın yeni sürümünde olmayan `think_about_*` araçları çıkarıldı (git'te değil)
+- Kullanıcı config'i: `~/Dev/vibecode` dizin marketplace'i olarak eklendi + `vibecode@vibecode` kuruldu (user scope)
 
 ## Tests
-- **Added:** `.vibecode/scripts/tests/deepseek-debate.test.js` (15 test, mock DeepSeek sunucusu — `node --test .vibecode/scripts/tests/`)
-- **Modified:** N/A
-- **All passing:** yes (gerçek API ile duman testi de yapıldı)
-
-## Spike Results (2026-09-25, Claude Code 2.1.282)
-- **Kurulum:** `claude plugin marketplace add <yol|owner/repo|https://…>` + `claude plugin install vibecode@vibecode` → çalışıyor. `file://` kaynak **desteklenmiyor**. CLI `install`'da `--marketplace` bayrağı **yok** → tek adımlı kurulum yok; iki adımlı akış kullanılacak.
-- **Plugin hook exit 2 engelliyor** ✔ (headless + interaktif). stderr modele iletiliyor, "This hook comes from the … plugin" notu ekleniyor → `permission-policy.js` plugin'e taşınabilir.
-- **`${CLAUDE_PLUGIN_ROOT}`** komut metninde, skill metninde, hooks.json `command`'ında ve `!` enjeksiyonunda genişliyor ✔. (`!` enjeksiyonu `-p` modunda izin yoksa sessizce boş döner — yerel komutta da aynı, plugin'e özgü değil.)
-- **Dizin kaynaklı marketplace yerinde yüklenir:** `CLAUDE_PLUGIN_ROOT` = kaynak repo yolu (cache'e kopyalanmaz) — geliştirmede düzenleme anında yansır.
-- **Sunucu-yeniden-kurulum senaryosu:** proje `.claude/settings.json`'da `extraKnownMarketplaces` + `enabledPlugins` → temiz config'de, **klasöre güven** onayından sonra plugin soru sormadan yüklendi (interaktif ve sonrasında headless). Güven verilmeden headless yüklemiyor. `claude plugin list` bu durumda "kurulu yok" diyor (proje-bildirimli ≠ kurulu). ⚠ Yalnızca `directory` kaynağıyla test edildi; `github` kaynağı (klonlama) push gerektirdiği için test edilmedi.
-- Temiz config'de ilk interaktif açılış `hasCompletedOnboarding` yoksa giriş ekranına düşer (yalnız spike ortamı sorunu).
+- **Added:** `.vibecode/scripts/tests/vibe-init.test.js` (9), `.vibecode/scripts/tests/hooks.test.js` (6)
+- **Modified:** `.vibecode/scripts/tests/deepseek-debate.test.js` (+1 plugin-yerleşimi testi)
+- **All passing:** yes — 31/31 (`node --test .vibecode/scripts/tests/`). Uçtan uca (izole `CLAUDE_CONFIG_DIR`): yerel + GitHub kurulum, `/vibecode:init`, core rules bağlamda, `rm -rf` engeli, kural enjeksiyonu, vibecode olmayan projede sessizlik, `/vibe-status`.
 
 ## Open Questions
-- `github` kaynaklı proje-bildirimli marketplace'in yeni sunucuda otomatik klonlanıp yüklendiği → ilk GitHub push'undan sonra doğrula.
-- Plugin'de **CLAUDE.md** ve **`.claude/rules`** desteklenmiyor (skill'e çevrilmeli) ve **izinler** plugin'den verilemiyor (projede/kullanıcı ayarında kalmalı) — bunun `/vibecode:init` tasarımına etkisi.
-- Komut adları `/vibecode:vibe-plan` biçimine dönüşüyor (önek zorunlu) — kısaltma istenir mi (ör. `/vibecode:plan`)?
-- Otomatik güncelleme kendi marketplace'lerde varsayılan kapalı — açık mı gelsin?
+- **Otomatik geri gelme tam değil:** proje `settings.json`'daki GitHub bildirimi klasör güveninde marketplace'i ekliyor ama Claude Code 2.1.282 plugin'i önbelleğe almıyor ("Plugin not cached" hatası) → yeni sunucuda bir kez `/plugin install vibecode@vibecode` gerekiyor (doğrulandı, README'de). Denenebilir: `marketplace.json`'da plugin kaynağını `"./"` yerine `{"source":"github",...}` yapmak — ama geliştirme makinesindeki yerinde yüklemeyi bozar; Claude Code güncellemesiyle düzelebilir.
+- Otomatik güncelleme kendi marketplace'lerde varsayılan kapalı — açık mı gelsin? (`/plugin` → Marketplaces → vibecode)
 
 ## Next Steps
-- [x] Plugin denemesi (spike) — yapıldı, bkz. Spike Results
-- [ ] Sonuca göre yazılı plugin tasarımı (neyin plugin'e, neyin projeye; `/vibecode:init`; geçiş yolu) → kullanıcı onayı → uygulama
-- [x] **Proje içi hafıza** — uygulandı (ADR-011): `.vibecode/memory/` + `.serena/memories/` repoda. **Doğrula:** yeni oturumda `/memory` konumu `.vibecode/memory` göstermeli (ayar ilk oturumda yazıldıysa ikinci oturumdan itibaren)
-- [ ] **Sunucu silinip repo yeniden çekilince her şey geri gelsin** (kullanıcı senaryosu: plugin'le 5 gün geliştir → sunucuyu sil → repoyu yeni sunucuya çek): (a) hafıza repoda — yapıldı; (b) plugin'in otomatik geri gelmesi için proje `.claude/settings.json`'a `extraKnownMarketplaces` + `enabledPlugins` — `/vibecode:init` yazsın, açılışta kurulum teklif ediliyor mu doğrula; (c) `.serena/memories/` git'e alındı — yapıldı; (d) sırlar (DeepSeek anahtarı) repoya girmez — yeni sunucuda tek adımlık kurulum talimatı
+- [ ] Gerçek bir projede dene: `cd <proje> && claude` → `/vibecode:init` → `/vibe-go <görev>`; eski klon-tabanlı bir proje varsa `LEGACY`/`--migrate` akışını orada doğrula
+- [ ] Yeni Claude Code sürümlerinde proje-bildirimli otomatik kurulumu yeniden dene (düzeldiyse README'deki `/plugin install` adımını kaldır)
 - [ ] **vibeplan reposuna dokunma** (kullanıcı kararı, 2026-09-25); yanıtlar Türkçe
 
 ## Active Skills
-- superpowers:brainstorming (plugin tasarımı mimari iş — spike → yazılı tasarım → onay)
+- N/A

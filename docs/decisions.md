@@ -755,6 +755,9 @@ güveninden sonra plugin'i kendiliğinden yüklüyor.
 - Framework tek yerde; tüm projeler plugin güncellemesiyle birlikte güncellenir, projelerde framework kopyası yok.
 - Komutların tam adı `/vibecode:<ad>`; öneksiz ad çakışma yoksa çalışır. Tek adımlı kurulum yok (CLI'de
   `--marketplace` bayrağı yok).
+- Sunucu yeniden kurulumu: klasöre güven marketplace'i projedeki bildirimden ekler, ama Claude Code 2.1.282'de git
+  kaynaklı kök plugin'in otomatik kurulumu önbelleği doldurmuyor ("not cached" hatası) → bir kez
+  `/plugin install vibecode@vibecode` gerekir (doğrulandı: sonrasında hook'lar, temel kurallar, hafıza ayarı çalışıyor).
 - Geliştirme makinesinde bu çalışma kopyası dizin marketplace'i olarak eklenir (yerinde yüklenir); kullanıcı
   seviyesindeki marketplace projede bildirilen GitHub kaynağının önüne geçer (doğrulandı).
 - Eski klon-tabanlı projeler `/vibecode:init` ile taşınır.

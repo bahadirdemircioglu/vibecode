@@ -19,8 +19,8 @@ Exit codes: **0** done · **1** error (e.g. `.claude/settings.json` is not valid
 to fix it, STOP) · **2** usage (report, STOP).
 
 Summarize the `CREATED` / `UPDATED` / `WARN` lines in 2–5 bullets. Mention that `.claude/settings.json` now declares the
-vibecode marketplace + plugin, so after a fresh clone (e.g. a server rebuild) Claude Code loads vibecode again once the
-folder is trusted.
+vibecode marketplace + plugin: after a fresh clone (e.g. a server rebuild) trusting the folder re-adds the marketplace,
+and one `/plugin install vibecode@vibecode` (then restart) brings vibecode back.
 
 ### 2. Legacy install (only if the output has `LEGACY` lines)
 

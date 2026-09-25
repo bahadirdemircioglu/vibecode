@@ -11,7 +11,9 @@
  *   2. .gitignore — appends the missing vibecode lines
  *   3. .claude/settings.json — union of the framework permissions, plus
  *      extraKnownMarketplaces.vibecode + enabledPlugins["vibecode@vibecode"] so a fresh clone
- *      (e.g. after a server rebuild) offers the plugin again
+ *      (e.g. after a server rebuild) re-adds the marketplace on folder trust; one
+ *      `/plugin install vibecode@vibecode` then restores the plugin (Claude Code 2.1.282: the
+ *      auto-install of a git-sourced, root-level plugin does not populate the plugin cache)
  *   4. .claude/settings.local.json — autoMemoryDirectory → <root>/.vibecode/memory (absolute, per machine)
  *   5. .serena/project.yml from the template when missing (per machine, gitignored)
  *   6. Legacy (clone-based) framework copies are REPORTED: `LEGACY same|differs <path>`.
