@@ -67,9 +67,23 @@ olan) çalışır; diğer projelerinde vibecode sessiz kalır.
 
 ### 3. Çalışmaya başla
 
-```
-/vibe-go kullanici-yonetimi-ekle
-```
+Her oturum `/vibe-go <görev>` ile başlar (görev adı serbest metin — örnek: `/vibe-go kullanici-yonetimi-ekle`);
+önceki oturumdan devam ediyorsan `/vibe-go devam` yeterli (HANDOFF.md okunur). Sonrası işin türüne göre:
+
+| Durum | Komut |
+|-------|-------|
+| Her oturumun başı — durumu ve uygun skill'leri yükle | `/vibe-go <görev>` |
+| Yeni özellik / mimari değişiklik (fikirden onaylı plana) | `/vibe-plan <fikir>` |
+| Onaylanmış planı adım adım, testli uygula | `/vibe-sdd <özellik>` |
+| Büyük işi paralel rol ajanlarına dağıt | `/vibe-fleet <görev>` |
+| Çözülemeyen bug | `/vibe-collab-debug <bug>` |
+| Güvenlik taraması | `/vibe-security-review [dosya]` |
+| İş bitti — doğrula, dokümante et, HANDOFF yaz, commit öner | `/vibe-done` |
+| Bağlam doldu / göreve ara ver | `/vibe-compact` |
+| Oturum durumu | `/vibe-status` |
+
+Tipik büyük özellik akışı: `/vibe-go` → `/vibe-plan` → (onay) → `/vibe-sdd` → `/vibe-done`. Küçük işte:
+`/vibe-go` → doğrudan çalış → `/vibe-done`.
 
 Komutlar öneksiz çalışır (`/vibe-go`); çakışma olursa tam adı `/vibecode:vibe-go`.
 
