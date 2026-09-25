@@ -5,6 +5,16 @@
 
 ---
 
+## [2026-09-25] — Proje hafızası repoda (ADR-011)
+
+### Changes
+- **What:** Claude auto memory `.vibecode/memory/`'de (commit edilir); session-start hook `autoMemoryDirectory`'yi
+  `.claude/settings.local.json`'a yazar; CLAUDE.md `MEMORY.md`'yi import eder; `.serena/memories/` takip edilir;
+  `/vibe-done` / `/vibe-compact` hafıza değişikliklerini commit'e dahil eder; fresh-clone vibecode hafızalarını siler.
+  vibecode'un kendi hafızaları (Türkçe yanıt, yalnızca vibecode, plugin hedefi) repoya taşındı.
+- **Why:** Sunucu silinip repo yeniden çekildiğinde hafıza kayboluyordu.
+- **Source:** Kullanıcı isteği ("private geliştirme yapıyorum, repoda memorylerin de olmasını istiyorum").
+
 ## [2026-09-25] — README güncellendi
 
 ### Changes

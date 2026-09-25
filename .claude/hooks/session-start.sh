@@ -194,7 +194,8 @@ if is_fresh_clone; then
   done
   # Pure vibecode artifacts with no project equivalent.
   rm -f "$PROJECT_ROOT/docs/vibecode-analiz-raporu.md" "$PROJECT_ROOT/HANDOFF.md"
-  OUTPUT+="FRESH-CLONE: vibecode history docs reset from templates (architecture plans, decisions, CHANGELOG, progress, HANDOFF)"$'\n'
+  find "$PROJECT_ROOT/.vibecode/memory" "$PROJECT_ROOT/.serena/memories" -type f -delete 2>/dev/null   # vibecode's own memories
+  OUTPUT+="FRESH-CLONE: vibecode history docs reset from templates (architecture plans, decisions, CHANGELOG, progress, HANDOFF, memories)"$'\n'
 
   if git -C "$PROJECT_ROOT" init -q 2>/dev/null; then
     # Record the vibecode framework baseline so /vibe-update can later detect which
@@ -282,6 +283,31 @@ if [[ -n "$MODEL" ]]; then
       : # hedef model, sessiz geç
       ;;
   esac
+fi
+
+# 0e. Repo-local memory — Claude's auto memory lives IN the repo (.vibecode/memory/, committed),
+# so it survives a server rebuild + `git clone`. autoMemoryDirectory must be an absolute path,
+# so it goes into the per-machine, gitignored .claude/settings.local.json (never the committed
+# settings.json). Claude Code reads settings at startup → a change applies from the NEXT
+# session; CLAUDE.md @imports .vibecode/memory/MEMORY.md so the first session still sees it.
+MEM_DIR="$PROJECT_ROOT/.vibecode/memory"
+if [[ -d "$PROJECT_ROOT/.vibecode" ]]; then
+  mkdir -p "$MEM_DIR"
+  [[ -f "$MEM_DIR/MEMORY.md" ]] || printf '%s\n' '<!-- Project memory index (Claude auto memory, committed with the repo). One line per memory: - [Title](file.md) — hook -->' > "$MEM_DIR/MEMORY.md"
+  if command -v node &>/dev/null; then
+    MEM_SET=$(MEM_DIR="$MEM_DIR" LOCAL="$PROJECT_ROOT/.claude/settings.local.json" node -e '
+      const fs = require("fs"); const f = process.env.LOCAL; let s = {};
+      try { s = JSON.parse(fs.readFileSync(f, "utf-8")); } catch (e) { if (fs.existsSync(f)) { console.log("invalid"); process.exit(0); } }
+      if (s.autoMemoryDirectory === process.env.MEM_DIR) process.exit(0);
+      s.autoMemoryDirectory = process.env.MEM_DIR;
+      fs.mkdirSync(require("path").dirname(f), { recursive: true });
+      fs.writeFileSync(f, JSON.stringify(s, null, 2) + "\n");
+      console.log("set");' 2>/dev/null)
+    case "$MEM_SET" in
+      set) OUTPUT+="MEMORY: auto memory → .vibecode/memory (repo, committed) — active from next session"$'\n' ;;
+      invalid) OUTPUT+="MEMORY: .claude/settings.local.json is not valid JSON — autoMemoryDirectory not set"$'\n' ;;
+    esac
+  fi
 fi
 
 # 1. Check HANDOFF.md

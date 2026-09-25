@@ -39,6 +39,9 @@ Thumbs.db
 
 # Vibecode — framework files ARE tracked (/vibe-update needs a clean tree);
 # only local runtime state and the optional provider secret are ignored
+# Serena: config/cache per-machine, memories tracked
+.serena/*
+!.serena/memories/
 .vibecode/state/
 .vibecode/sdd/
 .vibecode/providers.env

@@ -5,8 +5,9 @@ Thumbs.db
 # Worktrees (temporary)
 .claude/worktrees/
 
-# Serena (auto-generated per project, not part of template)
-.serena/
+# Serena: config/cache are per-machine; memories are project knowledge → tracked
+.serena/*
+!.serena/memories/
 
 # Continuous-doc-maintainer idempotency state (local cache, not repo content)
 .vibecode/state/

@@ -26,5 +26,9 @@ Summary:
   Next steps: [brief]
 ```
 
+### 3.5 Memory
+If `.vibecode/memory/` or `.serena/memories/` changed this session, list them — they belong in the
+next commit (project memory lives in the repo, CLAUDE.md → Project Memory).
+
 ### 4. Show HANDOFF.md
 Display the full contents of HANDOFF.md so the user can verify before compacting.

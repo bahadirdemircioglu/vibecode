@@ -57,7 +57,8 @@ type(scope): description
 
 body with details
 ```
-Present to user for approval. Do NOT commit automatically.
+The proposed commit includes `HANDOFF.md`, `.vibecode/memory/` and `.serena/memories/` changes (project
+memory lives in the repo — see CLAUDE.md → Project Memory). Present to user for approval. Do NOT commit automatically.
 
 ### 7. Remind
 > Run `/vibe-compact` if context is large before starting the next task.

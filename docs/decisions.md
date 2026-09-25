@@ -684,3 +684,33 @@ soru soramaz.
 - Bir `/vibe-plan` en fazla 4 DeepSeek turu + planlayıcının cevapları kadar ek maliyet getirir.
 - ADR-007 ve ADR-009'un DeepSeek kısmı (tek tur) bu kararla değişti.
 
+---
+
+## ADR-011: Proje Hafızası Repoda
+**Date:** 2026-09-25 | **Status:** Accepted
+
+### Context
+
+Kullanıcı private geliştirme yapıyor ve zaman zaman sunucuyu tamamen silip repoyu yeni sunucuya
+çekiyor. Claude'un auto memory'si `~/.claude/projects/<proje>/memory/`, Serena hafızası `.serena/`
+(gitignore'da) altındaydı — her yeniden kurulumda kayboluyordu.
+
+### Decision
+
+- Claude Code'un `autoMemoryDirectory` ayarı ile auto memory `.vibecode/memory/`'ye (commit edilir)
+  yönlendirilir. Ayar mutlak yol istediği için commit edilen `settings.json`'a değil, makineye özel ve
+  gitignore'daki `.claude/settings.local.json`'a session-start hook'u yazar (mevcut anahtarlar korunur,
+  idempotent). Ayar açılışta okunduğu için değişiklik bir sonraki oturumda etkinleşir.
+- CLAUDE.md `@.vibecode/memory/MEMORY.md` import eder — yeni sunucudaki ilk oturum da hafızayı görür.
+- `.serena/memories/` git'e alınır (`.serena/*` + `!.serena/memories/`); Serena config/cache makineye özel kalır.
+- `/vibe-done` önerdiği commit'e hafıza değişikliklerini dahil eder; `/vibe-compact` listeler.
+- Fresh-clone bootstrap vibecode'un kendi hafızalarını siler (yeni proje devralmaz).
+- **Sır yazılmaz** — hafıza git geçmişine girer; yalnızca private repolar için.
+
+### Consequences
+
+- Sunucu silinip `git clone` yapıldığında hafıza geri gelir (ilk oturum import ile, ikinci oturumdan
+  itibaren yazma da repoya).
+- Hafıza içeriği repo erişimi olan herkese görünür — public repoda kullanılmamalı.
+- Plugin tasarımında (HANDOFF Goal) hafıza "projede kalanlar" arasındadır.
+
