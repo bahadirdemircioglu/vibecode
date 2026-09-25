@@ -5,6 +5,21 @@
 
 ---
 
+## [2026-09-25] — `/vibecode:init` bağımlılıkları zorla kurar; node'suz makinede hook'lar sessiz
+
+### Changes
+- **What:** Yeni `.vibecode/scripts/install-deps.sh` — Node.js ≥ 18 (+npm/npx; paket yöneticisi, dağıtım sürümü eskiyse
+  NodeSource), uv (brew/pacman ya da Astral installer; root'ta `/usr/local/bin`) ve Serena'yı (uv önbelleği) kurar;
+  idempotent; root/şifresiz sudo yoksa çalıştırılacak komutu yazar. `/vibecode:init` 0. adımda bunu zorunlu çalıştırır,
+  başarısızsa durur. `commands/init.md` `allowed-tools` ile iki script'i önceden onaylar (izin reddi düzeldi) ve komutlara
+  ek yapılmasını (`; echo`) yasaklar. Yeni `hooks/run-node.sh`: node yoksa JS hook'ları atlanır (her çağrıda hata yerine);
+  session-start node yokken init edilmemiş projede de tek satır uyarı basar, MISSING satırları `/vibecode:init`'e yönlendirir.
+- **Why:** Sunucu denemesinde `/vibecode:init` izin reddine takıldı; sunucuda node/npx/uvx yoktu (Serena + Context7
+  açılamadı). Kullanıcı tercihi: bağımlılıklar zorla kurulsun.
+- **Tests:** `install-deps.test.js` (6, stub paket yöneticileriyle — gerçek kurulum yok), `hooks.test.js` +1 (run-node);
+  toplam 38 yeşil. Uçtan uca: izin bayrağı olmadan `/vibecode:init` tamamlandı; node'suz PATH'te hook hatası yok, init
+  Node kurulamayınca durdu, uv geçici HOME'a kuruldu.
+
 ## [2026-09-25] — vibecode artık bir Claude Code plugin'i (ADR-012)
 
 ### Changes

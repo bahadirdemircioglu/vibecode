@@ -14,10 +14,11 @@ rules (standards index, commands, core rules, skills, memory) are injected at se
 | `.claude-plugin/plugin.json`, `marketplace.json` | Manifest (agents list, Serena + Context7 MCP) and single-plugin marketplace |
 | `commands/` | Slash commands (`/vibe-*`, `/vibecode:init`) — framework paths as `${CLAUDE_PLUGIN_ROOT}/.vibecode/...` |
 | `agents/` | Role subagents (listed in `plugin.json` — add new ones there too) |
-| `hooks/` | `hooks.json` + scripts; every hook exits silently unless the project has a `.vibecode/` dir (`vibecode-project.js`) |
+| `hooks/` | `hooks.json` + scripts; every hook exits silently unless the project has a `.vibecode/` dir (`vibecode-project.js`); JS hooks go through `run-node.sh` (skipped when node is missing) |
 | `.vibecode/core-rules.md` | Plugin-side CLAUDE.md replacement (`{{VIBECODE_ROOT}}` → plugin root). Keep it short — every session pays for it |
 | `.vibecode/rules/` | Path-scoped rules (`paths:` frontmatter), injected by `hooks/pre-tool-use.js` on first matching write |
 | `.vibecode/{standards,skills,templates,scripts,prompts,config}` | Framework content, read from the plugin root at runtime |
+| `.vibecode/scripts/install-deps.sh` | `/vibecode:init` step 0 — installs Node.js ≥ 18, uv, Serena (never called from a hook) |
 | `.vibecode/scripts/vibe-init.js` | `/vibecode:init` — project skeleton, settings merge, legacy migration |
 | `.vibecode/memory/`, `docs/`, `HANDOFF.md` | This repo's own project data |
 
@@ -31,6 +32,8 @@ rules (standards index, commands, core rules, skills, memory) are injected at se
 - **Paths:** anything the model reads from a command/agent must use `${CLAUDE_PLUGIN_ROOT}` (substituted by Claude
   Code). Standards/skills keep `.vibecode/...` paths — core-rules maps them to the plugin root. Scripts must take the
   **project** from `CLAUDE_PROJECT_DIR`/cwd, never from their own location.
+- **Release:** bump `version` in `.claude-plugin/plugin.json` for every pushed change — installed copies are cached per
+  version, so `/plugin update vibecode@vibecode` only picks up a new version number.
 - **Skills are not registered** as plugin skills (105 skills ≈ 6.4k always-on tokens); `/vibe-go` lists them lazily.
 - Never `git add -A`; stage explicit paths. Update `docs/CHANGELOG.md` for every change.
 

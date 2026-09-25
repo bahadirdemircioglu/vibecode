@@ -11,9 +11,6 @@ set -uo pipefail
 PROJECT_ROOT="${CLAUDE_PROJECT_DIR:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}"
 PLUGIN_ROOT="${CLAUDE_PLUGIN_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
 
-# Gate: plugin hooks fire in every project where the plugin is enabled.
-[[ -d "$PROJECT_ROOT/.vibecode" ]] || exit 0
-
 OUTPUT=""
 INSTALL_NEEDED=""
 
@@ -53,9 +50,9 @@ sedi() {
 
 # Build a platform-specific install hint for a system package.
 # Usage: pkg_hint <pkg_brew> <pkg_apt> <pkg_dnf> <pkg_apk> <pkg_pacman>
-# NOTE: this hook NEVER installs anything on the host (Docker-first rule; no
-# curl|sh, no sudo, no npm -g). It only prints a MISSING line with the command
-# the user can run themselves.
+# NOTE: this hook NEVER installs anything on the host (no curl|sh, no sudo,
+# no npm -g). It only prints a MISSING line; installing Node.js + uv/Serena is
+# done by the explicitly invoked /vibecode:init (.vibecode/scripts/install-deps.sh).
 pkg_hint() {
   local pkg_brew="$1" pkg_apt="${2:-$1}" pkg_dnf="${3:-$1}" pkg_apk="${4:-$1}" pkg_pacman="${5:-$1}"
   case "$PKG_MGR" in
@@ -68,17 +65,27 @@ pkg_hint() {
   esac
 }
 
+# Gate: plugin hooks fire in every project where the plugin is enabled. Outside a
+# vibecode project stay silent — except when node is missing: then /vibecode:init
+# and every JS hook (skipped by run-node.sh) cannot work, so say so once.
+if [[ ! -d "$PROJECT_ROOT/.vibecode" ]]; then
+  if ! command -v node &>/dev/null; then
+    echo "vibecode: MISSING node — the vibecode plugin's hooks need Node.js. Run /vibecode:init: it installs Node.js + uv/Serena (or: $(pkg_hint node "nodejs npm" nodejs nodejs nodejs))"
+  fi
+  exit 0
+fi
+
 # -0. MCP dependency check — report (never install) what Serena / Context7 need
 # Serena requires: uv/uvx (Python 3.13+), language servers per language
 # Context7 requires: node/npx
 
 if ! command -v uv &>/dev/null; then
-  OUTPUT+="MISSING: uv — Serena will not work. Install: curl -LsSf https://astral.sh/uv/install.sh | sh"$'\n'
+  OUTPUT+="MISSING: uv — Serena will not work. Run /vibecode:init (installs it)"$'\n'
   INSTALL_NEEDED="true"
 fi
 
 if ! command -v node &>/dev/null; then
-  OUTPUT+="MISSING: node — Context7 will not work. Install: $(pkg_hint node nodejs nodejs nodejs nodejs) (or https://nodejs.org)"$'\n'
+  OUTPUT+="MISSING: node — vibecode hooks and Context7 will not work. Run /vibecode:init (installs it)"$'\n'
   INSTALL_NEEDED="true"
 elif ! command -v npm &>/dev/null; then
   # npm may not ship with node on some distros (e.g. Debian splits nodejs/npm)

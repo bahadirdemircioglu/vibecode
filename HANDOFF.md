@@ -24,6 +24,7 @@
   - 2026-09-25 — Denetim temizliği (ADR-009), sözleşme-spec + Haiku `mechanic` (ADR-008), vibeplan akışı taşındı (ADR-010), hafıza repoda (ADR-011).
   - 2026-09-25 — Spike (2.1.282): plugin hook exit 2 engelliyor, `${CLAUDE_PLUGIN_ROOT}` her yerde genişliyor, öneksiz komut/ajan çalışıyor, SessionStart çıktısı bağlama giriyor, plugin MCP proje cwd'sinde.
   - 2026-09-25 — Plugin paketlemesi uygulandı + push edildi (ADR-012, `df5bbfc`). Geliştirme makinesinde bu çalışma kopyası kullanıcı seviyesinde dizin marketplace'i olarak kurulu (yerinde yüklenir).
+  - 2026-09-25 — Sunucu denemesi: `/vibecode:init` izin reddi + node/uvx yok. Düzeltme (v1.1.0): `allowed-tools` ile ön onay, `install-deps.sh` Node ≥ 18 + uv + Serena'yı zorla kurar (kullanıcı tercihi), `run-node.sh` node yokken hook'ları sessiz atlar.
 
 ## Changes This Session
 - `.claude-plugin/{plugin,marketplace}.json` (yeni) — manifest (ajan listesi, Serena + Context7), tek plugin'lik marketplace
@@ -42,13 +43,14 @@
 ## Tests
 - **Added:** `.vibecode/scripts/tests/vibe-init.test.js` (9), `.vibecode/scripts/tests/hooks.test.js` (6)
 - **Modified:** `.vibecode/scripts/tests/deepseek-debate.test.js` (+1 plugin-yerleşimi testi)
-- **All passing:** yes — 31/31 (`node --test .vibecode/scripts/tests/`). Uçtan uca (izole `CLAUDE_CONFIG_DIR`): yerel + GitHub kurulum, `/vibecode:init`, core rules bağlamda, `rm -rf` engeli, kural enjeksiyonu, vibecode olmayan projede sessizlik, `/vibe-status`.
+- **All passing:** yes — 38/38 (v1.1.0: +install-deps 6, +run-node 1); önce 31/31 (`node --test .vibecode/scripts/tests/`). Uçtan uca (izole `CLAUDE_CONFIG_DIR`): yerel + GitHub kurulum, `/vibecode:init`, core rules bağlamda, `rm -rf` engeli, kural enjeksiyonu, vibecode olmayan projede sessizlik, `/vibe-status`.
 
 ## Open Questions
 - **Otomatik geri gelme tam değil:** proje `settings.json`'daki GitHub bildirimi klasör güveninde marketplace'i ekliyor ama Claude Code 2.1.282 plugin'i önbelleğe almıyor ("Plugin not cached" hatası) → yeni sunucuda bir kez `/plugin install vibecode@vibecode` gerekiyor (doğrulandı, README'de). Denenebilir: `marketplace.json`'da plugin kaynağını `"./"` yerine `{"source":"github",...}` yapmak — ama geliştirme makinesindeki yerinde yüklemeyi bozar; Claude Code güncellemesiyle düzelebilir.
 - Otomatik güncelleme kendi marketplace'lerde varsayılan kapalı — açık mı gelsin? (`/plugin` → Marketplaces → vibecode)
 
 ## Next Steps
+- [ ] Sunucuda güncelle ve yeniden dene: `/plugin marketplace update vibecode` → `/plugin update vibecode@vibecode` → yeniden başlat → `/vibecode:init` (root ise Node + uv kendiliğinden kurulur)
 - [ ] Gerçek bir projede dene: `cd <proje> && claude` → `/vibecode:init` → `/vibe-go <görev>`; eski klon-tabanlı bir proje varsa `LEGACY`/`--migrate` akışını orada doğrula
 - [ ] Yeni Claude Code sürümlerinde proje-bildirimli otomatik kurulumu yeniden dene (düzeldiyse README'deki `/plugin install` adımını kaldır)
 - [ ] **vibeplan reposuna dokunma** (kullanıcı kararı, 2026-09-25); yanıtlar Türkçe

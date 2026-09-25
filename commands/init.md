@@ -1,5 +1,6 @@
 ---
 description: "Set up this project for vibecode (or migrate a clone-based install) — skeleton docs, settings, plugin auto-restore"
+allowed-tools: Bash(bash *install-deps.sh*), Bash(node *vibe-init.js*)
 ---
 
 ## vibecode init: $ARGUMENTS
@@ -9,7 +10,25 @@ merges settings; it never overwrites project content.
 
 > **Model:** main session, no subagent. Mechanical work is done by the script; you only explain and ask.
 
+### 0. Dependencies — mandatory, installed automatically
+
+vibecode needs Node.js ≥ 18 (hooks, setup script, Context7) and uv (Serena). Install them first — run exactly this,
+on its own (Bash `timeout: 600000`, the first Serena download can take minutes):
+
+```bash
+bash "${CLAUDE_PLUGIN_ROOT}/.vibecode/scripts/install-deps.sh"
+```
+
+It prints `OK` / `INSTALLED` / `FAIL` per component (node, uv, serena) and `RESTART: …` when something was installed.
+- **Exit 1 (`FAIL`)** — do NOT continue. Show the FAIL lines. If one says it needs root, tell the user to run the
+  printed command themselves with the `!` prefix (e.g. `! sudo bash "<path>"`), then `/vibecode:init` again. STOP.
+- **Exit 0** — continue with step 1 (a freshly installed `node` is usable right away). Remember whether `RESTART`
+  was printed; mention it at the end.
+
 ### 1. Run the setup
+
+Run exactly this command — on its own, with nothing appended (no `; echo`, no `&&`), so the pre-approved permission
+matches; the exit code is reported by the tool anyway:
 
 ```bash
 node "${CLAUDE_PLUGIN_ROOT}/.vibecode/scripts/vibe-init.js"
@@ -34,15 +53,18 @@ Ask: **migrate now?** (and separately, for `differs` files: keep as overrides, o
 in git, so removal is reversible. On yes run:
 
 ```bash
-node "${CLAUDE_PLUGIN_ROOT}/.vibecode/scripts/vibe-init.js" --migrate        # add --all to also remove `differs`
+node "${CLAUDE_PLUGIN_ROOT}/.vibecode/scripts/vibe-init.js" --migrate
 ```
+
+(append ` --all` to also remove the `differs` files — again nothing else appended)
 
 If the user wants CLAUDE.md trimmed, remove only the vibecode template sections (standards index, commands table,
 core rules, project structure) and keep anything project-specific; show the diff.
 
 ### 3. Finish
 
-- Tell the user to **restart the session** when `.serena/project.yml` was created or legacy hooks were removed.
+- Tell the user to **restart the session** when step 0 printed `RESTART`, `.serena/project.yml` was created or legacy
+  hooks were removed.
 - Propose a commit (do NOT commit automatically), e.g. `chore: set up vibecode plugin` — include `docs/`,
   `.gitignore`, `.claude/settings.json`, `.vibecode/memory/` and any migration removals.
 - Next step: `/vibe-go <task>` (or `/vibe-plan <idea>` for a new feature).

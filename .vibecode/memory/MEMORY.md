@@ -3,3 +3,4 @@
 - [vibecode only](vibecode-only.md) — yalnızca ~/Dev/vibecode'da çalış; vibeplan reposuna dokunma
 - [Plugin goal](vibecode-plugin-goal.md) — vibecode artık plugin (ADR-012); dev'de yerel dizin marketplace; yeni sunucuda bir kez `/plugin install` gerekiyor
 - [Repo-local memory](repo-local-memory.md) — hafıza repoda (.vibecode/memory, .serena/memories), commit edilir; sır yazılmaz
+- [Force-install deps](force-install-deps.md) — /vibecode:init Node.js + uv/Serena'yı kendisi kurar (yalnızca uyarı değil); hook'lar asla kurmaz

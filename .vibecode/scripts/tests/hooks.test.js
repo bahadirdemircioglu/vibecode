@@ -92,3 +92,16 @@ test('rule globs', () => {
   assert.ok(globToRegExp('a/**/b.md').test('a/x/y/b.md'));
   assert.ok(!globToRegExp('a/*.md').test('a/x/b.md'));
 });
+
+test('run-node.sh: without node the hook is skipped (exit 0), with node it runs the script', () => {
+  const root = project(true);
+  const wrapper = path.join(HOOKS, 'run-node.sh');
+  const input = JSON.stringify(bash('rm -rf /tmp/x'));
+  const env = { CLAUDE_PROJECT_DIR: root, CLAUDE_PLUGIN_ROOT: PLUGIN };
+  const noNode = spawnSync('/bin/bash', [wrapper, path.join(HOOKS, 'permission-policy.js')],
+    { input, encoding: 'utf-8', env: { ...env, PATH: fs.mkdtempSync(path.join(os.tmpdir(), 'empty-path-')) } });
+  assert.deepStrictEqual([noNode.status, noNode.stdout, noNode.stderr], [0, '', '']);
+  const withNode = spawnSync('/bin/bash', [wrapper, path.join(HOOKS, 'permission-policy.js')],
+    { input, encoding: 'utf-8', env: { ...env, PATH: process.env.PATH } });
+  assert.strictEqual(withNode.status, 2);
+});

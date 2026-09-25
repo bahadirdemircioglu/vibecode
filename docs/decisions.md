@@ -761,3 +761,12 @@ güveninden sonra plugin'i kendiliğinden yüklüyor.
 - Geliştirme makinesinde bu çalışma kopyası dizin marketplace'i olarak eklenir (yerinde yüklenir); kullanıcı
   seviyesindeki marketplace projede bildirilen GitHub kaynağının önüne geçer (doğrulandı).
 - Eski klon-tabanlı projeler `/vibecode:init` ile taşınır.
+
+**Ek (2026-09-25, sunucu denemesi sonrası):** Node/npx/uvx olmayan bir sunucuda `/vibecode:init` izin reddine takıldı ve
+Serena/Context7 açılamadı. Kullanıcı tercihi: bağımlılıklar **zorla kurulsun**. Karar: `/vibecode:init` 0. adımı
+`.vibecode/scripts/install-deps.sh` — Node.js ≥ 18 (paket yöneticisi, eskiyse NodeSource), uv (brew/pacman ya da Astral
+installer; root'ta `/usr/local/bin`), Serena'yı uv önbelleğine alır; başarısızsa init durur. "Hook hiçbir şey kurmaz"
+kuralı korunur — kurulum yalnızca kullanıcının çağırdığı komutla. Komutun `allowed-tools`'u yalnızca iki script'i önceden
+onaylar (`Bash(bash *install-deps.sh*)`, `Bash(node *vibe-init.js*)` — kapanış tırnağı yüzünden sondaki `*` şart,
+doğrulandı). JS hook'ları `hooks/run-node.sh` üzerinden çalışır: node yoksa sessizce atlanır (her araç çağrısında hata
+yerine); session-start tek satırla `/vibecode:init`'e yönlendirir.

@@ -40,8 +40,9 @@ Claude Code içinde:
 (`add` tam adresi de kabul eder: `https://github.com/bahadirdemircioglu/vibecode`. Terminalden:
 `claude plugin marketplace add …` + `claude plugin install vibecode@vibecode`.)
 
-Gereksinimler: `node` (hook'lar, Context7), `uv` (Serena). Eksikse session başında kurulum komutuyla bir
-`MISSING` satırı basılır — hiçbir şey otomatik kurulmaz.
+Gereksinimler: Node.js ≥ 18 (hook'lar, kurulum script'i, Context7) ve `uv` (Serena). **Önceden kurman gerekmez** —
+`/vibecode:init` eksikse kendisi kurar (aşağıda). Node yokken plugin'in hook'ları hata vermeden atlanır ve oturum
+başında tek satırlık bir `MISSING` uyarısı çıkar.
 
 ### 2. Projede başlat (proje başına bir kez)
 
@@ -53,7 +54,17 @@ claude
 /vibecode:init
 ```
 
-`/vibecode:init` yalnızca **eksik** olanı oluşturur, hiçbir dosyanın üzerine yazmaz:
+`/vibecode:init` önce **bağımlılıkları zorunlu olarak kurar** (`.vibecode/scripts/install-deps.sh`), kurulamazsa durur:
+- **Node.js ≥ 18** + npm/npx — paket yöneticisiyle (apt/dnf/yum/apk/pacman/brew); dağıtımın sürümü 18'den eskiyse
+  NodeSource (Node.js'in resmi apt/rpm paketleri)
+- **uv** — brew/pacman paketi, yoksa Astral'ın resmi kurulum script'i (root iken `/usr/local/bin`'e, değilse `~/.local/bin`'e)
+- **Serena** — bir kez çalıştırılıp uv önbelleğine alınır (ilk oturumda MCP hemen açılsın diye)
+
+Sistem paketi için root ya da şifresiz sudo gerekir; ikisi de yoksa çalıştırman gereken komutu yazar
+(`! sudo bash …/install-deps.sh`). Bir şey kurulduysa oturumu yeniden başlatmanı ister. Hook'lar hiçbir zaman
+kendiliğinden kurulum yapmaz — kurulum yalnızca bu komutla, senin çağırmanla olur.
+
+Sonra projeyi hazırlar — yalnızca **eksik** olanı oluşturur, hiçbir dosyanın üzerine yazmaz:
 - `docs/` iskeleti (CHANGELOG, decisions, progress, `architecture/INDEX.md`, `constraints/`) ve `.vibecode/memory/`
 - `.gitignore`'a vibecode satırları
 - `.claude/settings.json`: vibecode izinleri (birleştirilir) + **plugin bildirimi** (`extraKnownMarketplaces` +
@@ -445,8 +456,8 @@ Her session başında çalışır:
 - HANDOFF.md durumunu ve ilk açık adımı gösterir
 - Test/source oranını ve CHANGELOG güncelliğini kontrol eder
 - **Config dosyalarından ilgili skill'leri tespit eder** (otomatik)
-- Eksik araçlar için kurulum komutuyla `MISSING` satırı basar — hiçbir şeyi kendisi kurmaz
-  (`curl | sh`, `sudo`, `npm -g` yok)
+- Eksik araçlar için `MISSING` satırı basar ve `/vibecode:init`'e yönlendirir — hook'un kendisi hiçbir şey kurmaz
+  (`curl | sh`, `sudo`, `npm -g` yok); Node yoksa JS hook'ları `run-node.sh` sayesinde sessizce atlanır
 - Eksikse `.serena/project.yml`'ı şablondan oluşturur, hafıza konumunu ayarlar; eski klon-tabanlı kurulumu `LEGACY` olarak bildirir
 - Hiçbir dosyayı silmez, commit atmaz
 
@@ -521,14 +532,15 @@ vibecode/
 ├── commands/                    ← Slash komutları (vibe-go, vibe-plan, vibe-sdd, …, init)
 ├── agents/                      ← Rol ajanları (architect, engineer, mechanic, tester, reviewer, …)
 ├── hooks/                       ← hooks.json + session-start.sh, pre-tool-use.js, permission-policy.js,
-│                                  net-fs-guard.js, notification.js, vibecode-project.js (proje kapısı)
+│                                  net-fs-guard.js, notification.js, vibecode-project.js (proje kapısı),
+│                                  run-node.sh (node yoksa JS hook'larını atlar)
 ├── .vibecode/
 │   ├── core-rules.md            ← Her oturuma eklenen temel kurallar (CLAUDE.md'nin plugin karşılığı)
 │   ├── standards/               ← Kodlama standartları (11 dosya, on-demand; delegation.md = model routing)
 │   ├── rules/                   ← Yol kuralları (8 dosya, pre-tool-use.js enjekte eder)
 │   ├── skills/                  ← 110+ skill (lazy, kayıtsız)
 │   ├── config/                  ← ai-providers.json (varsayılan; proje kendi kopyasıyla geçersiz kılabilir)
-│   ├── scripts/                 ← vibe-init.js, task-brief, review-package, sdd-workspace, deepseek-debate.js,
+│   ├── scripts/                 ← install-deps.sh, vibe-init.js, task-brief, review-package, sdd-workspace, deepseek-debate.js,
 │   │                              db-backup/restore (+ tests/)
 │   ├── prompts/                 ← SDD implementer/reviewer şablonları
 │   └── templates/               ← docs iskeleti, HANDOFF, izinler, serena, docker-compose, Makefile, Dockerfile'lar
