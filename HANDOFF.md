@@ -48,6 +48,7 @@
 - [ ] Plugin denemesi (spike) — geçici `CLAUDE_CONFIG_DIR` ile (kullanıcının `~/.claude`'una iz bırakmadan), yerel git marketplace'ten; GitHub'a push yok. Doğrula: (1) GitHub/marketplace kurulumu, iki adımlı + tek adımlı; (2) plugin hook exit 2 engellemesi; (3) komut metninde `${CLAUDE_PLUGIN_ROOT}` yolu
 - [ ] Sonuca göre yazılı plugin tasarımı (neyin plugin'e, neyin projeye; `/vibecode:init`; geçiş yolu) → kullanıcı onayı → uygulama
 - [ ] **Proje içi hafıza** (kullanıcı isteği): kullanıcı sunucuyu silip kodu yeniden kurabiliyor; `~/.claude/projects/.../memory` sunucuyla birlikte gidiyor. Hafıza projede, git'te tutulmalı (ör. `.vibecode/memory/` veya `docs/memory/`, CLAUDE.md'den okunan kısa bir indeks). Plugin tasarımında "projede kalanlar" arasına girer. Önce Claude Code'un auto-memory konumunun ayarlanabilir olup olmadığını dokümandan doğrula
+- [ ] **Sunucu silinip repo yeniden çekilince her şey geri gelsin** (kullanıcı senaryosu: plugin'le 5 gün geliştir → sunucuyu sil → repoyu yeni sunucuya çek): (a) hafıza repoda (üstteki madde); (b) plugin'in otomatik geri gelmesi için proje `.claude/settings.json`'a `extraKnownMarketplaces` + `enabledPlugins` — `/vibecode:init` yazsın, açılışta kurulum teklif ediliyor mu doğrula; (c) Serena hafızası `.serena/` gitignore'da — `.serena/memories/` git'e alınsın mı değerlendir; (d) sırlar (DeepSeek anahtarı) repoya girmez — yeni sunucuda tek adımlık kurulum talimatı
 - [ ] **vibeplan reposuna dokunma** (kullanıcı kararı, 2026-09-25); yanıtlar Türkçe
 
 ## Active Skills
