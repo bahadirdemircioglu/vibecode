@@ -1,56 +1,53 @@
-# HANDOFF — Session State
+# Session Handoff
 
-**Date:** 2026-04-30
-**Branch:** main
+<!-- Written by /vibe-done and /vibe-compact (fill THIS template — no other format), read by /vibe-go.
+     Every section is mandatory; use N/A where it does not apply.
+     Parser contract (session-start hook): keep the `- **Status:**` line and `- [ ]` items under
+     Next Steps — the first `- [ ]` in the file is shown as "Next". Do not use `- [ ]` above Next Steps. -->
 
----
+## Date
+2026-09-25
 
-## Changes this session
+## Current State
+- **Branch:** `main` (tek dal — yerel ve GitHub)
+- **Status:** in-progress
 
-### New Files
-- `.vibecode/skills/continuous-doc-maintainer/SKILL.md` — 13-step v4 doc-maintainer pipeline (plain-MD adaptation): classification → target → prune → schema-sync → blocking security linter → section patch → audit
-- `.vibecode/skills/continuous-doc-maintainer/resources/input-schema.json` — skill input contract
-- `.vibecode/skills/continuous-doc-maintainer/resources/output-schema.json` — skill output contract
-- `.vibecode/skills/continuous-doc-maintainer/resources/audit-log-template.md` — CHANGELOG_INTERNAL entry template
-- `.claude/commands/vibe-doc-sync.md` — `/vibe-doc-sync [--live] [--tier full] [paths...]` slash command
-- `docs/CHANGELOG_INTERNAL.md` — append-only audit ledger (machine-parsable)
-- `docs/architecture/continuous-doc-maintainer-plan.md` — architecture plan (approved)
+## Goal
+- **Goal status:** active
+- **Goal:** vibecode'u Claude Code **plugin**'i olarak paketlemek — GitHub linki verilince kurulsun, klonlama/`/vibe-update` gerekmesin
+- **Acceptance:**
+  - `.claude-plugin/marketplace.json` + plugin manifest; kurulum: `/plugin marketplace add bahadirdemircioglu/vibecode` + `/plugin install vibecode@vibecode` (tek adımlı `/plugin install vibecode --marketplace bahadirdemircioglu/vibecode` sürümde çalışıyorsa o da)
+  - Komutlar, ajanlar (model: frontmatter'ları ile), skill'ler, hook'lar, script'ler, standartlar/şablonlar, MCP (Serena, Context7) plugin'den gelir; proje verisi (`docs/architecture/`, `docs/constraints/`, `HANDOFF.md`, izinler) projede kalır
+  - Otomatik fresh-clone bootstrap yerine elle çağrılan `/vibecode:init` (proje iskeleti + izinler) — hook kendi kendine dosya silmez/commit atmaz
+  - Mevcut klon-tabanlı projeler için geçiş yolu yazılı
+- **Journal** (newest last, max ~10 lines — trim oldest):
+  - 2026-09-25 — Denetim temizliği (ADR-009), sözleşme-spec + Haiku `mechanic` (ADR-008), vibeplan akışı taşındı: keşif + Understanding Lock + madde bazlı DeepSeek tartışması (ADR-010). README güncel. Tüm dallar silindi, yalnızca `main`.
+  - 2026-09-25 — Plugin fikri konuşuldu; dokümantasyon kontrol edildi (bulgular aşağıda). Deneme (spike) henüz başlamadı — kullanıcı onayı bekleniyor.
 
-### Modified Files
-- `.vibecode/standards/documentation.md` — §6 added (Continuous Doc Maintainer reference)
-- `.claude/commands/vibe-done.md` — Step 4b added (auto shadow run)
-- `CLAUDE.md` — `/vibe-doc-sync` added to slash commands table
-- `docs/CHANGELOG.md` — 2026-04-30 entry
-- `docs/decisions.md` — ADR-005 added; ADR-003 marked "Superseded by ADR-005"
-- `docs/progress.md` — "Doc-Sync System" replaced by "Continuous Doc Maintainer (🟢 Complete)"
-- `docs/architecture/INDEX.md` — plan entry under Aktif Planlar
-- `.gitignore` — `.vibecode/state/` excluded (idempotency cache, local-only)
+## Changes This Session
+- `.vibecode/scripts/deepseek-debate.js` + `tests/` — madde bazlı Claude ↔ DeepSeek tartışması (`consult-provider.sh` yerine), ADR-010
+- `.claude/commands/vibe-plan.md` — Step 0.7 keşif + Understanding Lock ("sadece fikir" → `Status: concept`), Step 1e DeepSeek tartışması (Opus planlayıcı yürütür)
+- `.vibecode/standards/delegation.md` (yeni) — model routing + sözleşme-spec + 2 deneme kuralı tek kaynak (ADR-008/009)
+- `.claude/agents/mechanic.md` (yeni, Haiku) — mekanik işler
+- `.claude/hooks/*` — güvenli fresh-clone (marker), otomatik kurulum yok, tek node süreci/düzenleme, `$CLAUDE_PROJECT_DIR` yolları
+- 12 skill silindi/birleşti, `scaffold.sh`/`statusline.sh`/`/vibe-goal` kaldırıldı; README, ADR'ler, CHANGELOG güncel
+- Ayrıntı: `docs/CHANGELOG.md` (2026-09-25 girdileri), `docs/decisions.md` ADR-008…010
 
 ## Tests
-- No executable code changed — all changes are Markdown/JSON skill, command, and doc files
-- `make verify` not available (Makefile not present — project template, no backend/frontend scaffolded yet)
-- JSON schemas validated via `python3 json.load` — pass
-- Markdown frontmatter/headers validated — pass
-- Cross-reference integrity (CLAUDE.md, documentation.md, vibe-done.md, etc. all reference skill/command correctly) — pass
-- Bootstrap audit entry written to `docs/CHANGELOG_INTERNAL.md`
+- **Added:** `.vibecode/scripts/tests/deepseek-debate.test.js` (15 test, mock DeepSeek sunucusu — `node --test .vibecode/scripts/tests/`)
+- **Modified:** N/A
+- **All passing:** yes (gerçek API ile duman testi de yapıldı)
 
-## Open questions
-- **None blocking.** All 7 plan open-questions answered with user-confirmed defaults (see `docs/architecture/continuous-doc-maintainer-plan.md` §Confirmed Decisions).
-- **Future work (deferred, out of scope):**
-  1. `pre-tool-use.js` blocking secret scan — separate plan (`pre-tool-use-secret-scan-plan.md`)
-  2. Mintlify migration (`.mdx` + `mint.json`) — separate plan if needed
-  3. Multi-agent doc lockfile (`.vibecode/.doc-locks/`) — when paralel subagent doc writes appear
-  4. Skill runtime executor — current spec is declarative; needs an interpreter or LLM execution to actually run the 13 steps. First real run will materialize when there's actual code in `backend/`/`frontend/`.
+## Open Questions
+- **Plugin hook'ları exit 2 ile engelleyebiliyor mu?** Doküman kontrolü "hayır" dedi ama genel hook davranışıyla çelişiyor — doğrulanmalı. Engelleyemiyorsa `permission-policy.js` (rm -rf / sudo engeli) plugin'de değil projede kalmalı.
+- Plugin'de **CLAUDE.md** ve **`.claude/rules`** desteklenmiyor (skill'e çevrilmeli) ve **izinler** plugin'den verilemiyor (projede/kullanıcı ayarında kalmalı) — bunun `/vibecode:init` tasarımına etkisi.
+- Komut adları `/vibecode:vibe-plan` biçimine dönüşüyor (önek zorunlu) — kısaltma istenir mi (ör. `/vibecode:plan`)?
+- Otomatik güncelleme kendi marketplace'lerde varsayılan kapalı — açık mı gelsin?
 
-## Next steps
-1. **Trigger first real run** when project gets scaffolded (`/vibe-go` for backend/frontend setup) → `/vibe-doc-sync --tier full` after first API endpoint added
-2. **Quarterly archive policy** for `CHANGELOG_INTERNAL.md` — defer until file grows past ~500 entries
-3. **Optional:** schedule a one-time agent in 2 weeks to verify the skill ran cleanly in the first real `/vibe-done` cycle and adjust spec if friction found
+## Next Steps
+- [ ] Plugin denemesi (spike) — geçici `CLAUDE_CONFIG_DIR` ile (kullanıcının `~/.claude`'una iz bırakmadan), yerel git marketplace'ten; GitHub'a push yok. Doğrula: (1) GitHub/marketplace kurulumu, iki adımlı + tek adımlı; (2) plugin hook exit 2 engellemesi; (3) komut metninde `${CLAUDE_PLUGIN_ROOT}` yolu
+- [ ] Sonuca göre yazılı plugin tasarımı (neyin plugin'e, neyin projeye; `/vibecode:init`; geçiş yolu) → kullanıcı onayı → uygulama
+- [ ] **vibeplan reposuna dokunma** (kullanıcı kararı, 2026-09-25); yanıtlar Türkçe
 
-## Active skills
-- `vibe-plan` — used to author the architecture plan
-- `vibe-done` — current session wrap-up
-- `continuous-doc-maintainer` — newly added (declarative spec, not yet runtime-executed)
-
-## Session note
-- MCP servers (Serena + Context7) were unavailable this session — deferred-tool list did not include their schemas. Plan + implementation completed via Read/Grep/Edit. Recommend session restart before next code-heavy task to restore Serena.
+## Active Skills
+- superpowers:brainstorming (plugin tasarımı mimari iş — spike → yazılı tasarım → onay)
