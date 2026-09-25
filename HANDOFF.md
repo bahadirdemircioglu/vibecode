@@ -22,7 +22,7 @@
   - Mevcut klon-tabanlı projeler için geçiş yolu yazılı
 - **Journal** (newest last, max ~10 lines — trim oldest):
   - 2026-09-25 — Denetim temizliği (ADR-009), sözleşme-spec + Haiku `mechanic` (ADR-008), vibeplan akışı taşındı: keşif + Understanding Lock + madde bazlı DeepSeek tartışması (ADR-010). README güncel. Tüm dallar silindi, yalnızca `main`.
-  - 2026-09-25 — Plugin fikri konuşuldu; dokümantasyon kontrol edildi (bulgular aşağıda). Deneme (spike) henüz başlamadı — kullanıcı onayı bekleniyor.
+  - 2026-09-25 — Plugin fikri konuşuldu; dokümantasyon kontrol edildi (bulgular aşağıda). Deneme (spike) henüz başlamadı. Ek istek: hafıza proje içinde, git'te tutulsun.
 
 ## Changes This Session
 - `.vibecode/scripts/deepseek-debate.js` + `tests/` — madde bazlı Claude ↔ DeepSeek tartışması (`consult-provider.sh` yerine), ADR-010
@@ -47,6 +47,7 @@
 ## Next Steps
 - [ ] Plugin denemesi (spike) — geçici `CLAUDE_CONFIG_DIR` ile (kullanıcının `~/.claude`'una iz bırakmadan), yerel git marketplace'ten; GitHub'a push yok. Doğrula: (1) GitHub/marketplace kurulumu, iki adımlı + tek adımlı; (2) plugin hook exit 2 engellemesi; (3) komut metninde `${CLAUDE_PLUGIN_ROOT}` yolu
 - [ ] Sonuca göre yazılı plugin tasarımı (neyin plugin'e, neyin projeye; `/vibecode:init`; geçiş yolu) → kullanıcı onayı → uygulama
+- [ ] **Proje içi hafıza** (kullanıcı isteği): kullanıcı sunucuyu silip kodu yeniden kurabiliyor; `~/.claude/projects/.../memory` sunucuyla birlikte gidiyor. Hafıza projede, git'te tutulmalı (ör. `.vibecode/memory/` veya `docs/memory/`, CLAUDE.md'den okunan kısa bir indeks). Plugin tasarımında "projede kalanlar" arasına girer. Önce Claude Code'un auto-memory konumunun ayarlanabilir olup olmadığını dokümandan doğrula
 - [ ] **vibeplan reposuna dokunma** (kullanıcı kararı, 2026-09-25); yanıtlar Türkçe
 
 ## Active Skills
