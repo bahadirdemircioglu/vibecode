@@ -1,12 +1,16 @@
 ---
-description: "Create an architecture plan for a new feature or project"
+description: "Idea → discovery → Understanding Lock → Opus architecture plan → DeepSeek debate → approval"
 ---
 
 ## Feature: $ARGUMENTS
 
-Create a detailed architecture plan. Do NOT write any code until the plan is approved.
+From a rough idea to an approved architecture plan. Do NOT write any code until the plan is approved.
 
-> **Model:** Planlama muhakemesi **Opus** üzerinde koşar. Bu oturum (ana oturum) hangi modelde olursa olsun yalnızca **orkestrasyon** yapar: MCP kurulumu, Serena planning-mode, harici AI danışma turu (Step 1.5), sunum ve onay kapısı. Asıl araştırma + plan yazımı bir **Opus subagent'ına** dispatch edilir: `Agent(subagent_type: "general-purpose", model: "opus")` — bu tipin `Write` + Serena/Context7 erişimi vardır (`architect` tipinde Write yok, bu yüzden kullanılmaz). Sonnet'e delege ETME. Routing kuralları: `.vibecode/standards/delegation.md`.
+**Arguments:** `<feature-slug> [idea text] [--no-debate]` (`--no-consult` is an alias). Derive a
+kebab-case slug from the idea if only a description was given, and confirm it. `--no-debate` skips
+the DeepSeek debate (sensitive plans — the plan text leaves the machine).
+
+> **Model:** Planlama muhakemesi **Opus** üzerinde koşar. Bu oturum (ana oturum) hangi modelde olursa olsun yalnızca **orkestrasyon** yapar: MCP kurulumu, Serena planning-mode, keşif soruları + Understanding Lock (Step 0.7), sunum ve onay kapısı. Asıl araştırma + plan yazımı bir **Opus subagent'ına** dispatch edilir: `Agent(subagent_type: "general-purpose", model: "opus")` — bu tipin `Write` + Serena/Context7 erişimi vardır (`architect` tipinde Write yok, bu yüzden kullanılmaz). Sonnet'e delege ETME. Routing kuralları: `.vibecode/standards/delegation.md`.
 
 ### 0. MCP Setup & Check
 Ensure MCP servers are configured and running before any work begins:
@@ -30,12 +34,35 @@ Switch Serena to read-only planning mode to prevent accidental file writes durin
 - This disables all write tools in Serena — only read/search/analysis tools remain active. The planning subagent shares this Serena connection, so it also inherits read-only mode.
 - Nothing switches it back automatically — Step 3 calls `switch_modes(["editing", "interactive"])` after the approval gate.
 
+### 0.7 Discovery + Understanding Lock (ana oturum — HARD GATE)
+Skip questions already answered in the arguments or in an existing `docs/architecture/<slug>-plan.md`
+with `**Status:** concept` (then go straight to Step 1 with that file as input).
+
+Ask **ONE question per message**, prefer multiple-choice; if the user is unsure, propose a default and
+mark it as an **assumption**:
+1. **Problem & users** — what problem, for whom, what if it's never built?
+2. **Scope** — smallest valuable version, explicit non-goals, hard constraints (deadline, team, regulatory)
+3. **Technical** — the stack is fixed (`docs/constraints/`, `.vibecode/standards/`): don't ask for a
+   preference. Ask: integrations, scale (users / data / traffic), anything the stack can't cover
+
+Then present the **Understanding Lock**: summary (5-7 bullets: what, why, for whom, key constraints,
+non-goals, success criteria), **assumptions**, **open questions**, and ask:
+
+> "Bu anlayış doğru mu? **(1)** düzelt · **(2)** onayla ve planla · **(3)** onayla ama şimdilik sadece fikir olarak kaydet"
+
+- **(1)** → correct and repeat the Lock
+- **(3)** → write `docs/architecture/<slug>-plan.md` with only *Overview & Goals*, *Non-Goals*,
+  *Assumptions*, *Decision Log*, *Open Questions* and `**Status:** concept`; add it to INDEX.md with
+  `(concept)`. STOP. A later `/vibe-plan <slug>` resumes at Step 1.
+- **(2)** → Step 1. **DO NOT proceed without explicit confirmation.**
+
 ### 1. Dispatch Opus Planning Subagent
 Steps 1a–1d (standart yükleme, araştırma, plan yazımı, INDEX güncelleme) **tek bir Opus subagent'ında** koşar. Ana oturum bu subagent'ı `Agent(subagent_type: "general-purpose", model: "opus", run_in_background: false)` ile **senkron** çağırır (onay kapısından önce plan dosyası hazır olmalı).
 
-Subagent'a verilecek görev tanımı (aynen ilet):
+Subagent'a verilecek görev tanımı (aynen ilet; `<LOCK>` = onaylanan Understanding Lock metni):
 
-> **Görev:** `$ARGUMENTS` için mimari plan yaz. Model: Opus. KOD YAZMA — sadece plan dosyası.
+> **Görev:** `<slug>` için mimari plan yaz. Model: Opus. KOD YAZMA — sadece plan dosyası.
+> **Onaylı anlayış (bağlayıcı):** <LOCK>
 >
 > **1a. Standartları yükle**
 > - Read `.vibecode/standards/architecture.md` (§1.1 plan şablonu dahil)
@@ -49,68 +76,43 @@ Subagent'a verilecek görev tanımı (aynen ilet):
 > - Üçüncü parti kütüphane kararları için Context7 kullan.
 > - Önceki kararlar: `grep -n '^## ADR\|\*\*Status:\*\*' docs/decisions.md` ile yalnızca ADR başlık/durumlarını al; sadece ilgili ADR'nin gövdesini targeted oku.
 >
-> **1c. Plan dosyasını yaz** — `docs/architecture/$ARGUMENTS-plan.md`, `.vibecode/standards/architecture.md` §1.1 şablonuyla (tek şablon; N/A bölümleri atla). Portlar kullanıcının ports dosyasından gelir (`ports.md` §1) — uydurma.
+> **1c. Plan dosyasını yaz** — `docs/architecture/<slug>-plan.md`, `.vibecode/standards/architecture.md` §1.1 şablonuyla (tek şablon; N/A bölümleri atla). Portlar kullanıcının ports dosyasından gelir (`ports.md` §1) — uydurma.
 >
 > **1d. INDEX'i güncelle** — `docs/architecture/INDEX.md` içinde "Aktif Planlar" altına tek satır ekle:
 > ```
-> - [$ARGUMENTS]($ARGUMENTS-plan.md) — bir cümlelik özet (~80 karakter)
+> - [<slug>](<slug>-plan.md) — bir cümlelik özet (~80 karakter)
 > ```
-> Bu plan önceki bir planı geçersiz kılıyorsa, o satırı "Superseded / Arşivlenmiş" bölümüne **taşı**: `superseded by [$ARGUMENTS]`.
+> Bu plan önceki bir planı geçersiz kılıyorsa, o satırı "Superseded / Arşivlenmiş" bölümüne **taşı**: `superseded by [<slug>]`.
 >
-> **DÖNÜŞ:** Yazdığın plan dosyasının yolunu + 3-5 maddelik özet + Open Questions listesini döndür.
+> **1e. DeepSeek tartışması** (görevde `--no-debate` yoksa) — sen eleştirilen tarafsın, planı yalnızca sen düzenlersin:
+> 1. `.vibecode/scripts/deepseek-debate.js critique docs/architecture/<slug>-plan.md --new` (sonraki turlarda `--new` yok).
+>    Exit 4 (`SKIPPED`: config kapalı / anahtar yok) veya exit 1 (API hatası — script zaten yeniden denedi) → tartışmayı
+>    bırak, dönüşte belirt. **Plan asla DeepSeek yüzünden bloklanmaz.** `NEXT: done` → adım 4.
+> 2. Her açık maddeye karar ver: **accept** → önce planı düzelt, sonra yaptığın değişikliği yaz; **reject** → somut
+>    gerekçe. DeepSeek yalnızca plan dosyasını görür: gerekçe onaylı anlayışa/keşfe dayanıyorsa önce bunu plana
+>    (Assumptions / Decision Log) yaz. Standartlar, `docs/constraints/` ve onaylı anlayış DeepSeek'ten önce gelir.
+>    Tartışmayı bitirmek için kabul etme, inat için reddetme.
+> 3. `.vibecode/scripts/deepseek-debate.js respond docs/architecture/<slug>-plan.md - <<'EOF'` +
+>    `[{"id":"D1","decision":"accept|reject","response":"..."}]` + `EOF` — her açık madde için bir kayıt.
+>    `NEXT: critique` → adım 1. `NEXT: done` → adım 4.
+> 4. Çıktı `decided-by-claude` maddeler listelediyse (tur limiti) her birini planın **Open Questions**'ına ekle:
+>    `- [ ] [DeepSeek Dx] <itiraz> — Planlayıcı kararı: <gerekçe>`.
 >
-> **YAPMA:** Kod yazma, uygulama yapma, test yazma, plan dosyası dışında dosya değiştirme, `ls docs/architecture/` çekme, onay kapısını atlama.
+> **DÖNÜŞ:** Plan dosyasının yolu + 3-5 maddelik özet + Open Questions + tartışma özeti (tur sayısı, agreed /
+> decided-by-claude sayıları, DeepSeek'in tetiklediği ana değişiklikler; ya da neden atlandığı).
+>
+> **YAPMA:** Kod yazma, uygulama yapma, test yazma, plan dosyası dışında dosya değiştirme (tartışma kayıtlarını
+> script yazar), `ls docs/architecture/` çekme, onay kapısını atlama.
 
 Subagent döndükten sonra ana oturum yalnızca dönen özeti tutar; plan dosyası Step 2'de bir kez okunur.
-
-### 1.5 Consultation — Harici AI Danışma Turu (OPSİYONEL, bounded)
-
-> Taslak plan hazır olduktan sonra, yapılandırılmışsa, plan harici bir AI sağlayıcısına
-> (v1: **DeepSeek**) eleştiri için gönderilir; makul öneriler entegre edilir. `max_rounds` config'ten
-> okunur (**default 1**). **Son söz her zaman Opus planlama subagent'ındadır** — DeepSeek yalnızca
-> danışman. `consult-provider.sh` çok-tur bilmez (her round tek istek/tek cevap). Mekanizma
-> **fail-open**: her hata/eksik yapılandırma normal akışa döner — güvenlik kapısı değil, opsiyonel
-> kalite adımı (bkz. `docs/guides/framework-security.md §2`). **Ana context'e ham eleştiri veya plan dosyası AKTARILMAZ** —
-> yalnızca subagent'ın döndürdüğü kısa özet.
-
-**0. Kaçış kapısı:** `$ARGUMENTS` içinde `--no-consult` varsa → bu adımı atla, Step 2. (Bayrağı Step 1'de
-   plan dosya adı/slug'ından da çıkar.)
-
-**1. Ön kontrol:** `.vibecode/config/ai-providers.json` yoksa → sessizce Step 2.
-
-**2. Round döngüsü** — `round = 1`, `max_rounds` = config değeri (default 1):
-
-   **a. Script'i çağır (Bash, round başına BİR kez), çıktıyı dosyaya yönlendir:**
-   ```
-   .vibecode/scripts/consult-provider.sh <plan-dosya-yolu> > "${TMPDIR:-/tmp}/vibe-consult-<slug>.md"                     # round 1
-   .vibecode/scripts/consult-provider.sh <plan-dosya-yolu> --exclude-appendix > "${TMPDIR:-/tmp}/vibe-consult-<slug>.md"  # round 2+
-   ```
-   (`--exclude-appendix`: DeepSeek'e kendi önceki turlarını geri besleme.)
-
-   **b. Sonucu yorumla (içeriği okumadan):**
-   - **exit 0 + boş dosya** → provider disabled / key yok → sessizce Step 2 (`round==1` ise tek satır:
-     "Danışma turu atlandı: provider yapılandırılmamış").
-   - **exit ≠ 0** → "Danışma turu round N'de durdu: <stderr>" → o ana kadarki entegrasyonlar korunur → Step 2.
-   - **exit 0 + dolu dosya** → tek satır: "Danışma turu round N: geri bildirim alındı." → adım c.
-
-   **c. Entegrasyon (senkron Opus subagent):** `Agent(subagent_type: "general-purpose", model: "opus", run_in_background: false)`:
-   > Round N. Plan dosyası: `<yol>`. Harici eleştiri: `<consult çıktı dosyası>` (ikisini de oku).
-   > (1) Makul/isabetli önerileri plana ENTEGRE et; katılmadıklarını uygulama. (2) Plan dosyasının
-   > SONUNA `## Appendix: External Review (DeepSeek)` yoksa oluştur; altına `### Round N`: eleştirinin
-   > kısa özeti + alınan/reddedilen öneriler (gerekçeli). (3) DÖNÜŞ: en fazla 5 maddelik özet
-   > (alınan/reddedilen) + son satırda `VERDICT: CONVERGED` veya `VERDICT: CONTINUE`. KOD YAZMA.
-
-   Ana oturum yalnızca bu özeti kullanıcıya gösterir.
-
-   **d. Döngü kontrolü:** `CONVERGED` veya `round == max_rounds` → Step 2. `CONTINUE` ve
-   `round < max_rounds` → `round++`, adım a.
+Tartışma kaydı: `docs/architecture/debates/<slug>.md` (script üretir — elle düzenlenmez).
 
 ### 2. Present Plan
-Plan dosyasını **bir kez** oku ve kullanıcıya göster (subagent özeti + dosya içeriği + varsa danışma özeti).
+Plan dosyasını **bir kez** oku ve kullanıcıya göster (subagent özeti + dosya içeriği + tartışma özeti).
 
 ### 3. Wait for Approval
 **STOP HERE.** Do NOT proceed without explicit user approval.
 
-Say: "Plan written to `docs/architecture/$ARGUMENTS-plan.md` (INDEX güncellendi, Opus ile yazıldı). Please review and approve before I begin implementation."
+Say: "Plan written to `docs/architecture/<slug>-plan.md` (INDEX güncellendi, Opus ile yazıldı). Please review and approve before I begin implementation."
 
 **Onay (veya planlamanın iptali) sonrası:** Serena'yı düzenleme moduna geri al — `switch_modes` with `["editing", "interactive"]`. Uygulama `/vibe-go` veya `/vibe-sdd` ile başlar.

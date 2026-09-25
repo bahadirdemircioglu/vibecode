@@ -182,6 +182,7 @@ if is_fresh_clone; then
   TPL="$PROJECT_ROOT/.vibecode/templates"
   # docs/architecture/ holds vibecode's own meta-plans — a new project starts clean.
   find "$PROJECT_ROOT/docs/architecture" -maxdepth 1 -name '*-plan.md' -type f -delete 2>/dev/null
+  find "$PROJECT_ROOT/docs/architecture/debates" -type f \( -name '*.json' -o -name '*.md' \) -delete 2>/dev/null
   [[ -f "$TPL/architecture-INDEX.md" ]] && cp "$TPL/architecture-INDEX.md" "$PROJECT_ROOT/docs/architecture/INDEX.md"
   # Framework-history docs → reset from minimal templates (don't inherit vibecode's history).
   for pair in "docs-decisions.md:docs/decisions.md" \

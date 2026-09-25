@@ -21,7 +21,7 @@ Vibecode, Claude Code ile yazılım geliştirirken karşılaşılan temel sorunl
 | Opus'ta rutin iş = pahalı | **Sonnet-first routing** — hook Opus tespit ederse `/model sonnet` önerir |
 | Plan discovery için `ls` token yiyor | **`docs/architecture/INDEX.md`** — tek otorite, targeted Read |
 | vibecode gelişince türetilmiş projen eski sürümde kalıyor | **`/vibe-update`** — framework dosyalarını upstream'den hash-tabanlı güvenli merge ile senkronize eder |
-| Plan tek modelin bakış açısıyla sınırlı | **Multi-AI consultation** — `/vibe-plan` planı DeepSeek'e danışıp tek turda eleştiri entegre eder (opt-in, kapalı gelir, max 1 round) |
+| Plan tek modelin bakış açısıyla sınırlı | **DeepSeek tartışması** — `/vibe-plan` planı DeepSeek'e eleştirtir, her itiraz madde madde uzlaşılana (en fazla 4 tur) kadar tartışılır |
 
 ---
 
@@ -60,91 +60,53 @@ Session-start hook otomatik olarak:
 
 ## Proje Yaşam Döngüsü
 
-### /vibe-plan — Mimariyi Tasarla
+### /vibe-plan — Fikirden Onaylı Mimariye
 
 ```
-/vibe-plan uygulama-adi
+/vibe-plan odeme-sistemi "kartla ve havaleyle ödeme alınsın"
+/vibe-plan odeme-sistemi --no-debate     # hassas plan: DeepSeek'e gönderme
 ```
 
-Planlama bir **Opus** subagent'ında koşar (`Agent(subagent_type: "general-purpose", model: "opus")`);
-ana oturum yalnızca orkestrasyon yapar. Routing kuralları: `.vibecode/standards/delegation.md`.
+1. **Keşif** (ana oturum) — tek tek sorular: problem ve kullanıcılar, kapsam ve kapsam dışı,
+   entegrasyonlar ve ölçek. Stack zorunlu olduğu için tercih sorulmaz
+2. **Understanding Lock** — 5-7 maddelik özet + varsayımlar + açık sorular. Seçenekler: düzelt ·
+   onayla ve planla · **sadece fikir olarak kaydet** (plan `Status: concept` olarak yazılır, sonra
+   aynı komut kaldığı yerden devam eder)
+3. **Plan** — bir **Opus** subagent'ı (`Agent(subagent_type: "general-purpose", model: "opus")`)
+   INDEX'i ve ilgili eski planları okur, `docs/architecture/<slug>-plan.md`'yi
+   `architecture.md §1.1` şablonuyla yazar, INDEX'e bir satır ekler
+4. **DeepSeek tartışması** — aynı Opus subagent'ı planı DeepSeek'e eleştirtir; her itirazı kabul
+   eder (planı düzeltir) veya gerekçeyle reddeder. Her maddede uzlaşılana ya da 4 tur dolana kadar
+   döner; çözülmeyen maddelerde planlayıcı karar verir ve madde plana "Open Questions" olarak düşer.
+   Plan başlığındaki `**Revision:**` her turda artar
+5. **Onay** — plan + tartışma özeti sunulur; onaydan sonra Serena düzenleme moduna geri alınır
 
-1. `docs/architecture/INDEX.md` okunur (tek otorite — `ls` çekilmez)
-2. İlgili eski planlar targeted Read edilir
-3. Yeni plan `docs/architecture/<slug>-plan.md` olarak `architecture.md §1.1` şablonuyla yazılır
-4. INDEX'e bir satır özet eklenir
-5. (Opsiyonel) Harici AI danışma turu — bkz. aşağıdaki bölüm
-6. Onay beklenir; onaydan sonra Serena düzenleme moduna geri alınır
+Ana oturum yalnızca orkestrasyon ve soruları yapar; routing kuralları: `.vibecode/standards/delegation.md`.
 
-### /vibe-plan — Harici AI Danışma (Multi-AI Consultation, DeepSeek)
+### DeepSeek Tartışması — Ayarlar
 
-`/vibe-plan` taslak planı yazdıktan sonra, **isteğe bağlı olarak** ikinci bir AI sağlayıcısına
-(şu an **DeepSeek**) danışabilir: plan eleştiri için gönderilir, makul öneriler entegre edilir.
-Varsayılan `max_rounds: 1` (tek tur; ADR-009) — ana context'e yalnızca kısa entegrasyon özeti gelir,
-ham eleştiri veya plan dosyası her turda aktarılmaz. **Son söz her zaman Opus planlama subagent'ında** kalır — DeepSeek yalnızca danışman. Varsayılan
-**kapalı**; açmadıkça `/vibe-plan` eskisi gibi tek modelle çalışır.
+- **Motor:** `.vibecode/scripts/deepseek-debate.js` (`critique` / `respond` / `status <plan-file>`),
+  bağımlılıksız Node. Madde bazlı kayıt: `docs/architecture/debates/<slug>.json` + okunur özet
+  `<slug>.md` (script üretir, elle düzenlenmez). Testler: `node --test .vibecode/scripts/tests/`
+- **Durumlar:** `open` → Claude kabul ederse `resolved` → DeepSeek onaylarsa `agreed` (yetersizse
+  yeniden açar); reddedilen madde DeepSeek geri çekene kadar `open`; tur limitinde `decided-by-claude`
+- **Yakınsama:** 1. turda en fazla 8, sonraki turlarda en fazla 3 yeni itiraz; 3. turdan itibaren
+  yalnızca `high` önemde
+- **Config:** `.vibecode/config/ai-providers.json` — `enabled: true`, `max_rounds: 4`,
+  `model: deepseek-v4-pro` (ucuz: `deepseek-flash`), `timeout_seconds: 300`, `max_tokens: 32000`.
+  Bir projede kapatmak için `enabled: false`
+- **API key** — projenin `.env`'ine **koyma** (vibecode başka projenin içinde çalışır; kök `.env`
+  uygulamanındır). Script şu sırayla arar: `DEEPSEEK_API_KEY` ortam değişkeni → `$VIBECODE_ENV_FILE`
+  → `.vibecode/providers.env` (gitignore'da) → **`~/.config/vibe/providers.env` (önerilen, vibeplan
+  ile ortak)** → `~/.config/vibecode/providers.env` (eski yol)
 
-**Nasıl açılır (opt-in — iki adım):**
-
-1. `.vibecode/config/ai-providers.json` içinde `enabled`'ı `true` yap:
-
-   ```json
-   {
-     "active_provider": "deepseek",
-     "max_rounds": 1,
-     "providers": {
-       "deepseek": {
-         "enabled": true,              // ← false → true
-         "request_shape": "openai-compatible",
-         "base_url": "https://api.deepseek.com",
-         "model": "deepseek-v4-pro",   // geçerli model'ler: deepseek-v4-pro | deepseek-v4-flash
-         "api_key_env": "DEEPSEEK_API_KEY",
-         "timeout_seconds": 120,
-         "max_tokens": 8192            // reasoning modelleri önce reasoning'e token harcar → yüksek tut
-       }
-     }
-   }
-   ```
-
-2. API key'i ver — **projenin `.env`'ine KOYMA.** vibecode başka bir projenin içinde
-   katman olarak çalıştığı için kök `.env` senin uygulamanın env'idir; framework key'i
-   oraya karışmamalı. Aşağıdakilerden **birini** seç (script bu sırayla arar):
-
-   ```bash
-   # (a) Shell rc'de export et — makine geneli, dosya gerekmez:
-   echo 'export DEEPSEEK_API_KEY=sk-...' >> ~/.zshrc && source ~/.zshrc
-
-   # (b) ÖNERİLEN — makine geneli dosya (bir kez ayarla, tüm projelerde çalışır,
-   #     hiçbir repo'ya karışmaz):
-   mkdir -p ~/.config/vibe
-   cp .vibecode/providers.env.example ~/.config/vibe/providers.env
-   # → ~/.config/vibe/providers.env dosyasını düzenle, DEEPSEEK_API_KEY gir
-   #   (vibecode + vibeplan ortak key dosyası — ADR-009)
-
-   # (c) Proje-yerel override (gitignore'da) — yalnızca bu yolun host projede
-   #     gitignore'landığından eminsen:
-   cp .vibecode/providers.env.example .vibecode/providers.env
-   ```
-
-   Key adı, config'teki `api_key_env` ile aynı olmalı (`DEEPSEEK_API_KEY`).
-   (key: https://platform.deepseek.com/api_keys)
-
-**Kullanım:**
-
-```
-/vibe-plan odeme-sistemi                # enabled ise otomatik danışır
-/vibe-plan odeme-sistemi --no-consult   # bu planda danışmayı atla (hassas plan)
-```
-
-**Nasıl çalışır:**
-- Her turda tek satır bildirim: *"Danışma turu round N: plan DeepSeek'e gönderildi, geri bildirim alındı."*
-- DeepSeek eleştirisinin özeti + hangi önerilerin alındığı/reddedildiği, plan dosyasının sonuna
-  `## Appendix: External Review (DeepSeek)` bölümü olarak tur-tur eklenir (şeffaflık).
-- Config yok / key yok / hata / timeout → **sessizce** normal tek-modelli akışa döner (fail-open —
-  danışma bir kalite adımıdır, planı asla bloklamaz).
-
-**Gizlilik:** Plan içeriği DeepSeek API'sine gider. Hassas planlar için `enabled: false` bırak veya
-`--no-consult` kullan. API key asla loglanmaz/plana yazılmaz. Detay: `docs/guides/framework-security.md §2`.
+  ```bash
+  mkdir -p ~/.config/vibe
+  cp .vibecode/providers.env.example ~/.config/vibe/providers.env   # DEEPSEEK_API_KEY=... gir
+  ```
+- **Hata olursa** (anahtar yok, config kapalı, API hatası) tartışma atlanır, plan yine onaya gelir
+- **Gizlilik:** plan metni DeepSeek sunucularına gider — hassas planlarda `--no-debate`. Anahtar asla
+  loglanmaz ve plana/kayda yazılmaz. Detay: `docs/guides/framework-security.md §2`
 
 **Başka provider eklemek:** Config, OpenAI-uyumlu chat-completions şekline (`request_shape:
 "openai-compatible"`) uyan her sağlayıcıyı destekler — `providers`'a yeni bir giriş + `.env`'e key
@@ -493,12 +455,12 @@ vibecode/
 ├── .vibecode/
 │   ├── standards/               ← Kodlama standartları (11 dosya, on-demand yüklenir; delegation.md = model routing)
 │   ├── skills/                  ← 110+ AI skill
-│   ├── config/                  ← ai-providers.json (harici AI provider registry — /vibe-plan danışma)
+│   ├── config/                  ← ai-providers.json (harici AI provider registry — /vibe-plan tartışması)
 │   ├── scripts/                 ← Yardımcı shell scriptler
 │   │   ├── task-brief           ← SDD: plan'dan görev özeti çıkarır
 │   │   ├── review-package       ← SDD: diff paketi oluşturur
 │   │   ├── sdd-workspace        ← SDD: çalışma alanı + progress ledger başlatır
-│   │   ├── consult-provider.sh  ← /vibe-plan: harici AI danışma (DeepSeek)
+│   │   ├── deepseek-debate.js   ← /vibe-plan: Claude ↔ DeepSeek madde bazlı tartışma (+ tests/)
 │   │   ├── db-backup.sh
 │   │   └── db-restore.sh
 │   ├── prompts/                 ← Subagent prompt şablonları

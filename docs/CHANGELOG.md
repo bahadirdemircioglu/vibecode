@@ -5,6 +5,18 @@
 
 ---
 
+## [2026-09-25] — vibeplan akışı taşındı: keşif + Understanding Lock, madde bazlı DeepSeek tartışması (ADR-010)
+
+### Changes
+- **What:** `/vibe-plan` artık fikirden başlar: Step 0.7 keşif soruları + Understanding Lock (düzelt / onayla /
+  "sadece fikir olarak kaydet" → `Status: concept`). Opus planlayıcı planı yazdıktan sonra Step 1e'de DeepSeek
+  ile madde bazlı tartışır (en fazla 4 tur, yakınsama sınırları, çözülmeyenler Open Questions'a). Yeni
+  `.vibecode/scripts/deepseek-debate.js` + `tests/` (15 test, mock sunucu); `consult-provider.sh` kaldırıldı.
+  Plan şablonuna Status / Revision / Non-Goals / Assumptions / Decision Log. Config: `enabled: true`,
+  `max_rounds: 4`. Hook komutları `$CLAUDE_PROJECT_DIR` ile mutlak yol. Fresh-clone tartışma kayıtlarını da temizler.
+- **Why:** Kullanıcı, vibeplan'da bu oturumda geliştirilen her şeyin vibecode'da da olmasını istedi.
+- **Source:** Kullanıcı isteği; vibeplan ADR-002 / ADR-004 karşılığı.
+
 ## [2026-09-25] — Denetim temizliği (ADR-009)
 
 ### Changes

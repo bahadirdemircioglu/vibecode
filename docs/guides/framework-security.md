@@ -55,13 +55,14 @@ Second layer for network and filesystem reach. Wiring: settings.json registers O
 
 ---
 
-## 2. External AI Consultation — Secret Hygiene (`/vibe-plan` Step 1.5)
+## 2. External AI Debate — Secret Hygiene (`/vibe-plan` Step 1e)
 
 > **When to read:** Before touching `.vibecode/config/ai-providers.json`,
-> `.vibecode/scripts/consult-provider.sh`, the framework provider secret, or `/vibe-plan` Step 1.5.
+> `.vibecode/scripts/deepseek-debate.js`, the framework provider secret, or `/vibe-plan` Step 1e.
 
-`/vibe-plan` can optionally send a draft plan to an external provider (v1: DeepSeek) for a critique
-round (see ADR-007, `docs/architecture/multi-ai-plan-consultation-plan.md`). Unlike §1's hooks, this
+`/vibe-plan` sends the draft plan to an external provider (v1: DeepSeek) and debates it item by item
+until every objection is settled or the round limit is hit (ADR-010, which replaced ADR-007's single
+consultation round). Unlike §1's hooks, this
 step is **fail-open** by design — it is a quality bonus, not a security gate, so any error or missing
 config silently falls back to the normal single-model flow.
 
@@ -84,31 +85,32 @@ config silently falls back to the normal single-model flow.
   Only `.vibecode/providers.env.example` (placeholder) is tracked.
 
 ### 2.2 Key handling rules
-- `consult-provider.sh` first checks the env var named by `api_key_env`; if unset it extracts **only
-  that one line** from the first secret file found (order above) — **no `source`/`eval`**, so the file
-  is never executed. The project's own `.env` is **never** read.
-- The key travels **only** in the `curl` `Authorization: Bearer` header, which is piped to curl on
-  **stdin** (`-H @-`) — never in argv, so it is not visible in `ps` / `/proc/<pid>/cmdline`. It is
-  **never** printed to stdout/stderr, never logged, never interpolated into the plan or the critique.
-- `curl -sS` (no verbose/echo); on error the script surfaces HTTP status + provider error *message*,
-  **never** request headers.
+- `deepseek-debate.js` first checks the env var named by `api_key_env`; if unset it extracts **only
+  that one line** from the first secret file found (order above) with a regex — the file is never
+  executed. The project's own `.env` is **never** read.
+- The key travels **only** in the in-process `fetch` `Authorization: Bearer` header — never in argv,
+  so it is not visible in `ps` / `/proc/<pid>/cmdline`. It is **never** printed, logged, or written to
+  the plan or the debate ledger (`docs/architecture/debates/`).
+- On error the script surfaces HTTP status + the first 300 characters of the provider's response
+  body, **never** request headers.
 - **Why this doesn't circumvent the §1.1 `.env` deny-list:** that deny-list stops *Claude's own*
   Read/`cat` tool calls from pulling secrets into the model's context. The script reads its own
   secret file inside a subprocess and emits only the critique text — the key never reaches the model.
-  Running the script via Bash (`consult-provider.sh <plan>`) puts no secret path in the command
+  Running the script via Bash (`deepseek-debate.js critique <plan>`) puts no secret path in the command
   string, so the deny-list is neither triggered nor bypassed.
 
 ### 2.3 Privacy & opt-in
-- **Opt-in = configuring it.** No external call happens unless a maintainer sets
-  `enabled: true` **and** provides a key. The shipped default is `enabled: false`.
-- **Rounds:** `max_rounds` defaults to **1** (one critique pass). Reasoning models spend
-  `max_tokens` on reasoning first, so the config ships `max_tokens: 32000`, `timeout_seconds: 300`.
-- **Transparency:** every round prints a one-line notice ("plan DeepSeek'e gönderildi") so plan
-  content is never sent to a third party without a visible trace.
-- **Escape hatch:** `/vibe-plan <feature> --no-consult` skips consultation for one call (sensitive
-  plans) without editing config.
+- **On when a key exists.** The shipped config has `enabled: true`; nothing is sent unless a key is
+  also found (order above). Set `enabled: false` to switch it off for a whole project.
+- **Rounds:** `max_rounds` defaults to **4**; convergence caps (≤ 8 new objections in round 1, ≤ 3
+  later, only `high` from round 3) keep it bounded. Reasoning models spend `max_tokens` on reasoning
+  first, so the config ships `max_tokens: 32000`, `timeout_seconds: 300`.
+- **Transparency:** every round prints a header line and token usage, and the full exchange is kept
+  in `docs/architecture/debates/<slug>.md`.
+- **Escape hatch:** `/vibe-plan <feature> --no-debate` (alias `--no-consult`) skips the debate for one
+  call (sensitive plans) without editing config.
 - **Third-party retention:** plan content (architecture, possibly business context) leaves your
   machine. The provider's data-retention/training policy is out of scope (their ToS) — for
-  confidential plans, keep `enabled: false` or use `--no-consult`.
-- **Timeout is mandatory:** `curl --max-time` (config `timeout_seconds`) so a slow provider never
-  blocks `/vibe-plan` indefinitely.
+  confidential plans, set `enabled: false` or use `--no-debate`.
+- **Timeout is mandatory:** each request aborts after `timeout_seconds` (2 retries on network / 429 /
+  5xx), so a slow provider never blocks `/vibe-plan` indefinitely.

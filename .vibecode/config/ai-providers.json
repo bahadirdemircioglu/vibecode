@@ -1,9 +1,9 @@
 {
   "active_provider": "deepseek",
-  "max_rounds": 1,
+  "max_rounds": 4,
   "providers": {
     "deepseek": {
-      "enabled": false,
+      "enabled": true,
       "request_shape": "openai-compatible",
       "base_url": "https://api.deepseek.com",
       "chat_path": "/chat/completions",

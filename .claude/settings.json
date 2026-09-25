@@ -20,7 +20,7 @@
       "Bash(docker compose exec * pytest*)",
       "Bash(docker compose exec * npm test*)",
       "Bash(docker compose exec * ruff*)",
-      "Bash(.vibecode/scripts/consult-provider.sh*)"
+      "Bash(.vibecode/scripts/deepseek-debate.js*)"
     ],
     "deny": [
       "Bash(rm -rf *)",
@@ -49,7 +49,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": ".claude/hooks/pre-tool-use.js",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/pre-tool-use.js",
             "description": "Single process per write/fetch: net-fs-guard (SSRF + system-path & symlink-escape containment, fail-closed; VIBE_ALLOW_PRIVATE_FETCH=1 allows local fetch) + advisory skill hint once per path per session"
           }
         ]
@@ -59,7 +59,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": ".claude/hooks/permission-policy.js",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/permission-policy.js",
             "description": "Risk-tier permission gate for Bash: hard-blocks destructive commands (rm -rf in any flag order, force push, curl|bash, fork bombs), warns on standard-risk ops. VIBE_YOLO=1 downgrades blocks."
           }
         ]
@@ -70,7 +70,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": ".claude/hooks/notification.js",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/notification.js",
             "description": "Per-turn context monitor — warns at ~60K/80K token thresholds (per session)"
           }
         ]
@@ -81,7 +81,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": ".claude/hooks/session-start.sh",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/session-start.sh",
             "description": "Show session state and detect project gaps on startup"
           }
         ]

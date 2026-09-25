@@ -10,7 +10,6 @@
 - [security-review-skill](security-review-skill-plan.md) — `/vibe-security-review` slash command + OWASP Top 10 skill entegrasyonu.
 - [serena-auto-activation](serena-auto-activation-plan.md) — `.mcp.json` `--project-from-cwd` + `.serena/project.yml` otomatik dil tespiti.
 - [serena-optimization](serena-optimization-plan.md) — Serena onboarding + symbol-level navigation + permission auto-grant.
-- [multi-ai-plan-consultation](multi-ai-plan-consultation-plan.md) — vibe-plan'e harici AI (DeepSeek) danışma turu + provider/apikey config (ADR-009: max 1 round, planlama Opus'ta)
 
 ## Uygulandı
 
@@ -20,6 +19,7 @@
 
 ## Superseded / Arşivlenmiş
 
+- [multi-ai-plan-consultation](multi-ai-plan-consultation-plan.md) — tek turluk DeepSeek danışması + provider/apikey config. **superseded by** madde bazlı DeepSeek tartışması (`.vibecode/scripts/deepseek-debate.js`, ADR-010); provider config ve anahtar çözümü aynen kaldı
 - [model-routing-sonnet-first](model-routing-sonnet-first-plan.md) — Default Sonnet, Opus eskalasyon. **superseded by** `.vibecode/standards/delegation.md` (ADR-008, ADR-009)
 - [opus-sonnet-delegation](opus-sonnet-delegation-plan.md) — Opus mikro-spec → Sonnet write → Opus review. **superseded by** `.vibecode/standards/delegation.md` (sözleşme-spec, ADR-008)
 - [vibe-manager-integration](vibe-manager-integration-plan.md) — vibe-manager skill + `/vibe-init` wrapper (hiç uygulanmadı). **superseded by** `/vibe-plan` → `/vibe-sdd` akışı (ADR-009)

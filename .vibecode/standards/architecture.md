@@ -35,8 +35,14 @@ Skip sections that are N/A (write "N/A" only for Data Storage / Security / Monit
 ```markdown
 # Architecture Plan: [name]
 
+**Status:** concept / draft / approved
+**Revision:** 0  <!-- bumped by .vibecode/scripts/deepseek-debate.js each debate round -->
+
 ## Overview & Goals
-[What this feature does and why it's needed]
+[What this feature does, for whom, and why it's needed — from the Understanding Lock]
+
+## Non-Goals
+[Explicitly out of scope]
 
 ## Directory Structure Changes
 [New directories, files to create or modify]
@@ -66,8 +72,15 @@ Skip sections that are N/A (write "N/A" only for Data Storage / Security / Monit
 ## Migration Plan
 [Steps to implement without breaking existing functionality]
 
+## Assumptions
+[From the Understanding Lock — how/when each gets validated]
+
+## Decision Log
+| Decision | Alternatives | Rationale |
+|----------|-------------|-----------|
+
 ## Open Questions
-[Decisions that need user input before proceeding]
+[Decisions that need user input before proceeding; unresolved DeepSeek items as `[DeepSeek Dx]`]
 ```
 
 ---

@@ -634,3 +634,53 @@ komut yüzeyi, kazancı yok.
   `.claude/agents/{architect,engineer,refactor-planner}.md`, `.vibecode/standards/{architecture,delegation,documentation}.md`,
   `.vibecode/prompts/sdd-implementer.md`, `agent-dispatch` + `handoff-protocol` skill'leri,
   `.vibecode/templates/HANDOFF.md`, `docs/architecture/INDEX.md`, `docs/guides/`.
+
+---
+
+## ADR-010: vibeplan Akışının vibecode'a Taşınması — Keşif + Understanding Lock, Madde Bazlı DeepSeek Tartışması
+**Date:** 2026-09-25 | **Status:** Accepted
+
+### Context
+
+Kardeş planlama reposu vibeplan'da `/vibe-plan` iki özellik kazandı: (1) fikirden başlayan keşif
+soruları + Understanding Lock (onayla / düzelt / "sadece fikir olarak kaydet"), (2) planı DeepSeek'e
+eleştirten ve her itiraz maddesinde uzlaşılana kadar dönen madde bazlı tartışma döngüsü. Kullanıcı bu
+oturumda konuşulan her şeyin vibecode'da da olmasını istedi. vibecode'un `/vibe-plan`'ı ise keşif
+yapmadan doğrudan plana geçiyor ve DeepSeek'i yalnızca tek turluk, madde takibi olmayan bir danışman
+olarak kullanıyordu (ADR-007, varsayılan kapalı).
+
+### Decision
+
+1. **Step 0.7 — Keşif + Understanding Lock** ana oturumda: tek tek sorular (problem/kullanıcılar,
+   kapsam/kapsam dışı, entegrasyon/ölçek; stack tercihi sorulmaz), sonra onay kapısı. "Sadece fikir"
+   seçeneği planı `**Status:** concept` ile yazar; sonraki `/vibe-plan <slug>` kaldığı yerden devam eder.
+   Onaylı Lock metni Opus planlayıcıya bağlayıcı girdi olarak verilir.
+2. **Madde bazlı tartışma** — `.vibecode/scripts/deepseek-debate.js` (vibeplan'daki
+   `deepseek-critique.js`'in uyarlaması; bağımlılıksız Node, testli). Opus planlama subagent'ı planı
+   yazdıktan sonra aynı bağlamda döngüyü yürütür (Step 1e): DeepSeek itiraz eder, planlayıcı her maddeyi
+   kabul edip planı düzeltir ya da gerekçeyle reddeder; `open → resolved → agreed`, `reopen`,
+   tur limitinde `decided-by-claude` (plana Open Question olarak düşer). Yakınsama: tur 1 ≤ 8, sonra
+   ≤ 3 yeni itiraz, tur 3+ yalnızca `high`. Kayıt `docs/architecture/debates/<slug>.{json,md}`,
+   plan başlığında `**Revision:** N`. `consult-provider.sh` kaldırıldı.
+3. **Config ve anahtar aynen** — `.vibecode/config/ai-providers.json` (sağlayıcı, model, zaman aşımı,
+   `max_tokens`) ve anahtar çözüm sırası (env → `$VIBECODE_ENV_FILE` → `.vibecode/providers.env` →
+   `~/.config/vibe/providers.env` → eski yol). Değişen: `enabled: true` (anahtar yoksa zaten atlanır),
+   `max_rounds: 4` (ADR-009'daki 1 turluk sınır yerine — madde bazlı tartışma tek turda anlamsız).
+   Bayrak: `--no-debate` (`--no-consult` takma adı).
+4. Plan şablonu (`architecture.md §1.1`): `**Status:**`, `**Revision:**`, *Non-Goals*, *Assumptions*,
+   *Decision Log* eklendi.
+5. Hook komutları `"$CLAUDE_PROJECT_DIR"/.claude/hooks/...` ile mutlak — çalışma dizini değişince kırılmaz.
+
+**Alternatifler:** (a) Tek turluk danışmayı korumak — kullanıcının istediği "her konuda karar kılana kadar"
+davranışını sağlamıyor. (b) Tartışmayı ana oturumda (Sonnet) yürütmek — planlama kararları Opus'ta
+(ADR-009); itirazlara cevap planlama işidir. (c) Keşfi Opus subagent'ında yapmak — subagent kullanıcıya
+soru soramaz.
+
+### Consequences
+
+- vibecode ve vibeplan aynı planlama akışına sahip; iki repo aynı anahtar dosyasını paylaşır.
+- Anahtar tanımlıysa plan metni varsayılan olarak DeepSeek'e gider — hassas planlarda `--no-debate`
+  ya da `enabled: false` (bkz. `docs/guides/framework-security.md §2`).
+- Bir `/vibe-plan` en fazla 4 DeepSeek turu + planlayıcının cevapları kadar ek maliyet getirir.
+- ADR-007 ve ADR-009'un DeepSeek kısmı (tek tur) bu kararla değişti.
+
