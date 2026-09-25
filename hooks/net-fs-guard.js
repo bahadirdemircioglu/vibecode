@@ -21,7 +21,7 @@
  *   3. Write / Edit → Symlink escape: refuse writing THROUGH a symlink whose
  *      real target lands outside both the project root and the home dir.
  *
- * Wiring: NOT registered in settings.json on its own. `.claude/hooks/pre-tool-use.js`
+ * Wiring: NOT registered in hooks.json on its own. `hooks/pre-tool-use.js`
  * require()s this module and calls checkWrite()/checkWebFetch() in the SAME node
  * process (one process per Write/Edit instead of three). It still runs standalone
  * for piped-JSON testing:  echo '{"tool_name":"Write",...}' | node net-fs-guard.js

@@ -22,7 +22,7 @@
  * Generated files (never edit by hand): docs/architecture/debates/<slug>.json + .md
  * (previous debates: docs/architecture/debates/history/).
  *
- * Config: .vibecode/config/ai-providers.json (active provider: enabled, base_url,
+ * Config: <project>/.vibecode/config/ai-providers.json, else the plugin's own copy (active provider: enabled, base_url,
  * chat_path, model, api_key_env, timeout_seconds, max_tokens; top-level max_rounds).
  * Missing config / enabled:false / no key → skipped (exit 4).
  * Key lookup (first hit): env var named by api_key_env → $VIBECODE_ENV_FILE →
@@ -39,16 +39,22 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 
-const ROOT = path.resolve(process.env.DEBATE_ROOT || path.join(__dirname, '..', '..'));
+// Project root (debates, plans, project-local overrides). The script ships inside the vibecode
+// plugin, so it must NOT derive the project from its own location.
+const ROOT = path.resolve(process.env.DEBATE_ROOT || process.env.CLAUDE_PROJECT_DIR || process.cwd());
+const FRAMEWORK_CONFIG = path.join(__dirname, '..', 'config', 'ai-providers.json');
 const DEBATES_DIR = path.join(ROOT, 'docs', 'architecture', 'debates');
 
 function loadConfig() {
-  let cfg;
-  try {
-    cfg = JSON.parse(fs.readFileSync(path.join(ROOT, '.vibecode', 'config', 'ai-providers.json'), 'utf-8'));
-  } catch {
-    return null;
+  // Project override first, then the framework default shipped with the plugin.
+  let cfg = null;
+  for (const file of [path.join(ROOT, '.vibecode', 'config', 'ai-providers.json'), FRAMEWORK_CONFIG]) {
+    try {
+      cfg = JSON.parse(fs.readFileSync(file, 'utf-8'));
+      break;
+    } catch { /* try next */ }
   }
+  if (!cfg) return null;
   const p = (cfg.providers || {})[cfg.active_provider];
   if (!p) return null;
   return {

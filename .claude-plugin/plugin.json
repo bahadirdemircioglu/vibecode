@@ -1,0 +1,28 @@
+{
+  "name": "vibecode",
+  "version": "1.0.0",
+  "description": "Opinionated Claude Code workflow: /vibe-plan → /vibe-sdd → /vibe-done, role agents, safety hooks, standards and skills. Run /vibecode:init once per project.",
+  "author": { "name": "Bahadır Demircioğlu" },
+  "repository": "https://github.com/bahadirdemircioglu/vibecode",
+  "agents": [
+    "./agents/architect.md",
+    "./agents/bug-hunter.md",
+    "./agents/critic.md",
+    "./agents/engineer.md",
+    "./agents/explorer.md",
+    "./agents/mechanic.md",
+    "./agents/refactor-planner.md",
+    "./agents/reviewer.md",
+    "./agents/tester.md"
+  ],
+  "mcpServers": {
+    "serena": {
+      "command": "uvx",
+      "args": ["--from", "git+https://github.com/oraios/serena", "serena", "start-mcp-server", "--project-from-cwd"]
+    },
+    "context7": {
+      "command": "npx",
+      "args": ["-y", "@upstash/context7-mcp@latest"]
+    }
+  }
+}

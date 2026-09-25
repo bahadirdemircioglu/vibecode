@@ -20,7 +20,7 @@ known-bad shapes (`rm -rf`, force push, `git clean -fd`, `sudo`, `chmod 777`, `d
 `.env` reads/writes, raw `node`/`python`/installs). Add a new glob here when you find a class of
 command that should never run.
 
-### 1.2 Risk-tier policy hook (`.claude/hooks/permission-policy.js`)
+### 1.2 Risk-tier policy hook (`hooks/permission-policy.js`)
 Second layer — a `PreToolUse` hook on **Bash only** (matcher `Bash`). It inspects the command
 (quoted data stripped unless an `eval`/`sh -c` construct is present) and classifies it. File
 paths and URLs are not matched against command rules (a path containing "sudo" is data):
@@ -33,7 +33,7 @@ paths and URLs are not matched against command rules (a path containing "sudo" i
 Escape hatch: `VIBE_YOLO=1` downgrades destructive blocks to warnings — **sandboxed/disposable
 environments only**.
 
-### 1.3 Net/FS guard (`.claude/hooks/net-fs-guard.js`, run inside `pre-tool-use.js`)
+### 1.3 Net/FS guard (`hooks/net-fs-guard.js`, run inside `pre-tool-use.js`)
 Second layer for network and filesystem reach. Wiring: settings.json registers ONE hook,
 `pre-tool-use.js`, for `Write|Edit|NotebookEdit|WebFetch`; it `require()`s `net-fs-guard.js`
 (one node process per call) and then emits the advisory skill hint once per path per session.

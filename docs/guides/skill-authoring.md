@@ -24,6 +24,6 @@ model: <sonnet | opus | inherit>               # optional — hints which model 
 **Rules:**
 - `name` MUST equal the directory name.
 - `description` MUST state the trigger ("Use when…") — vague descriptions break lazy-loading.
-- Layered override (unchanged, already in CLAUDE.md): **project skill > user skill > bundled**.
+- Layered override (unchanged, already in the vibecode core rules): **project skill > user skill > bundled**.
   Discovery walks highest-priority first and skips already-seen names.
 - Keep skill bodies action-oriented: Purpose → How to work → Output shape → YAPMA (anti-patterns).

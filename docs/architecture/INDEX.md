@@ -13,12 +13,13 @@
 
 ## Uygulandı
 
-- [clone-workflow](clone-workflow-plan.md) — Clone tabanlı proje setup; Serena/Context7 restart-free ilk oturumda çalışsın. (CLAUDE.md "New Project Setup" + session-start `git init`)
+- [plugin-packaging](plugin-packaging-plan.md) — vibecode Claude Code plugin'i; `/vibecode:init`, klonlama/`/vibe-update` kaldırıldı. (ADR-012)
 - [vibe-prefix-commands](vibe-prefix-commands-plan.md) — Custom slash command namespace çakışması için `vibe-` prefix kuralı. (tüm `.claude/commands/vibe-*.md`)
 - [wrongstack-pattern-adoption](wrongstack-pattern-adoption-plan.md) — WrongStack'in permission/fleet/SDD desenlerini Claude-only vibecode'a uyarla. (Implementation Status: DONE 2026-06-04; `/vibe-goal` sonradan HANDOFF `## Goal`'a katlandı — ADR-009)
 
 ## Superseded / Arşivlenmiş
 
+- [clone-workflow](clone-workflow-plan.md) — Clone tabanlı proje setup. **superseded by** [plugin-packaging](plugin-packaging-plan.md) (ADR-012)
 - [multi-ai-plan-consultation](multi-ai-plan-consultation-plan.md) — tek turluk DeepSeek danışması + provider/apikey config. **superseded by** madde bazlı DeepSeek tartışması (`.vibecode/scripts/deepseek-debate.js`, ADR-010); provider config ve anahtar çözümü aynen kaldı
 - [model-routing-sonnet-first](model-routing-sonnet-first-plan.md) — Default Sonnet, Opus eskalasyon. **superseded by** `.vibecode/standards/delegation.md` (ADR-008, ADR-009)
 - [opus-sonnet-delegation](opus-sonnet-delegation-plan.md) — Opus mikro-spec → Sonnet write → Opus review. **superseded by** `.vibecode/standards/delegation.md` (sözleşme-spec, ADR-008)

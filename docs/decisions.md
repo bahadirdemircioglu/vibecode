@@ -714,3 +714,47 @@ Kullanıcı private geliştirme yapıyor ve zaman zaman sunucuyu tamamen silip r
 - Hafıza içeriği repo erişimi olan herkese görünür — public repoda kullanılmamalı.
 - Plugin tasarımında (HANDOFF Goal) hafıza "projede kalanlar" arasındadır.
 
+
+## ADR-012: vibecode Bir Claude Code Plugin'i — Klonlama Tabanlı Kurulum Kaldırıldı
+**Date:** 2026-09-25 | **Status:** Accepted | **Supersedes:** klonlama akışı (clone-workflow planı), `/vibe-update`
+
+### Context
+
+Kullanıcının akışı "vibecode'u klonla, üstüne proje kur" değil; "projeyi kendi reposundan çek, içinde `claude` aç,
+vibecode'u çağır". Klonlama tabanlı kurulum framework'ü her projeye kopyalıyor, riskli bir fresh-clone bootstrap'ı ve
+hash tabanlı `/vibe-update` birleştirmesini gerektiriyordu. Spike (Claude Code 2.1.282) plugin sisteminin gereken her
+şeyi karşıladığını gösterdi: plugin hook'u exit 2 ile engelleyebiliyor; `${CLAUDE_PLUGIN_ROOT}` komut/skill/ajan metninde
+ve hook'larda genişliyor; komut ve ajanlar öneksiz çağrılabiliyor; plugin SessionStart çıktısı bağlama giriyor; plugin
+MCP sunucusu proje dizininde başlıyor; proje `settings.json`'daki `extraKnownMarketplaces` + `enabledPlugins` klasör
+güveninden sonra plugin'i kendiliğinden yüklüyor.
+
+### Decision
+
+- Repo kökü = plugin kökü = marketplace kökü (`.claude-plugin/plugin.json` + `marketplace.json`). Kurulum:
+  `/plugin marketplace add bahadirdemircioglu/vibecode` + `/plugin install vibecode@vibecode`.
+- `commands/`, `agents/`, `hooks/` plugin dizinlerine taşındı; `.claude/rules/` → `.vibecode/rules/` (plugin
+  `.claude/rules` gönderemez; `pre-tool-use.js` eşleşen yola ilk yazımda kuralı oturum başına bir kez enjekte eder).
+- Plugin CLAUDE.md gönderemez → `.vibecode/core-rules.md` SessionStart'ta `{{VIBECODE_ROOT}}` gerçek yolla değiştirilerek
+  bağlama basılır; standart/skill'lerdeki `.vibecode/...` yolları bu köke göre çözülür, projedeki aynı adlı dosya
+  geçersiz kılar. Komut ve ajanlarda framework yolları `${CLAUDE_PLUGIN_ROOT}/.vibecode/...`.
+- Serena + Context7 `plugin.json`'daki `mcpServers` ile gelir; `.mcp.json` kaldırıldı.
+- Hook'lar yalnızca init edilmiş projede (kökte `.vibecode/` dizini) çalışır — kullanıcı seviyesinde kurulan plugin
+  diğer projelere karışmaz.
+- 105 skill plugin skill'i olarak **kaydedilmez** (her oturuma ~6.4k token); `/vibe-go` lazy listeler.
+- `/vibecode:init` (`.vibecode/scripts/vibe-init.js`, idempotent, üzerine yazmaz): docs iskeleti, `.gitignore`,
+  izin birleştirme, plugin bildirimi (sunucu yeniden kurulunca geri gelmesi için), hafıza konumu, `.serena/project.yml`;
+  eski klon kurulumunu `LEGACY` olarak raporlar, onayla `--migrate` (farklılaşmış dosyalar override olarak kalabilir,
+  `CLAUDE.md`'ye dokunulmaz).
+- Kaldırılanlar: fresh-clone bootstrap + `fresh-clone.marker`, `/vibe-update` + script (yerine
+  `/plugin marketplace update vibecode`).
+- `deepseek-debate.js` projeyi kendi konumundan değil `CLAUDE_PROJECT_DIR`/cwd'den alır; config önce projeden, sonra
+  plugin'den okunur.
+
+### Consequences
+
+- Framework tek yerde; tüm projeler plugin güncellemesiyle birlikte güncellenir, projelerde framework kopyası yok.
+- Komutların tam adı `/vibecode:<ad>`; öneksiz ad çakışma yoksa çalışır. Tek adımlı kurulum yok (CLI'de
+  `--marketplace` bayrağı yok).
+- Geliştirme makinesinde bu çalışma kopyası dizin marketplace'i olarak eklenir (yerinde yüklenir); kullanıcı
+  seviyesindeki marketplace projede bildirilen GitHub kaynağının önüne geçer (doğrulandı).
+- Eski klon-tabanlı projeler `/vibecode:init` ile taşınır.

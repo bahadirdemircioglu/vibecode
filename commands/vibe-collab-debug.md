@@ -23,7 +23,7 @@ Spawn the `bug-hunter` agent with the bug description + file set. It returns ran
 Pass the BugHunter's findings to the `refactor-planner` agent. It returns a minimal root-cause fix
 per defect as a contract spec (file · change type · contract (signature / types / error behaviour) ·
 acceptance cases table incl. the reproduction case · pattern reference), plus blast-radius and tests to add. No
-pseudo-code — see `.vibecode/standards/delegation.md`. Read-only.
+pseudo-code — see `${CLAUDE_PLUGIN_ROOT}/.vibecode/standards/delegation.md`. Read-only.
 
 ### 4. Stage C — Critic (subagent: `critic`)
 Pass BOTH the defects and the fix plan to the `critic` agent. It returns REFUTED / CONFIRMED /

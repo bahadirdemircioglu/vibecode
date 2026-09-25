@@ -331,3 +331,26 @@ test('plan path outside the project is rejected', async () => {
   assert.strictEqual(r.code, 1);
   assert.match(r.stderr, /Plan file not found/);
 });
+
+test('plugin layout: no DEBATE_ROOT → project = cwd, config falls back to the plugin copy', async () => {
+  const mock = await startMock([
+    { content: { verdicts: [], new_objections: [obj('A')], summary: 'r1' } },
+  ]);
+  const plans = makePlans();
+  fs.rmSync(path.join(plans, '.vibecode', 'config'), { recursive: true }); // project has no own config
+  const env = { ...process.env, HOME: fs.mkdtempSync(path.join(os.tmpdir(), 'vibecode-home-')),
+    DEEPSEEK_API_KEY: 'test-key', DEBATE_RETRY_DELAY_MS: '10', DEBATE_BASE_URL: mock.url };
+  delete env.DEBATE_ROOT;
+  delete env.CLAUDE_PROJECT_DIR;
+  try {
+    const r = await new Promise((resolve) => {
+      execFile('node', [SCRIPT, 'critique', PLAN, '--new'], { cwd: plans, env },
+        (err, stdout, stderr) => resolve({ code: err ? err.code : 0, stdout, stderr }));
+    });
+    assert.strictEqual(r.code, 0, r.stderr);
+    assert.strictEqual(ledger(plans).items.length, 1);   // written into the project, not the plugin
+    assert.strictEqual(mock.requests[0].model, 'deepseek-v4-pro'); // model from the plugin's config
+  } finally {
+    mock.close();
+  }
+});

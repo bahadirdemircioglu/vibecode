@@ -5,6 +5,24 @@
 
 ---
 
+## [2026-09-25] — vibecode artık bir Claude Code plugin'i (ADR-012)
+
+### Changes
+- **What:** Repo = plugin = marketplace (`.claude-plugin/`). Kurulum `/plugin marketplace add bahadirdemircioglu/vibecode`
+  + `/plugin install vibecode@vibecode`, projede `/vibecode:init`. `commands/`, `agents/`, `hooks/` plugin dizinlerine,
+  `.claude/rules/` → `.vibecode/rules/` taşındı (kural enjeksiyonu `pre-tool-use.js`'te). CLAUDE.md'nin plugin karşılığı
+  `.vibecode/core-rules.md` (SessionStart'ta bağlama). Serena + Context7 `plugin.json`'da; `.mcp.json` kaldırıldı.
+  Hook'lar yalnızca `.vibecode/` dizini olan projede çalışır (`hooks/vibecode-project.js`). Yeni
+  `.vibecode/scripts/vibe-init.js` (+ `commands/init.md`): docs iskeleti, `.gitignore`, izin birleştirme, plugin
+  bildirimi (sunucu yeniden kurulumunda geri gelir), hafıza konumu, eski klon kurulumunun raporu/`--migrate`.
+  `deepseek-debate.js` projeyi cwd'den alır, config'i projeden sonra plugin'den okur. Kaldırılan: fresh-clone bootstrap,
+  `fresh-clone.marker`, `/vibe-update` + script. README, CLAUDE.md (repo geliştirme notlarına indi), guide'lar güncel.
+  `/vibe-go`'nun `.serena/.gitignore`'a `/memories` yazması düzeltildi (ADR-011 ile çelişiyordu).
+- **Why:** Kullanıcı vibecode'u mevcut projelerin içinde çağırmak istiyor; klonlama + `/vibe-update` akışı buna uymuyordu.
+- **Tests:** `.vibecode/scripts/tests/vibe-init.test.js` (9), `hooks.test.js` (6), debate'e plugin-yerleşimi testi —
+  toplam 31 yeşil. Uçtan uca: izole `CLAUDE_CONFIG_DIR` + yerel marketplace ile kurulum, init, core rules, `rm -rf`
+  engeli, kural enjeksiyonu, vibecode olmayan projede sessizlik, `/vibe-status`.
+
 ## [2026-09-25] — Proje hafızası repoda (ADR-011)
 
 ### Changes

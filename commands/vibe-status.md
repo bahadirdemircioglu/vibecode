@@ -11,11 +11,11 @@ Run a full status check and report. Read-only — do not modify any files.
 
 ### 2. Skills
 - List matching skill files from `~/.claude/skills/`
-- List matching skill files from project `.vibecode/skills/`
+- List matching skill files from the plugin (`${CLAUDE_PLUGIN_ROOT}/.vibecode/skills/`) and from this project's `.vibecode/skills/` (if present)
 - Note which were loaded this session (if any)
 
 ### 3. Standards Loaded
-- List which `.vibecode/standards/*.md` files were read during this session
+- List which `${CLAUDE_PLUGIN_ROOT}/.vibecode/standards/*.md` files were read during this session
 - Note any that are relevant but not yet loaded
 
 ### 4. MCP Status

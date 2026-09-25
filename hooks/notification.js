@@ -25,6 +25,7 @@
  * different projects never clobber each other's counter.
  */
 
+const { isVibecodeProject } = require('./vibecode-project.js');
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
@@ -60,6 +61,7 @@ function saveState(file, state) {
 }
 
 async function main() {
+  if (!isVibecodeProject()) process.exit(0); // plugin enabled, but not a vibecode project
   let input;
   try {
     input = JSON.parse(await readStdin());

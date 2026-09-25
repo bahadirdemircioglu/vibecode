@@ -24,6 +24,7 @@
  * Output: exit 2 + stderr to BLOCK, or exit 0 (+ optional advisory JSON) to ALLOW
  */
 
+const { isVibecodeProject } = require('./vibecode-project.js');
 async function readStdin() {
   const chunks = [];
   for await (const chunk of process.stdin) chunks.push(chunk);
@@ -104,6 +105,7 @@ const STANDARD = [
 ];
 
 async function main() {
+  if (!isVibecodeProject()) process.exit(0); // plugin enabled, but not a vibecode project
   let input;
   try {
     input = JSON.parse(await readStdin());

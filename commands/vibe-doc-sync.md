@@ -18,7 +18,7 @@ Parse `$ARGUMENTS` as space-separated tokens:
 ## Execution
 
 ### 1. Load skill
-Read `.vibecode/skills/continuous-doc-maintainer/SKILL.md`.
+Read `${CLAUDE_PLUGIN_ROOT}/.vibecode/skills/continuous-doc-maintainer/SKILL.md`.
 
 ### 2. Build input payload
 - `diff` = `git diff` output (staged + unstaged) OR diff for the specified paths

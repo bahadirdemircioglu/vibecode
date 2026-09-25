@@ -1,12 +1,19 @@
 #!/usr/bin/env bash
-# Runs on SessionStart — detects project gaps and shows session state
-# Output is kept SHORT (max 10 lines) to avoid noise on every session.
+# Runs on SessionStart (vibecode plugin) — injects the vibecode core rules,
+# detects project gaps and shows session state. stdout becomes session context.
+# Acts ONLY in projects initialized with /vibecode:init (a .vibecode/ directory
+# at the project root); everywhere else it exits silently.
 
 # -u + pipefail for safety, but NOT -e: this is a best-effort startup hook;
 # a single failing probe must never abort the whole session-start output.
 set -uo pipefail
 
-PROJECT_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
+PROJECT_ROOT="${CLAUDE_PROJECT_DIR:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}"
+PLUGIN_ROOT="${CLAUDE_PLUGIN_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
+
+# Gate: plugin hooks fire in every project where the plugin is enabled.
+[[ -d "$PROJECT_ROOT/.vibecode" ]] || exit 0
+
 OUTPUT=""
 INSTALL_NEEDED=""
 
@@ -79,23 +86,15 @@ elif ! command -v npm &>/dev/null; then
   INSTALL_NEEDED="true"
 fi
 
-# Serena project init — if uv exists but .serena/project.yml does not,
-# run serena init to bootstrap the project configuration
-if command -v uvx &>/dev/null && [[ ! -f "$PROJECT_ROOT/.serena/project.yml" ]]; then
-  if [[ -f "$PROJECT_ROOT/.vibecode/templates/serena-project.yml" ]]; then
-    mkdir -p "$PROJECT_ROOT/.serena"
-    cp "$PROJECT_ROOT/.vibecode/templates/serena-project.yml" "$PROJECT_ROOT/.serena/project.yml"
-    DIR_NAME=$(basename "$PROJECT_ROOT")
-    DIR_NAME_SED=$(printf '%s' "$DIR_NAME" | sed 's/[&|\\]/\\&/g')
-    sedi "s|{{PROJECT_NAME}}|$DIR_NAME_SED|" "$PROJECT_ROOT/.serena/project.yml"
-    printf '/cache\n/project.local.yml\n/memories\n' > "$PROJECT_ROOT/.serena/.gitignore"
-    OUTPUT+="SERENA: initialized from vibecode template (project: $DIR_NAME)"$'\n'
-  else
-    uvx -p 3.13 --from "git+https://github.com/oraios/serena" serena init --project-root "$PROJECT_ROOT" 2>/dev/null
-    OUTPUT+="SERENA: initialized via 'serena init' — check .serena/project.yml"$'\n'
-  fi
-  OUTPUT+="ACTION: Restart session for Serena to pick up new project config"$'\n'
-  INSTALL_NEEDED="true"
+# Serena project config — .serena/project.yml is per-machine (gitignored), so it is
+# recreated from the plugin template after a fresh clone / server rebuild.
+if command -v uvx &>/dev/null && [[ ! -f "$PROJECT_ROOT/.serena/project.yml" && -f "$PLUGIN_ROOT/.vibecode/templates/serena-project.yml" ]]; then
+  mkdir -p "$PROJECT_ROOT/.serena"
+  cp "$PLUGIN_ROOT/.vibecode/templates/serena-project.yml" "$PROJECT_ROOT/.serena/project.yml"
+  DIR_NAME=$(basename "$PROJECT_ROOT")
+  DIR_NAME_SED=$(printf '%s' "$DIR_NAME" | sed 's/[&|\\]/\\&/g')
+  sedi "s|{{PROJECT_NAME}}|$DIR_NAME_SED|" "$PROJECT_ROOT/.serena/project.yml"
+  OUTPUT+="SERENA: .serena/project.yml created from vibecode template (project: $DIR_NAME) — restart session for Serena to pick it up"$'\n'
 fi
 
 # Check language servers based on .serena/project.yml languages
@@ -143,85 +142,14 @@ if [[ -f "$SERENA_YML_CHECK" ]]; then
   done
 fi
 
-# Validate .mcp.json — fix wrong Serena command ("mcp" → "start-mcp-server")
-MCP_JSON="$PROJECT_ROOT/.mcp.json"
-if [[ -f "$MCP_JSON" ]]; then
-  if grep -q '"serena"' "$MCP_JSON" && grep -q '"mcp"' "$MCP_JSON" && ! grep -q '"start-mcp-server"' "$MCP_JSON"; then
-    sedi 's/"mcp"/"start-mcp-server"/g' "$MCP_JSON"
-    OUTPUT+="FIXED: .mcp.json Serena command corrected (mcp → start-mcp-server)"$'\n'
-  fi
-fi
-
 if [[ -n "$INSTALL_NEEDED" ]]; then
   OUTPUT+="ACTION: Install missing dependencies and restart session"$'\n'
 fi
 
-# 0. Fresh-clone bootstrap (clone vibecode → rm -rf .git → first session).
-# Guarded by an explicit marker so it can NEVER fire in an arbitrary non-git
-# directory the framework was layered into. Conditions (all required) are
-# documented in .vibecode/templates/fresh-clone.marker:
-#   no .git + not inside a work tree + no .vibecode/VERSION + every identity
-#   path listed in the marker exists (vibecode's own meta-plans).
-is_fresh_clone() {
-  local marker="$PROJECT_ROOT/.vibecode/templates/fresh-clone.marker" line found=0
-  [[ -e "$PROJECT_ROOT/.git" ]] && return 1
-  git -C "$PROJECT_ROOT" rev-parse --is-inside-work-tree &>/dev/null && return 1
-  [[ -f "$PROJECT_ROOT/.vibecode/VERSION" ]] && return 1
-  [[ -f "$marker" ]] || return 1
-  while IFS= read -r line || [[ -n "$line" ]]; do
-    line="${line%%#*}"; line="${line//[[:space:]]/}"
-    [[ -z "$line" ]] && continue
-    [[ "$line" == /* || "$line" == *..* ]] && return 1   # relative, in-tree paths only
-    [[ -e "$PROJECT_ROOT/$line" ]] || return 1
-    found=1
-  done < "$marker"
-  [[ "$found" -eq 1 ]]
-}
-
-if is_fresh_clone; then
-  TPL="$PROJECT_ROOT/.vibecode/templates"
-  # docs/architecture/ holds vibecode's own meta-plans — a new project starts clean.
-  find "$PROJECT_ROOT/docs/architecture" -maxdepth 1 -name '*-plan.md' -type f -delete 2>/dev/null
-  find "$PROJECT_ROOT/docs/architecture/debates" -type f \( -name '*.json' -o -name '*.md' \) -delete 2>/dev/null
-  [[ -f "$TPL/architecture-INDEX.md" ]] && cp "$TPL/architecture-INDEX.md" "$PROJECT_ROOT/docs/architecture/INDEX.md"
-  # Framework-history docs → reset from minimal templates (don't inherit vibecode's history).
-  for pair in "docs-decisions.md:docs/decisions.md" \
-              "docs-CHANGELOG.md:docs/CHANGELOG.md" \
-              "docs-progress.md:docs/progress.md" \
-              "docs-CHANGELOG_INTERNAL.md:docs/CHANGELOG_INTERNAL.md"; do
-    src="$TPL/${pair%%:*}"; dst="$PROJECT_ROOT/${pair#*:}"
-    [[ -f "$src" ]] && mkdir -p "$(dirname "$dst")" && cp "$src" "$dst"
-  done
-  # Pure vibecode artifacts with no project equivalent.
-  rm -f "$PROJECT_ROOT/docs/vibecode-analiz-raporu.md" "$PROJECT_ROOT/HANDOFF.md"
-  find "$PROJECT_ROOT/.vibecode/memory" "$PROJECT_ROOT/.serena/memories" -type f -delete 2>/dev/null   # vibecode's own memories
-  OUTPUT+="FRESH-CLONE: vibecode history docs reset from templates (architecture plans, decisions, CHANGELOG, progress, HANDOFF, memories)"$'\n'
-
-  if git -C "$PROJECT_ROOT" init -q 2>/dev/null; then
-    # Record the vibecode framework baseline so /vibe-update can later detect which
-    # framework files the user has customized (hash-based 3-way merge). Written
-    # BEFORE the initial commit so .vibecode/VERSION ships in it.
-    if [[ -x "$PROJECT_ROOT/.vibecode/scripts/vibe-update" ]]; then
-      if bash "$PROJECT_ROOT/.vibecode/scripts/vibe-update" init >/dev/null 2>&1; then
-        OUTPUT+="VIBE-UPDATE: framework baseline recorded (.vibecode/VERSION)"$'\n'
-      fi
-    fi
-    # Stage an EXPLICIT framework path list — never `git add -A` (would sweep
-    # in whatever else happens to be in the directory).
-    STAGE=()
-    for p in .claude .vibecode docs CLAUDE.md .gitignore .mcp.json README.md; do
-      [[ -e "$PROJECT_ROOT/$p" ]] && STAGE+=("$p")
-    done
-    if [[ ${#STAGE[@]} -gt 0 ]] \
-       && git -C "$PROJECT_ROOT" add -- "${STAGE[@]}" 2>/dev/null \
-       && git -C "$PROJECT_ROOT" commit -q -m "Initial commit from vibecode template" 2>/dev/null; then
-      OUTPUT+="GIT: initialized + initial commit (${STAGE[*]})"$'\n'
-    else
-      OUTPUT+="GIT: initialized; initial commit NOT created (check git user.name/email, then commit manually)"$'\n'
-    fi
-  else
-    OUTPUT+="GIT: git init failed — initialize the repository manually"$'\n'
-  fi
+# 0. Legacy clone-based install (framework copied into the project) — duplicates the plugin.
+if [[ -f "$PROJECT_ROOT/.claude/hooks/session-start.sh" || -f "$PROJECT_ROOT/.vibecode/VERSION" || -d "$PROJECT_ROOT/.vibecode/standards" ]] \
+   && [[ "$PROJECT_ROOT" != "$PLUGIN_ROOT" ]]; then
+  OUTPUT+="LEGACY: this project still carries a copied (clone-based) vibecode — run /vibecode:init to migrate"$'\n'
 fi
 
 # 0b. Update .serena/project.yml project_name if still "vibecode"
@@ -289,7 +217,7 @@ fi
 # so it survives a server rebuild + `git clone`. autoMemoryDirectory must be an absolute path,
 # so it goes into the per-machine, gitignored .claude/settings.local.json (never the committed
 # settings.json). Claude Code reads settings at startup → a change applies from the NEXT
-# session; CLAUDE.md @imports .vibecode/memory/MEMORY.md so the first session still sees it.
+# session (/vibecode:init writes it too, so it is active from the session after init).
 MEM_DIR="$PROJECT_ROOT/.vibecode/memory"
 if [[ -d "$PROJECT_ROOT/.vibecode" ]]; then
   mkdir -p "$MEM_DIR"
@@ -363,13 +291,13 @@ if [[ -d "$PROJECT_ROOT/.git" ]]; then
 fi
 
 # 5. Stack detection — map dependencies to available skills.
-# NOTE: not every referenced skill ships in .vibecode/skills/. Extended-stack
+# NOTE: not every referenced skill ships in the plugin's .vibecode/skills/. Extended-stack
 # skills (django-pro, nextjs-best-practices, golang-pro, rust-pro, terraform-
 # specialist, etc.) resolve from the user-level catalog ($HOME/.claude/skills)
 # when present. skill_exists() checks BOTH dirs and add_skill silently skips
 # any skill found in neither — detection degrades gracefully, never errors.
 SKILLS=""
-SKILL_DIRS=("$PROJECT_ROOT/.vibecode/skills" "$HOME/.claude/skills")
+SKILL_DIRS=("$PROJECT_ROOT/.vibecode/skills" "$PLUGIN_ROOT/.vibecode/skills" "$HOME/.claude/skills")
 
 skill_exists() {
   for dir in "${SKILL_DIRS[@]}"; do
@@ -444,7 +372,14 @@ if [[ -n "$SKILLS" ]]; then
   OUTPUT+="SKILLS: ${SKILLS}"$'\n'
 fi
 
-# Print output (only if there is something to report)
+# Core rules (a plugin cannot ship CLAUDE.md) — {{VIBECODE_ROOT}} → the plugin root.
+CORE="$PLUGIN_ROOT/.vibecode/core-rules.md"
+if [[ -f "$CORE" ]]; then
+  ROOT_SED=$(printf '%s' "$PLUGIN_ROOT" | sed 's/[&|\\]/\\&/g')
+  sed "s|{{VIBECODE_ROOT}}|$ROOT_SED|g" "$CORE"
+  echo
+fi
+
 if [[ -n "$OUTPUT" ]]; then
   echo "--- Session Start Check ---"
   echo -n "$OUTPUT"

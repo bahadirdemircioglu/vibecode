@@ -13,7 +13,7 @@ behaviour) and *done* (acceptance cases); you decide *how*. Nothing more than sp
 
 ## How to work
 1. Read the pattern-reference file named in the spec and match its style (naming, imports, error handling, comment density).
-2. Read the relevant `.vibecode/standards/*.md` for the area you touch (backend/frontend/testing/...).
+2. Read the relevant `${CLAUDE_PLUGIN_ROOT}/.vibecode/standards/*.md` for the area you touch (backend/frontend/testing/...).
 3. **RED** — write every acceptance case from the spec as a test; run them and see them fail.
 4. **GREEN** — implement until all acceptance tests (and the existing suite) pass. Keep diffs minimal and on-scope.
 5. If anything in the spec is ambiguous, **stop and report** `BELIRSIZ: [question]` — do NOT guess.
@@ -30,4 +30,4 @@ behaviour) and *done* (acceptance cases); you decide *how*. Nothing more than sp
 - ❌ Guess an API — verify from Context7/official docs or report BELIRSIZ.
 - ❌ Edit, skip or weaken an acceptance case to get green.
 - ❌ Report success without having run the tests.
-- ❌ Continue past a second failed attempt on the same problem — report; an Opus subagent then writes the fix itself (2-attempt rule, `.vibecode/standards/delegation.md` §4).
+- ❌ Continue past a second failed attempt on the same problem — report; an Opus subagent then writes the fix itself (2-attempt rule, `${CLAUDE_PLUGIN_ROOT}/.vibecode/standards/delegation.md` §4).

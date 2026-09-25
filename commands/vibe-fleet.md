@@ -8,7 +8,7 @@ You are the **Director**. Decompose the task, dispatch each piece to the right r
 parallel where safe, then roll up. This is the vibecode adaptation of WrongStack's Director/fleet.
 
 > **Model:** the Director (this orchestration) is judgment work — stay on the current model.
-> Individual subagents use the model their role defines (`.claude/agents/*.md`).
+> Individual subagents use the model their role defines (`${CLAUDE_PLUGIN_ROOT}/agents/*.md`).
 
 ### 1. Load the protocol
 Load the `agent-dispatch` and `subagent-budget-protocol` skills (read their SKILL.md). They define

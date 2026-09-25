@@ -1,7 +1,7 @@
 ---
 name: agent-dispatch
 description: >
-  Route a free-form task to the right fleet role (.claude/agents/*.md) using
+  Route a free-form task to the right fleet role (the plugin's agents/*.md) using
   heuristic keyword scoring with a judgment fallback. Use whenever you are about
   to delegate work with the Agent tool and are unsure which subagent_type fits,
   or when /vibe-fleet needs to assign tasks to roles.

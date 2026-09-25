@@ -1,0 +1,14 @@
+{
+  "name": "vibecode",
+  "owner": {
+    "name": "Bahadır Demircioğlu"
+  },
+  "description": "vibecode — opinionated Claude Code workflow plugin (single-plugin marketplace)",
+  "plugins": [
+    {
+      "name": "vibecode",
+      "source": "./",
+      "description": "Opinionated Claude Code workflow — plan, spec-driven delivery, role agents, safety hooks, standards."
+    }
+  ]
+}

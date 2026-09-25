@@ -10,7 +10,7 @@ Save all session state before context compaction. Execute these steps in order.
 - If no changes to save: note "CHANGELOG already current"
 
 ### 2. Write HANDOFF.md
-Fill `.vibecode/templates/HANDOFF.md` (copy the template; every section, `N/A` where not applicable)
+Fill `${CLAUDE_PLUGIN_ROOT}/.vibecode/templates/HANDOFF.md` (copy the template; every section, `N/A` where not applicable)
 into `HANDOFF.md` at the project root. Include `$ARGUMENTS` (if provided) in the task description and
 keep an existing `## Goal` section intact.
 
@@ -28,7 +28,7 @@ Summary:
 
 ### 3.5 Memory
 If `.vibecode/memory/` or `.serena/memories/` changed this session, list them — they belong in the
-next commit (project memory lives in the repo, CLAUDE.md → Project Memory).
+next commit (project memory lives in the repo, vibecode core rules → Project memory).
 
 ### 4. Show HANDOFF.md
 Display the full contents of HANDOFF.md so the user can verify before compacting.

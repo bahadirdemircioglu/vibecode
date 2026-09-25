@@ -20,14 +20,14 @@ make verify
 1. Changed source files: `git diff --name-only HEAD` filtered to source code only (no docs/config-only changes).
    None → "Security review: skipped — no source changes" → Step 4.
 2. Otherwise dispatch the `reviewer` subagent (do NOT load the skill into the main context):
-   > Security review only. Files: [list]. Load `.vibecode/skills/security-review/SKILL.md` and run its
+   > Security review only. Files: [list]. Load `${CLAUDE_PLUGIN_ROOT}/.vibecode/skills/security-review/SKILL.md` and run its
    > OWASP Top 10 checklist on the diff of these files. Return ONLY findings
    > (severity · `file:line` · issue · 1-3 line patch), or "no findings".
 3. Findings → ask: "Security issues found. Apply patches? (all / pick / skip)". None → "Security review passed".
 - Checkpoint: "Security review completed"
 
 ### 4. Documentation Checklist
-Run inline (do NOT Read `documentation.md` — CHANGELOG entry format: `.vibecode/standards/documentation.md §2`, ADR format: §3; open only the section you need):
+Run inline (do NOT Read `documentation.md` — CHANGELOG entry format: `${CLAUDE_PLUGIN_ROOT}/.vibecode/standards/documentation.md §2`, ADR format: §3; open only the section you need):
 1. `docs/CHANGELOG.md` — ALWAYS add one entry at the top (the only CHANGELOG step in this command)
 2. Architectural decision made? → `docs/decisions.md` (ADR format)
 3. New feature/service/module? → `docs/progress.md`
@@ -46,7 +46,7 @@ on approval re-run with `--live`. If its security linter blocks: report `blocked
 Without `--full`: one line — "Doc-sync skipped (run `/vibe-done --full` or `/vibe-doc-sync` for a drift scan)".
 
 ### 5. Write HANDOFF.md
-Fill `.vibecode/templates/HANDOFF.md` (copy the template; every section, `N/A` where not applicable)
+Fill `${CLAUDE_PLUGIN_ROOT}/.vibecode/templates/HANDOFF.md` (copy the template; every section, `N/A` where not applicable)
 into `HANDOFF.md` at the project root. If `## Goal` is active: append one dated journal line; if all
 acceptance criteria are met, ask the user whether to mark it `completed`.
 
@@ -58,7 +58,7 @@ type(scope): description
 body with details
 ```
 The proposed commit includes `HANDOFF.md`, `.vibecode/memory/` and `.serena/memories/` changes (project
-memory lives in the repo — see CLAUDE.md → Project Memory). Present to user for approval. Do NOT commit automatically.
+memory lives in the repo — see vibecode core rules → Project memory). Present to user for approval. Do NOT commit automatically.
 
 ### 7. Remind
 > Run `/vibe-compact` if context is large before starting the next task.

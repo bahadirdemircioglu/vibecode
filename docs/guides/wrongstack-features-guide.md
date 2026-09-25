@@ -48,7 +48,7 @@ Claude Code'un kendi yapı taşlarıyla (slash command, subagent, hook, settings
 ## 2. Önce kavram: "Fleet" ve "rol" nedir?
 
 **Fleet (filo)** = bir görevi parçalara bölüp her parçayı en uygun **role** veren orkestrasyon.
-Her rol, `.claude/agents/` altında bir tanım dosyasıdır ve Claude Code'un **subagent** mekanizmasıyla
+Her rol, `agents/` altında bir tanım dosyasıdır ve Claude Code'un **subagent** mekanizmasıyla
 ayrı bir bağlamda (kendi penceresinde) çalışır. Ana sohbet sadece **sonucu** alır, ham dosya
 dökümünü değil — bağlam temiz kalır.
 
@@ -266,9 +266,9 @@ Bloklandığında şuna benzer bir mesaj görürsün:
 ### Hook'ları test etme (değiştirirsen)
 Hook'lar bağımsız, saf Node. Stdin'e örnek JSON verip exit kodunu kontrol et:
 ```bash
-chmod +x .claude/hooks/permission-policy.js
+chmod +x hooks/permission-policy.js
 printf '%s' '{"tool_name":"Bash","tool_input":{"command":"rm -rf x"}}' \
-  | ./.claude/hooks/permission-policy.js ; echo "exit=$?"   # -> exit=2 (blok)
+  | ./hooks/permission-policy.js ; echo "exit=$?"   # -> exit=2 (blok)
 ```
 > Not: bu projede `Bash(node *)` deny'li; hook'u `node x.js` yerine `./x.js` (shebang) ile çalıştır.
 
@@ -334,14 +334,14 @@ değişmedi. İstersen dosyaları silerek geri alabilirsin.
 ## 11. Dosya haritası (ne nerede)
 
 ```
-.claude/agents/*.md            9 rol tanımı (explorer, architect, engineer, mechanic, tester,
+agents/*.md            9 rol tanımı (explorer, architect, engineer, mechanic, tester,
                                reviewer, bug-hunter, refactor-planner, critic)
-.claude/commands/vibe-fleet.md         /vibe-fleet
-.claude/commands/vibe-sdd.md           /vibe-sdd
-.claude/commands/vibe-collab-debug.md  /vibe-collab-debug
+commands/vibe-fleet.md         /vibe-fleet
+commands/vibe-sdd.md           /vibe-sdd
+commands/vibe-collab-debug.md  /vibe-collab-debug
 .vibecode/templates/HANDOFF.md         ## Goal bölümü (eski /vibe-goal)
-.claude/hooks/permission-policy.js     risk-tier izin hook'u
-.claude/hooks/net-fs-guard.js          SSRF + dosya kaçışı hook'u
+hooks/permission-policy.js     risk-tier izin hook'u
+hooks/net-fs-guard.js          SSRF + dosya kaçışı hook'u
 .claude/settings.json                  hook kayıtları + genişletilmiş deny listesi
 .vibecode/skills/agent-dispatch/       rol yönlendirme skill'i
 .vibecode/skills/subagent-budget-protocol/  delegasyon disiplini skill'i

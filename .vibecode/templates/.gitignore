@@ -37,7 +37,7 @@ docker-compose.override.yml
 .DS_Store
 Thumbs.db
 
-# Vibecode — framework files ARE tracked (/vibe-update needs a clean tree);
+# Vibecode (plugin) — framework files live in the plugin, not here;
 # only local runtime state and the optional provider secret are ignored
 # Serena: config/cache per-machine, memories tracked
 .serena/*

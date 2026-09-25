@@ -2,7 +2,7 @@
 
 > **When to read:** Before delegating work to a subagent, choosing a model, or escalating a
 > failing task. **Tek otorite:** Model routing, Sonnet/Opus/Haiku delegasyonu, sözleşme-spec
-> formatı ve 2 deneme kuralı SADECE burada tanımlanır — CLAUDE.md, komutlar, ajanlar ve skill'ler
+> formatı ve 2 deneme kuralı SADECE burada tanımlanır — core rules, komutlar, ajanlar ve skill'ler
 > buraya işaret eder, kopyalamaz. (ADR-008, ADR-009)
 
 ---

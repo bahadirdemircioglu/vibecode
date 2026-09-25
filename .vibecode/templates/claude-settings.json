@@ -1,0 +1,44 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git status*)",
+      "Bash(git diff*)",
+      "Bash(git log*)",
+      "Bash(git branch*)",
+      "Bash(git show*)",
+      "Bash(ls *)",
+      "Bash(find *)",
+      "Bash(wc *)",
+      "Bash(make verify*)",
+      "Bash(make test*)",
+      "Bash(make lint*)",
+      "Bash(make format*)",
+      "Bash(make audit*)",
+      "Bash(docker compose ps*)",
+      "Bash(docker compose logs*)",
+      "Bash(docker compose exec * pytest*)",
+      "Bash(docker compose exec * npm test*)",
+      "Bash(docker compose exec * ruff*)",
+      "Bash(node *deepseek-debate.js *)"
+    ],
+    "deny": [
+      "Bash(rm -rf *)",
+      "Bash(git push --force*)",
+      "Bash(git push -f *)",
+      "Bash(git reset --hard*)",
+      "Bash(git clean -fd*)",
+      "Bash(git clean -df*)",
+      "Bash(sudo *)",
+      "Bash(chmod 777*)",
+      "Bash(chmod -R 777*)",
+      "Bash(dd if=*)",
+      "Bash(mkfs*)",
+      "Bash(*> .env*)",
+      "Bash(cat *.env*)",
+      "Bash(pip install*)",
+      "Bash(npm install*)",
+      "Read(**/.env)",
+      "Read(**/.env.local)"
+    ]
+  }
+}

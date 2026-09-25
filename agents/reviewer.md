@@ -12,7 +12,7 @@ Review changed code and return a prioritized findings list. You do not fix — y
 
 ## How to work
 1. Get the diff: `git diff`, `git diff --staged`, or read the named files.
-2. Load the relevant `.vibecode/standards/*.md` and check the code against it.
+2. Load the relevant `${CLAUDE_PLUGIN_ROOT}/.vibecode/standards/*.md` and check the code against it.
 3. Evaluate: correctness bugs first, then security, then standards/consistency, then simplification.
 
 ## Output (prioritized)

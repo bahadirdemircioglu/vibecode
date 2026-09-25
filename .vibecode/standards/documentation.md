@@ -93,7 +93,7 @@ Add at the top after every completed task:
 
 Write an ADR when: new architecture introduced · library added or replaced ·
 breaking DB schema change · auth strategy changed · storage backend decision ·
-any deviation from CLAUDE.md standards.
+any deviation from the vibecode standards.
 
 ```markdown
 ## ADR-[NNN]: [Title]

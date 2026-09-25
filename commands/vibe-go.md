@@ -9,12 +9,12 @@ Execute these steps in order:
 ### 0. MCP Setup & Check
 Ensure MCP servers are configured and running before any work begins:
 
-1. **Check `.mcp.json`** — Should already exist (tracked in git). If missing for any reason, create it with Serena (`--project-from-cwd`) and Context7 servers, then WARN: "`.mcp.json` was missing and recreated — restart session for MCP servers." Then **STOP**.
+1. **MCP servers** — Serena and Context7 come from the vibecode plugin (no `.mcp.json` needed). If their tools are unavailable, say so once ("Serena/Context7 not connected — check `/mcp`") and continue with Grep/Read and official docs. Do NOT create `.mcp.json`.
 
-2. **Check `.serena/project.yml`** — NOT tracked in git (it is in `.gitignore`); the session-start hook auto-creates it from `.vibecode/templates/serena-project.yml` on first run. If missing, auto-detect languages from project files and create it:
+2. **Check `.serena/project.yml`** — NOT tracked in git (it is in `.gitignore`); the session-start hook auto-creates it from `${CLAUDE_PLUGIN_ROOT}/.vibecode/templates/serena-project.yml` on first run. If missing, auto-detect languages from project files and create it:
    - Language detection: `*.py`/`pyproject.toml` → python, `package.json`/`*.ts` → typescript, `go.mod` → go, `Cargo.toml` → rust, `Gemfile` → ruby, `pom.xml`/`build.gradle` → java, `*.csproj` → csharp, `composer.json` → php, `*.tf` → terraform, `*.sh` → bash, `*.cpp`/`CMakeLists.txt` → cpp, etc.
-   - Use template from `.vibecode/templates/serena-project.yml` if available
-   - Also create `.serena/.gitignore` with: `/cache`, `/project.local.yml`, `/memories`
+   - Use template from `${CLAUDE_PLUGIN_ROOT}/.vibecode/templates/serena-project.yml` if available
+   - Also create `.serena/.gitignore` with: `/cache`, `/project.local.yml` (NOT `/memories` — Serena memories are tracked, ADR-011)
    - WARN: "`.serena/project.yml` created — restart session for Serena." Then **STOP**.
    
    If it exists but task needs a language not listed → WARN and add it, then note restart is needed.
@@ -52,12 +52,12 @@ If Serena is unavailable, WARN the user and ask if they want to continue without
 ### 2. Load State
 - Read `HANDOFF.md` if it exists, summarize previous session
 - If its `## Goal` section has an active goal (`- **Goal status:** active`): show the goal + acceptance
-  criteria and keep this task pointed at it (goal set/update/clear: see `.vibecode/templates/HANDOFF.md`)
+  criteria and keep this task pointed at it (goal set/update/clear: see `${CLAUDE_PLUGIN_ROOT}/.vibecode/templates/HANDOFF.md`)
 - If not found: "Fresh session — no prior state"
 
 ### 3. Identify Skills (DO NOT READ YET)
 **List relevant skills but do NOT load their content into context.**
-- Note which skills from `.vibecode/skills/` match the task (by name/description only)
+- Note which skills from `${CLAUDE_PLUGIN_ROOT}/.vibecode/skills/` match the task (by name/description only)
 - Skills will be loaded **lazily** — only when about to work on that specific area
 - Example: don't load `react-patterns` if the task is backend-only
 
@@ -82,7 +82,7 @@ Ready: $ARGUMENTS
 - **Skills:** Load a skill ONLY when about to use it. Read it into the subagent that needs it, not the main context.
 - **Standards:** Load the relevant standard ONLY when about to write code in that area.
 - **Files:** Don't read files "just in case." Read only what the current step requires.
-- **Model routing / delegation / 2 deneme kuralı:** `.vibecode/standards/delegation.md` (load when delegating or escalating).
+- **Model routing / delegation / 2 deneme kuralı:** `${CLAUDE_PLUGIN_ROOT}/.vibecode/standards/delegation.md` (load when delegating or escalating).
 - **Tooling:** Docker-first — dependency install / test / migration komutları container içinde (`docker compose exec <service> uv …` / `npm …`, ya da `make` hedefleri); host'a `pip`/`npm install` yok.
 
 Begin work after confirmation.

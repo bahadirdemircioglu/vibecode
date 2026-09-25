@@ -25,7 +25,7 @@ Give every subagent a written contract in its prompt:
 3. **Inputs** — the exact files/specs it needs, so it doesn't go exploring the whole repo.
 4. **Output shape** — tell it the structure to return (findings list / contract spec per `.vibecode/standards/delegation.md` §3 / diff summary).
 5. **Attempt cap** — "If you fail the same problem twice, stop and report; do not try a third time."
-   ("Same problem" = same file path + similar error — substring match, per CLAUDE.md.)
+   ("Same problem" = same file path + similar error — substring match, per delegation.md §4.)
 
 ## During — isolation rules
 

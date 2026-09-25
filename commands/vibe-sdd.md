@@ -9,7 +9,7 @@ architecture plan. `/vibe-plan` produces the plan; `/vibe-sdd` extends **that sa
 requirements, acceptance cases and a dependency-ordered task list, then executes it one task at a time.
 Use it for features big enough that "just start coding" would miss requirements.
 
-> **Model:** phases 1-4 are planning work → **Opus** (routing: `.vibecode/standards/delegation.md`).
+> **Model:** phases 1-4 are planning work → **Opus** (routing: `${CLAUDE_PLUGIN_ROOT}/.vibecode/standards/delegation.md`).
 > Execution (phase 5) follows normal Sonnet-first routing.
 
 ### Phase 0 — Locate the plan
@@ -30,10 +30,10 @@ Present the additions and ask the user to confirm or correct. Loop until approve
 
 ### Phase 3 — Task breakdown (append to the plan)
 Append `## Tasks` to the plan file. Each task is its own heading — **`### Task N: <title>`** (exactly this
-form; `.vibecode/scripts/task-brief` extracts tasks by it — use `####` or bold labels inside a task, never
+form; `${CLAUDE_PLUGIN_ROOT}/.vibecode/scripts/task-brief` extracts tasks by it — use `####` or bold labels inside a task, never
 `#`–`###`). Per task: files touched (≤3) · depends-on · role (per agent-dispatch: engineer / mechanic / opus) ·
 contract · acceptance cases table (`input / state → expected`, incl. edge + error cases). The implementer
-turns the cases into tests first. No pseudo-code (`.vibecode/standards/delegation.md` §3).
+turns the cases into tests first. No pseudo-code (`${CLAUDE_PLUGIN_ROOT}/.vibecode/standards/delegation.md` §3).
 Identify the **critical path** (longest dependency chain). Tasks with no shared deps can run in
 parallel via `/vibe-fleet`.
 
@@ -43,17 +43,17 @@ no implementation until "OK". On approval update the plan's line in `docs/archit
 (append `— SDD: tasks approved`).
 
 ### Phase 5 — Execute
-**Setup (once):** `.vibecode/scripts/sdd-workspace <feature-name>` çalıştır — `.vibecode/sdd/progress-<feature>.md` oluşturur (veya o özelliğin ledger'ını devam ettirir).
+**Setup (once):** `${CLAUDE_PLUGIN_ROOT}/.vibecode/scripts/sdd-workspace <feature-name>` çalıştır — `.vibecode/sdd/progress-<feature>.md` oluşturur (veya o özelliğin ledger'ını devam ettirir).
 
 Work tasks in dependency order:
-- **Her görev öncesi:** `.vibecode/scripts/task-brief docs/architecture/<feature>-plan.md <N>` → `.vibecode/sdd/task-<N>-brief.md`
+- **Her görev öncesi:** `${CLAUDE_PLUGIN_ROOT}/.vibecode/scripts/task-brief docs/architecture/<feature>-plan.md <N>` → `.vibecode/sdd/task-<N>-brief.md`
   - Implementer subagent'a dosya yolunu ver (içeriği prompt'a gömme).
-  - Prompt şablonu: `.vibecode/prompts/sdd-implementer.md` + `TASK_BRIEF=<path>` + global constraints özeti.
+  - Prompt şablonu: `${CLAUDE_PLUGIN_ROOT}/.vibecode/prompts/sdd-implementer.md` + `TASK_BRIEF=<path>` + global constraints özeti.
 - Independent tasks → fan out with `/vibe-fleet` (engineer/tester roles).
 - Each task: implement → test → `make verify` → commit → mark done.
-- **Her görev sonrası:** `.vibecode/scripts/review-package <BASE_COMMIT> HEAD` → `.vibecode/sdd/review-*.md`
+- **Her görev sonrası:** `${CLAUDE_PLUGIN_ROOT}/.vibecode/scripts/review-package <BASE_COMMIT> HEAD` → `.vibecode/sdd/review-*.md`
   - Reviewer subagent'a diff dosyasını ver (içeriği prompt'a gömme).
-  - Prompt şablonu: `.vibecode/prompts/sdd-reviewer.md` + `REVIEW_PACKAGE=<path>` + `TASK_BRIEF=<path>`.
+  - Prompt şablonu: `${CLAUDE_PLUGIN_ROOT}/.vibecode/prompts/sdd-reviewer.md` + `REVIEW_PACKAGE=<path>` + `TASK_BRIEF=<path>`.
   - Critical/Important bulgu varsa fix subagent → re-review.
 - **Her görev tamamlandığında:** `.vibecode/sdd/progress-<feature>.md` ledger'ını güncelle (`- [x] Task N: ...`).
 - On STATUS: BLOCKER, stop and report; `BELIRSIZ:` questions go to the user before continuing.

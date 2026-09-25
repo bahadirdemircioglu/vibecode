@@ -1,7 +1,8 @@
-# Vibecode — Vibe Coding Template System
+# Vibecode — Claude Code Plugin
 
-> AI destekli yazılım geliştirmede tutarlı, güvenli ve token-verimli projeler
-> oluşturmak için şablon ve yönetişim sistemi.
+> AI destekli yazılım geliştirmede tutarlı, güvenli ve token-verimli projeler için
+> iş akışı, standartlar ve yönetişim — **Claude Code plugin'i** olarak. Makineye bir kez kurulur,
+> her projede `/vibecode:init` ile açılır.
 
 ---
 
@@ -11,7 +12,7 @@ Vibecode, Claude Code ile yazılım geliştirirken karşılaşılan temel sorunl
 
 | Sorun | Çözüm |
 |-------|-------|
-| Her projede aynı dosyaları tekrar yazıyorsun | **Clone workflow** + hazır **`.vibecode/templates/`** |
+| Her projede aynı dosyaları tekrar yazıyorsun | **Plugin** — framework tek yerde; proje yalnızca kendi verisini tutar (`/vibecode:init`) |
 | Session geçişlerinde bağlam kaybı | **HANDOFF.md** + **`/vibe-go`** ile otomatik yükleme |
 | Uzun SDD çalışmalarında context compaction = ilerleme kaybı | **`.vibecode/sdd/progress-<feature>.md`** ledger — kaldığın yerden devam |
 | Subagent prompt'ları görev metniyle şişiyor | **File handoff scripts** — görev ve diff dosyaya yazılır, path geçilir |
@@ -19,45 +20,71 @@ Vibecode, Claude Code ile yazılım geliştirirken karşılaşılan temel sorunl
 | Doğru standart yüklenemiyor | **pre-tool-use hook** — dosya path'ine göre uyarı |
 | Opus'ta rutin iş = pahalı | **Sonnet-first routing** — hook Opus tespit ederse `/model sonnet` önerir |
 | Plan discovery için `ls` token yiyor | **`docs/architecture/INDEX.md`** — tek otorite, targeted Read |
-| vibecode gelişince türetilmiş projen eski sürümde kalıyor | **`/vibe-update`** — framework dosyalarını upstream'den hash-tabanlı güvenli merge ile senkronize eder |
+| vibecode gelişince projelerin eski sürümde kalıyor | **`/plugin marketplace update vibecode`** — tüm projeler aynı anda güncellenir |
+| Sunucu silinip repo yeniden çekilince her şey kayboluyor | Proje `.claude/settings.json`'da plugin bildirimi + hafıza repoda — klasöre güvenince geri gelir |
 | Plan tek modelin bakış açısıyla sınırlı | **DeepSeek tartışması** — `/vibe-plan` planı DeepSeek'e eleştirtir, her itiraz madde madde uzlaşılana (en fazla 4 tur) kadar tartışılır |
 
 ---
 
 ## Hızlı Başlangıç
 
-### 1. Kur
+### 1. Plugin'i kur (makinede bir kez)
 
-```bash
-git clone <this-repo> ~/Dev/vibecode
-cd ~/Dev/vibecode
+Claude Code içinde:
+
+```
+/plugin marketplace add bahadirdemircioglu/vibecode
+/plugin install vibecode@vibecode
 ```
 
-### 2. Yeni Proje Oluştur
+(`add` tam adresi de kabul eder: `https://github.com/bahadirdemircioglu/vibecode`. Terminalden:
+`claude plugin marketplace add …` + `claude plugin install vibecode@vibecode`.)
+
+Gereksinimler: `node` (hook'lar, Context7), `uv` (Serena). Eksikse session başında kurulum komutuyla bir
+`MISSING` satırı basılır — hiçbir şey otomatik kurulmaz.
+
+### 2. Projede başlat (proje başına bir kez)
 
 ```bash
-git clone <vibecode-repo> my-awesome-app
-cd my-awesome-app
-rm -rf .git README.md
+git clone <projen> && cd <projen>
 claude
 ```
+```
+/vibecode:init
+```
 
-Session-start hook, **yalnızca gerçekten yeni bir klonda** (`.git` yok, `.vibecode/VERSION` yok ve
-`.vibecode/templates/fresh-clone.marker`'daki vibecode'a özgü planlar mevcut) bir kez:
-- vibecode'un kendi geçmişini sıfırlar: `docs/architecture/` planlarını siler, INDEX'i boş başlatır;
-  `docs/decisions.md`, `CHANGELOG.md`, `progress.md`, `CHANGELOG_INTERNAL.md` şablondan yeniden oluşur,
-  `HANDOFF.md` silinir
-- `git init` + açık bir yol listesiyle ilk commit (`git add -A` yok — `.env` ve yerel ayarlar girmez)
-- `.serena/project.yml` proje ismini dizin adından günceller
+`/vibecode:init` yalnızca **eksik** olanı oluşturur, hiçbir dosyanın üzerine yazmaz:
+- `docs/` iskeleti (CHANGELOG, decisions, progress, `architecture/INDEX.md`, `constraints/`) ve `.vibecode/memory/`
+- `.gitignore`'a vibecode satırları
+- `.claude/settings.json`: vibecode izinleri (birleştirilir) + **plugin bildirimi** (`extraKnownMarketplaces` +
+  `enabledPlugins`) — repo başka bir makinede/sunucuda klonlanınca klasöre güven verildiği anda vibecode kendiliğinden gelir
+- `.claude/settings.local.json`: hafıza konumu (`autoMemoryDirectory` → `.vibecode/memory`)
+- `.serena/project.yml` (yoksa)
 
-Her oturumda: MCP server'lar (Serena + Context7) kontrol edilir; eksik araç (uv, node…) **kurulmaz**,
-kurulum komutuyla bir `MISSING` satırı basılır. Aktif model Opus ise `/model sonnet` önerilir (auto-switch yok).
+Sonra önerilen commit'i onayla. Plugin'in hook'ları **yalnızca init edilmiş projelerde** (kökte `.vibecode/` dizini
+olan) çalışır; diğer projelerinde vibecode sessiz kalır.
 
-### 3. Çalışmaya Başla
+### 3. Çalışmaya başla
 
 ```
 /vibe-go kullanici-yonetimi-ekle
 ```
+
+Komutlar öneksiz çalışır (`/vibe-go`); çakışma olursa tam adı `/vibecode:vibe-go`.
+
+### Güncelleme
+
+```
+/plugin marketplace update vibecode
+```
+
+### Eski (klonlama tabanlı) projelerden geçiş
+
+vibecode'u projeye kopyalayarak kurduğun eski projelerde: plugin'i kur → projede `/vibecode:init`. Kopyalanmış
+framework dosyalarını `LEGACY` olarak listeler (plugin'le aynı olanlar, farklılaşmışlar, `.claude/settings.json`'daki
+hook kayıtları, `.mcp.json`'daki serena/context7); onay verirsen `--migrate` ile kaldırır. Farklılaşmış dosyalar
+istersen **proje override'ı** olarak kalır. `CLAUDE.md`'ye hiç otomatik dokunulmaz. Proje verisi (docs, HANDOFF,
+hafıza) korunur.
 
 ---
 
@@ -95,9 +122,10 @@ Ana oturum yalnızca orkestrasyon ve soruları yapar; routing kuralları: `.vibe
   yeniden açar); reddedilen madde DeepSeek geri çekene kadar `open`; tur limitinde `decided-by-claude`
 - **Yakınsama:** 1. turda en fazla 8, sonraki turlarda en fazla 3 yeni itiraz; 3. turdan itibaren
   yalnızca `high` önemde
-- **Config:** `.vibecode/config/ai-providers.json` — `enabled: true`, `max_rounds: 4`,
+- **Config:** plugin'in `.vibecode/config/ai-providers.json`'ı — `enabled: true`, `max_rounds: 4`,
   `model: deepseek-v4-pro` (ucuz: `deepseek-flash`), `timeout_seconds: 300`, `max_tokens: 32000`.
-  Bir projede kapatmak için `enabled: false`
+  Bir projede değiştirmek/kapatmak için dosyayı projenin `.vibecode/config/ai-providers.json`'ına kopyala
+  (proje kopyası önce okunur) ve `enabled: false` yap
 - **API key** — projenin `.env`'ine **koyma** (vibecode başka projenin içinde çalışır; kök `.env`
   uygulamanındır). Script şu sırayla arar: `DEEPSEEK_API_KEY` ortam değişkeni → `$VIBECODE_ENV_FILE`
   → `.vibecode/providers.env` (gitignore'da) → **`~/.config/vibe/providers.env` (önerilen, vibeplan
@@ -105,7 +133,7 @@ Ana oturum yalnızca orkestrasyon ve soruları yapar; routing kuralları: `.vibe
 
   ```bash
   mkdir -p ~/.config/vibe
-  cp .vibecode/providers.env.example ~/.config/vibe/providers.env   # DEEPSEEK_API_KEY=... gir
+  printf 'DEEPSEEK_API_KEY=%s\n' 'sk-...' > ~/.config/vibe/providers.env && chmod 600 ~/.config/vibe/providers.env
   ```
 - **Hata olursa** (anahtar yok, config kapalı, API hatası) tartışma atlanır, plan yine onaya gelir
 - **Gizlilik:** plan metni DeepSeek sunucularına gider — hassas planlarda `--no-debate`. Anahtar asla
@@ -187,7 +215,9 @@ günlüğe satır ekler. Otonom döngü değil — pusula + defter.
 
 ## SDD Scriptleri
 
-`/vibe-sdd` komutunun arka planda kullandığı araçlar. Manuel çalıştırabilirsin.
+`/vibe-sdd` komutunun arka planda kullandığı araçlar. Script'ler **plugin'in** içindedir; projeyi çalıştıkları dizinden
+(git kökü) alırlar. Aşağıdaki örneklerde `.vibecode/scripts/…` plugin kökünü gösterir — Claude komutları bu yolu kendisi
+çözer; elle çalıştırmak için `/vibe-status` ya da session başındaki "Framework root" satırındaki yolu kullan.
 
 ### task-brief — Görev Özeti Çıkar
 
@@ -310,6 +340,7 @@ Critical bulgu varsa fix subagent devreye girer; re-review sonrası merge edilir
 
 | Komut | Ne Yapar |
 |-------|----------|
+| `/vibecode:init` | Projeyi vibecode için hazırlar / eski kurulumu taşır |
 | `/vibe-plan [feature]` | Mimari plan yazar, onay bekler |
 | `/vibe-go [task]` | State + skills yükler, başlar |
 | `/vibe-sdd [feature]` | Onaylı plan → soru → requirements/kabul vakaları → görev listesi → execute |
@@ -319,7 +350,6 @@ Critical bulgu varsa fix subagent devreye girer; re-review sonrası merge edilir
 | `/vibe-compact` | State kaydeder, context temizler |
 | `/vibe-doc-sync [--live] [--tier full] [paths...]` | Dokümanları kodla senkronize eder |
 | `/vibe-security-review [file]` | OWASP Top 10 güvenlik taraması |
-| `/vibe-update [ref]` | Framework dosyalarını (standards/skills/hooks/commands) upstream vibecode'dan senkronize eder — hash-tabanlı güvenli merge |
 | `/vibe-status` | Session durumunu gösterir |
 
 ---
@@ -347,7 +377,9 @@ SKILLS: fastapi-pro, postgresql, pydantic-models-py, react-patterns, zustand-sto
 
 ## Skills Sistemi
 
-110+ skill `.vibecode/skills/` altında. Gerçek dosya, symlink yok — herhangi bir makineye klonlayınca çalışır.
+110+ skill plugin'in `.vibecode/skills/` dizininde. Plugin skill'i olarak **kaydedilmez** (105 skill her oturuma
+~6.4k token eklerdi); `/vibe-go` göreve uyanları adıyla listeler, gerektiğinde okunur. Projeye özel skill:
+projede `.vibecode/skills/<ad>/SKILL.md` (plugin'dekini geçersiz kılar).
 
 | Kategori | Örnekler |
 |----------|----------|
@@ -387,21 +419,29 @@ description: "Bu skill'in ne zaman aktif olacağını açıklayan kısa açıkla
 
 ## Hooks
 
-### session-start.sh — Session Durumu + Stack Detection
+Plugin'in `hooks/hooks.json`'ı ile kayıtlıdır. Hepsi önce projeye bakar: kökte `.vibecode/` yoksa hiçbir şey yapmadan
+çıkar (`hooks/vibecode-project.js`).
+
+### session-start.sh — Temel Kurallar + Session Durumu + Stack Detection
 
 Her session başında çalışır:
+- **Temel kuralları** (`.vibecode/core-rules.md`, CLAUDE.md'nin plugin karşılığı) framework kökünün gerçek yoluyla
+  bağlama ekler
 - HANDOFF.md durumunu ve ilk açık adımı gösterir
 - Test/source oranını ve CHANGELOG güncelliğini kontrol eder
 - **Config dosyalarından ilgili skill'leri tespit eder** (otomatik)
 - Eksik araçlar için kurulum komutuyla `MISSING` satırı basar — hiçbir şeyi kendisi kurmaz
   (`curl | sh`, `sudo`, `npm -g` yok)
-- Yeni klonda tek seferlik kurulumu yapar (bkz. Hızlı Başlangıç)
+- Eksikse `.serena/project.yml`'ı şablondan oluşturur, hafıza konumunu ayarlar; eski klon-tabanlı kurulumu `LEGACY` olarak bildirir
+- Hiçbir dosyayı silmez, commit atmaz
 
 ### pre-tool-use.js — Standart + Skill Uyarısı
 
 Write / Edit / NotebookEdit / WebFetch öncesinde **tek node süreci** olarak çalışır:
 - Dosya path'ine göre ilgili skill'i önerir — her dosya için oturumda **bir kez**
   (`.vibecode/state/`'te tutulur); tekrar eden düzenlemede context'e hiçbir şey eklenmez
+- **Yol kuralları:** plugin `.claude/rules/` gönderemediği için kurallar `.vibecode/rules/*.md`'de (aynı `paths:`
+  frontmatter'ı); eşleşen bir dosyaya ilk yazımda kuralın metni bağlama eklenir — kural başına oturumda bir kez
 - `net-fs-guard.js`'i modül olarak çalıştırır (aşağıda) — bloklayan tek kısım bu
 
 ### permission-policy.js — Güvenlik Kapısı
@@ -426,6 +466,8 @@ Mesaj sayısını izler, context büyüdüğünde `/vibe-compact` önerir.
 ---
 
 ## Core Rules
+
+Plugin bunları her oturumda `.vibecode/core-rules.md`'den bağlama ekler (özet):
 
 1. İlgili standardı oku, sonra kod yaz
 2. Kütüphane API'lerini dokümantasyondan doğrula — hafızadan yazma
@@ -454,39 +496,42 @@ Her ikisi de yoksa standart Grep/Read ve resmi dokümantasyon ile devam edilir.
 
 ## Dizin Yapısı
 
+**Plugin (bu repo — repo kökü = plugin kökü = marketplace kökü):**
+
 ```
 vibecode/
-├── CLAUDE.md                    ← Ana yönetişim (~130 satır)
+├── .claude-plugin/
+│   ├── plugin.json              ← Manifest: ajan listesi, MCP (Serena + Context7)
+│   └── marketplace.json         ← Tek plugin'lik marketplace
+├── commands/                    ← Slash komutları (vibe-go, vibe-plan, vibe-sdd, …, init)
+├── agents/                      ← Rol ajanları (architect, engineer, mechanic, tester, reviewer, …)
+├── hooks/                       ← hooks.json + session-start.sh, pre-tool-use.js, permission-policy.js,
+│                                  net-fs-guard.js, notification.js, vibecode-project.js (proje kapısı)
 ├── .vibecode/
-│   ├── standards/               ← Kodlama standartları (11 dosya, on-demand yüklenir; delegation.md = model routing)
-│   ├── skills/                  ← 110+ AI skill
-│   ├── config/                  ← ai-providers.json (harici AI provider registry — /vibe-plan tartışması)
-│   ├── scripts/                 ← Yardımcı shell scriptler
-│   │   ├── task-brief           ← SDD: plan'dan görev özeti çıkarır
-│   │   ├── review-package       ← SDD: diff paketi oluşturur
-│   │   ├── sdd-workspace        ← SDD: çalışma alanı + progress ledger başlatır
-│   │   ├── deepseek-debate.js   ← /vibe-plan: Claude ↔ DeepSeek madde bazlı tartışma (+ tests/)
-│   │   ├── db-backup.sh
-│   │   └── db-restore.sh
-│   ├── prompts/                 ← Subagent prompt şablonları
-│   │   ├── sdd-implementer.md   ← Implementer subagent sözleşmesi
-│   │   └── sdd-reviewer.md      ← Reviewer subagent kriterleri
-│   └── templates/               ← docker-compose, Makefile, Dockerfile'lar, HANDOFF, yeni-klon doc şablonları
-├── .claude/
-│   ├── commands/                ← Slash komutları (vibe-go, vibe-done, vibe-sdd, vibe-fleet, ...)
-│   ├── hooks/                   ← session-start.sh, pre-tool-use.js, permission-policy.js, net-fs-guard.js, notification.js
-│   ├── rules/                   ← Path-scoped kodlama kuralları (8 dosya)
-│   └── settings.json            ← Hook registrations, permissions
-└── docs/
-    ├── architecture/            ← Plan dosyaları + INDEX.md (plan discovery'nin tek otoritesi)
-    ├── constraints/             ← Proje kısıtlamaları
-    ├── CHANGELOG.md
-    ├── decisions.md             ← ADR'ler
-    └── progress.md              ← (framework geçmişi; yeni projede şablondan sıfırlanır)
+│   ├── core-rules.md            ← Her oturuma eklenen temel kurallar (CLAUDE.md'nin plugin karşılığı)
+│   ├── standards/               ← Kodlama standartları (11 dosya, on-demand; delegation.md = model routing)
+│   ├── rules/                   ← Yol kuralları (8 dosya, pre-tool-use.js enjekte eder)
+│   ├── skills/                  ← 110+ skill (lazy, kayıtsız)
+│   ├── config/                  ← ai-providers.json (varsayılan; proje kendi kopyasıyla geçersiz kılabilir)
+│   ├── scripts/                 ← vibe-init.js, task-brief, review-package, sdd-workspace, deepseek-debate.js,
+│   │                              db-backup/restore (+ tests/)
+│   ├── prompts/                 ← SDD implementer/reviewer şablonları
+│   └── templates/               ← docs iskeleti, HANDOFF, izinler, serena, docker-compose, Makefile, Dockerfile'lar
+└── docs/, HANDOFF.md, .vibecode/memory/   ← vibecode reposunun kendi proje verisi
 ```
 
-> `backend/`, `frontend/`, `Makefile`, `docker-compose.yml` — proje setup sırasında oluşturulur.
-> `.vibecode/sdd/` — gitignore'da; çalışma zamanı dosyaları (brief'ler, diff'ler, ledger).
+**Senin projen (`/vibecode:init` sonrası) — yalnızca proje verisi:**
+
+```
+projen/
+├── .claude/settings.json        ← izinler + vibecode plugin bildirimi (commit edilir)
+├── .claude/settings.local.json  ← hafıza konumu (makineye özel, gitignore)
+├── .vibecode/memory/            ← Claude hafızası (commit edilir)
+├── .vibecode/{state,sdd}/       ← çalışma zamanı (gitignore)
+├── .serena/memories/            ← Serena hafızası (commit edilir)
+├── docs/                        ← architecture/ (+INDEX), constraints/, CHANGELOG, decisions, progress
+└── HANDOFF.md                   ← /vibe-done yazar, /vibe-go okur
+```
 
 ---
 
@@ -523,6 +568,8 @@ vibecode/
 | Yanlışlıkla Opus ile açıldım | Hook `/model sonnet` öneriyor — komutu çalıştır |
 | Sonnet aynı bug'ı 2 kez çözemedi | Otomatik — Sonnet `Agent(model:opus)` çağırır |
 | Riskli komut bloklandı | `permission-policy.js` hard-block — komutu gözden geçir |
+| Sunucuyu sildim, repoyu yeni makineye çektim | `claude` aç, klasöre güven → plugin projedeki bildirimden gelir; sırlar (DeepSeek anahtarı) için `~/.config/vibe/providers.env`'i yeniden oluştur |
+| Plugin başka projemde karışıyor | Karışmaz — hook'lar yalnızca `/vibecode:init` edilmiş projelerde çalışır |
 | Büyük özellik, nereden başlayacağım? | `/vibe-plan` → `/vibe-sdd` → `/vibe-fleet` sırasıyla |
 
 ---

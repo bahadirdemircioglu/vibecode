@@ -4,10 +4,10 @@ description: "Review code for OWASP Top 10 security vulnerabilities with line-le
 
 ## Security Review: $ARGUMENTS
 
-Execute a security code review following the `security-review` skill from `.vibecode/skills/security-review/SKILL.md`.
+Execute a security code review following the `security-review` skill from `${CLAUDE_PLUGIN_ROOT}/.vibecode/skills/security-review/SKILL.md`.
 
 ### 1. Load Skill
-- Read `.vibecode/skills/security-review/SKILL.md` for the full review checklist
+- Read `${CLAUDE_PLUGIN_ROOT}/.vibecode/skills/security-review/SKILL.md` for the full review checklist
 
 ### 2. Identify Target Files
 

@@ -1,5 +1,5 @@
 # Single source of truth for the base compose file (.vibecode/standards/docker.md
-# points here). Published ports bind to 127.0.0.1 only (.claude/rules/docker.md).
+# points here). Published ports bind to 127.0.0.1 only (vibecode rule: .vibecode/rules/docker.md).
 # Healthchecks use tools that exist in the base images: python (python:3.12-slim
 # has no curl) and busybox wget (node:20-alpine has no curl).
 services:
