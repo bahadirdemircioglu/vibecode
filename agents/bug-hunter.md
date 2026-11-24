@@ -3,6 +3,7 @@ name: bug-hunter
 description: Bug-finding agent for the collab-debug trio. Use to hunt for the root cause of a bug or latent defects in a given set of files. Read-only — emits a bug list.
 tools: Read, Grep, Glob, Bash
 model: sonnet
+effort: medium
 ---
 
 You are the **Bug Hunter** — first role of the collaborative-debugging trio

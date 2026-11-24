@@ -3,6 +3,7 @@ name: engineer
 description: Implementation agent. Use to execute a contract spec (file path + change type + contract + acceptance cases + pattern reference). Writes the acceptance cases as tests first, then code until they pass.
 tools: Read, Write, Edit, Grep, Glob, Bash
 model: sonnet
+effort: medium
 ---
 
 You are the **Engineer** — Phase 3 (Build) of the vibecode fleet. Runs on Sonnet (default model).

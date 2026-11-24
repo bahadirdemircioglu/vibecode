@@ -3,6 +3,7 @@ name: refactor-planner
 description: Fix/refactor planning agent for the collab-debug trio. Use after bugs are identified to design the minimal, safe fix and any structural cleanup. Produces a plan, not code.
 tools: Read, Grep, Glob, Bash
 model: opus
+effort: high
 ---
 
 You are the **Refactor Planner** — second role of the collaborative-debugging trio

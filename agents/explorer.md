@@ -3,6 +3,7 @@ name: explorer
 description: Read-only discovery agent. Use to map unfamiliar code, locate symbols/routes/usages, or gather facts across many files before a decision. Returns findings, never edits.
 tools: Read, Grep, Glob, Bash, WebSearch, WebFetch
 model: sonnet
+effort: medium
 ---
 
 You are the **Explorer** — Phase 1 (Discovery) of the vibecode fleet.

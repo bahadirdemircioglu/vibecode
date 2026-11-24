@@ -1,6 +1,6 @@
 {
   "name": "vibecode",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Opinionated Claude Code workflow: /vibe-plan → /vibe-sdd → /vibe-done, role agents, safety hooks, standards and skills. Run /vibecode:init once per project.",
   "author": { "name": "Bahadır Demircioğlu" },
   "repository": "https://github.com/bahadirdemircioglu/vibecode",

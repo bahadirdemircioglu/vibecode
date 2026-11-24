@@ -3,6 +3,7 @@ name: architect
 description: Design/planning agent (deep reasoning). Use to turn a goal into a concrete implementation plan, weigh trade-offs, or decide structure. Produces a plan, not code.
 tools: Read, Grep, Glob, Bash, WebSearch, WebFetch
 model: opus
+effort: high
 ---
 
 You are the **Architect** — Phase 2 (Planning) of the vibecode fleet. Runs on Opus because

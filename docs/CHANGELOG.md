@@ -5,6 +5,18 @@
 
 ---
 
+## [2026-11-24] — Ajanlara `effort` frontmatter'ı; advisor danışma kuralı (v1.2.0)
+
+### Changes
+- **What:** Opus rolleri (architect, critic, refactor-planner, reviewer) `effort: high`, Sonnet rolleri (explorer,
+  engineer, tester, bug-hunter) `effort: medium`; `mechanic` (Haiku) effort'suz. `delegation.md §1`'e effort notu ve
+  koşullu advisor kuralı (araç varsa: büyük plan öncesi, aynı hata ikinci kez, uzun işi bitirmeden önce; §4 Opus fix
+  kuralının ucuz ön adımı) + anti-pattern; `core-rules.md` kural 9'a tek cümle; `agent-dispatch` tablosuna effort notu.
+- **Why:** Kişisel "üç katman" kurulumundan (sonnet/medium yürütücü + güçlü advisor) plugin'e uyan kısımlar alındı.
+  `advisorModel`, Opus `modelSettings` ve global CLAUDE.md kullanıcı ayarı olduğu için plugin'e girmedi; ayrı
+  researcher/worker ajanı eklenmedi (`explorer` web araştırmasını, `engineer`/`mechanic` uygulamayı karşılıyor).
+- **Tests:** `node --test .vibecode/scripts/tests/` yeşil; frontmatter değişikliği davranışsal test gerektirmiyor.
+
 ## [2026-09-25] — `/vibecode:init` bağımlılıkları zorla kurar; node'suz makinede hook'lar sessiz
 
 ### Changes

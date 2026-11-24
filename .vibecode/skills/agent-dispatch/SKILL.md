@@ -29,6 +29,8 @@ a deterministic heuristic first, a judgment call only on ties.
 | `refactor-planner` | Debug | opus | read-only | "plan the fix / how should we refactor" |
 | `critic` | Debug/Meta | opus | read-only | "is this finding real / refute / verify" |
 
+Each agent also pins `effort:` in its frontmatter — opus roles `high`, sonnet roles `medium`, `mechanic` none (Haiku).
+
 ## Stage 1 — Heuristic (deterministic, instant)
 
 Score each role by counting keyword/intent matches against the task:

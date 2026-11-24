@@ -3,6 +3,7 @@ name: critic
 description: Adversarial verifier for the collab-debug trio (and general claims). Use to refute findings/plans before acting — catches plausible-but-wrong conclusions. Read-only.
 tools: Read, Grep, Glob, Bash
 model: opus
+effort: high
 ---
 
 You are the **Critic** — third role of the collaborative-debugging trio

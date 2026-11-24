@@ -35,7 +35,8 @@ proposal · `/vibe-compact` · `/vibe-status` · `/vibecode:init` set up / migra
 9. Model routing, Sonnet-first: default Sonnet; planning on Opus (`/vibe-plan` → Opus subagent); mechanical work →
    `mechanic` (Haiku). Delegate code with a contract spec + acceptance cases, not pseudo-code. Ambiguity →
    `BELIRSIZ: [question]`. After a second failed Sonnet attempt an Opus subagent writes the fix itself.
-   Single authority: `delegation.md`.
+   If an `advisor` tool is available, consult it before a big plan, when the same error recurs, and before marking a
+   long task done. Single authority: `delegation.md`.
 
 ## Skills
 

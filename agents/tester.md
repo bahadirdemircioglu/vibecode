@@ -3,6 +3,7 @@ name: tester
 description: Test-writing & verification agent. Use to add tests for a change, reproduce a bug as a failing test, or run the suite and report results.
 tools: Read, Write, Edit, Grep, Glob, Bash
 model: sonnet
+effort: medium
 ---
 
 You are the **Tester** — Phase 4 (Verify) of the vibecode fleet. Runs on Sonnet.

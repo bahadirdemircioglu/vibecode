@@ -20,6 +20,12 @@
   `/vibe-fleet` işlerinde kullanılır). Plan üretimi Sonnet'e delege EDİLMEZ.
 - Session-start hook'u Opus main context tespit ederse uyarır; kullanıcı `/model sonnet` ile geçer (auto-switch YOK).
 - Rol → model eşlemesi (9 rol): `.vibecode/skills/agent-dispatch/SKILL.md`.
+- **Effort:** her ajan `effort:` frontmatter'ı taşır — Opus rolleri `high`, Sonnet rolleri `medium`, `mechanic`
+  yok (Haiku). `CLAUDE_CODE_EFFORT_LEVEL` env değişkeni bunları ezebilir.
+- **Advisor (varsa):** `advisor` aracı açıksa (kullanıcı `advisorModel` ayarlamışsa) ana context şu üç anda danışır:
+  büyük bir plana girişmeden önce, aynı hata ikinci kez görülünce, uzun bir işi bitti saymadan önce. Advisor
+  eskalasyonun *ucuz ön adımıdır* — §4'teki Opus fix kuralının yerine geçmez. Araç yoksa bu madde uygulanmaz;
+  vibecode `advisorModel`'i kendisi ayarlamaz (kullanıcı ayarı).
 
 ---
 
@@ -111,6 +117,7 @@ aynı test adı + aynı assertion. Kararsızsan eskale et (az eskalasyon, fazlad
 ## 5. Anti-pattern'ler
 
 - ❌ Her belirsizlikte Opus'a sormak (eskalasyon overhead'i tasarrufu bozar)
+- ❌ Advisor'ı her adımda çağırmak — yalnızca yukarıdaki üç an (plan öncesi, tekrarlayan hata, bitiş öncesi)
 - ❌ 3. denemeyi Sonnet'le yapmak
 - ❌ Sonnet'le plan üretmek (plan = Opus)
 - ❌ Spec'e pseudo-code yazmak (derin reasoning istisnası hariç)
